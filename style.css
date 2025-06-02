@@ -1,0 +1,245 @@
+:root {
+    --primary: #4CAF50;
+    --primary-dark: #388E3C;
+    --white: #FFFFFF;
+    --black: #333333;
+    --gray: #666666;
+    --light-gray: #999999;
+    --error: #E53935;
+    --google: #DB4437;
+    --facebook: #4267B2;
+    --apple: #000000;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background-color: var(--primary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 480px;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--white);
+}
+
+.login-header .logo {
+    margin-bottom: 10px;
+}
+
+.login-card {
+    background-color: var(--white);
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.login-card h2 {
+    color: var(--primary);
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    color: var(--gray);
+    text-align: center;
+    margin-bottom: 24px;
+    font-size: 14px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--black);
+    font-weight: 500;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border 0.3s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.password-input {
+    position: relative;
+}
+
+.password-input .toggle-password {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--light-gray);
+    cursor: pointer;
+}
+
+.error-message {
+    color: var(--error);
+    font-size: 12px;
+    margin-top: 5px;
+    display: none;
+}
+
+.login-btn {
+    width: 100%;
+    padding: 14px;
+    background-color: var(--primary);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 10px;
+}
+
+.login-btn:hover {
+    background-color: var(--primary-dark);
+}
+
+.forgot-password {
+    text-align: right;
+    margin: 12px 0 24px;
+}
+
+.forgot-password a {
+    color: var(--primary-dark);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.forgot-password a:hover {
+    text-decoration: underline;
+}
+
+.social-login {
+    margin: 24px 0;
+}
+
+.divider {
+    color: var(--gray);
+    text-align: center;
+    position: relative;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.divider::before,
+.divider::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 30%;
+    height: 1px;
+    background-color: #eee;
+}
+
+.divider::before {
+    left: 0;
+}
+
+.divider::after {
+    right: 0;
+}
+
+.social-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.social-btn {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background-color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.social-btn i {
+    font-size: 18px;
+}
+
+.social-btn.google {
+    color: var(--google);
+    border-color: var(--google);
+}
+
+.social-btn.google:hover {
+    background-color: rgba(219, 68, 55, 0.1);
+}
+
+.social-btn.facebook {
+    color: var(--facebook);
+    border-color: var(--facebook);
+}
+
+.social-btn.facebook:hover {
+    background-color: rgba(66, 103, 178, 0.1);
+}
+
+.social-btn.apple {
+    color: var(--apple);
+    border-color: var(--apple);
+}
+
+.social-btn.apple:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.signup-prompt {
+    text-align: center;
+    margin-top: 20px;
+    color: var(--gray);
+    font-size: 14px;
+}
+
+.signup-prompt a {
+    color: var(--primary-dark);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.signup-prompt a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+    .login-card {
+        padding: 24px;
+    }
+}

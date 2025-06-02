@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FarmAssist AI</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: { primary: "#4CAF50", secondary: "#8BC34A" },
+            borderRadius: {
+              none: "0px",
+              sm: "4px",
+              DEFAULT: "8px",
+              md: "12px",
+              lg: "16px",
+              xl: "20px",
+              "2xl": "24px",
+              "3xl": "32px",
+              full: "9999px",
+              button: "8px",
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f9fafb;
+      }
+      .voice-button {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+        animation: pulse 1.5s infinite;
+      }
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+        }
+        70% {
+          box-shadow: 0 0 0 20px rgba(76, 175, 80, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+        }
+      }
+      .listening .voice-button {
+        animation: listening-pulse 1.5s infinite;
+      }
+      @keyframes listening-pulse {
+        0% {
+          transform: scale(0.95);
+          box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7);
+        }
+        70% {
+          transform: scale(1);
+          box-shadow: 0 0 0 20px rgba(255, 82, 82, 0);
+        }
+        100% {
+          transform: scale(0.95);
+          box-shadow: 0 0 0 0 rgba(255, 82, 82, 0);
+        }
+      }
+      .custom-switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+      }
+      .custom-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .switch-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 24px;
+      }
+      .switch-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+      input:checked + .switch-slider {
+        background-color: #4caf50;
+      }
+      input:checked + .switch-slider:before {
+        transform: translateX(20px);
+      }
+      .custom-checkbox {
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #d1d5db;
+        border-radius: 4px;
+        outline: none;
+        cursor: pointer;
+        position: relative;
+        background-color: white;
+      }
+      .custom-checkbox:checked {
+        background-color: #4caf50;
+        border-color: #4caf50;
+      }
+      .custom-checkbox:checked::after {
+        content: "";
+        position: absolute;
+        left: 6px;
+        top: 2px;
+        width: 5px;
+        height: 10px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+      .custom-radio {
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #d1d5db;
+        border-radius: 50%;
+        outline: none;
+        cursor: pointer;
+        position: relative;
+        background-color: white;
+      }
+      .custom-radio:checked {
+        border-color: #4caf50;
+      }
+      .custom-radio:checked::after {
+        content: "";
+        position: absolute;
+        left: 3px;
+        top: 3px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #4caf50;
+      }
+      .custom-range {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 6px;
+        border-radius: 5px;
+        background: #d1d5db;
+        outline: none;
+      }
+      .custom-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #4caf50;
+        cursor: pointer;
+      }
+      .custom-range::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #4caf50;
+        cursor: pointer;
+        border: none;
+      }
+      .tab-button.active {
+        background-color: #4caf50;
+        color: white;
+      }
+      input[type="number"]::-webkit-inner-spin-button,
+      input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      #deviceMap {
+        height: 100%;
+        width: 100%;
+      }
+      .profile-menu, .notification-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+        min-width: 200px;
+      }
+      .profile-menu a, .notification-menu a {
+        display: block;
+        padding: 10px 16px;
+        color: #1f2937;
+        text-decoration: none;
+      }
+      .profile-menu a:hover, .notification-menu a:hover {
+        background-color: #f3f4f6;
+      }
+      #userProfile:hover .profile-menu, #notificationsButton:hover .notification-menu {
+        display: block;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 20;
+        justify-content: center;
+        align-items: center;
+      }
+      .modal-content {
+        background-color: white;
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        position: relative;
+      }
+      .modal-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        cursor: pointer;
+      }
+      #voiceChat video {
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header Section -->
+    <header class="bg-white shadow-sm">
+      <div
+        class="container mx-auto px-4 py-3 flex items-center justify-between"
+      >
+        <div class="flex items-center space-x-2">
+          <a href="/company-details" aria-label="FarmAssist AI Company Details">
+            <img
+              src="../pic/logoGreen.png"
+              alt="FarmAssist AI Logo"
+              class="h-14 w-auto"
+            />
+          </a>
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <div
+            id="locationWeather"
+            class="flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg"
+            role="region"
+            aria-label="Location and Weather"
+          >
+            <div class="w-8 h-8 flex items-center justify-center text-gray-500">
+              <i class="ri-map-pin-line"></i>
+            </div>
+            <div>
+              <p id="location" class="text-sm font-medium">Loading...</p>
+              <div id="weather" class="flex items-center text-xs text-gray-500">
+                <i class="ri-sun-line mr-1"></i>
+                <span>Loading...</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="relative">
+            <button
+              id="notificationsButton"
+              class="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full relative !rounded-button"
+              aria-label="Notifications"
+            >
+              <i class="ri-notification-3-line text-gray-700"></i>
+              <span
+                id="notificationBadge"
+                class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"
+              ></span>
+            </button>
+            <div class="notification-menu" id="notificationMenu">
+              <div id="latestNotifications" class="p-2">
+                <p>Loading...</p>
+              </div>
+              <a href="/notifications" class="border-t border-gray-200">Show More Notifications</a>
+            </div>
+          </div>
+
+          <div id="userProfile" class="relative flex items-center space-x-2">
+            <div
+              class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white"
+            >
+              <span id="userInitials" class="font-medium">?</span>
+            </div>
+            <div class="hidden md:block">
+              <p id="userName" class="text-sm font-medium">Loading...</p>
+              <p id="userAccountType" class="text-xs text-gray-500">
+                Loading...
+              </p>
+            </div>
+            <div class="profile-menu" id="profileMenu">
+              <a href="/profile" aria-label="View Profile">View Profile</a>
+              <a href="/settings" aria-label="Settings">Settings</a>
+              <a href="/logout" aria-label="Logout">Logout</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6">
+      <!-- Voice Command Center -->
+      <section class="mb-8">
+        <div
+          class="bg-white rounded-xl shadow-sm p-6 text-center max-w-2xl mx-auto"
+          role="region"
+          aria-label="Voice Command Center"
+        >
+          <h2 class="text-xl font-semibold mb-3">Ask FarmAssist AI</h2>
+          <p class="text-gray-600 mb-6">
+            Press the button to start a voice chat with FarmAssist AI about crops, soil, or farming advice
+          </p>
+
+          <div id="voiceCommandCenter" class="flex flex-col items-center">
+            <button
+              id="voiceButton"
+              class="voice-button w-24 h-24 bg-primary rounded-full flex items-center justify-center mb-4 !rounded-button"
+              aria-label="Start voice chat"
+            >
+              <i class="ri-mic-line text-white ri-2x"></i>
+            </button>
+
+            <div
+              id="voiceStatus"
+              class="text-sm font-medium text-gray-500 mb-2"
+            >
+              Tap to start voice chat
+            </div>
+
+            <div
+              id="voiceText"
+              class="bg-gray-50 rounded-lg p-4 w-full max-w-lg min-h-16 text-left"
+              role="log"
+              aria-live="polite"
+            >
+              <p class="text-gray-400 italic">
+                Your voice chat will start here...
+              </p>
+            </div>
+
+            <div class="mt-4 text-sm text-gray-500">
+              Try asking: "How is my corn crop doing?" or "What's the soil
+              moisture level?"
+            </div>
+          </div>
+        </div>
+
+        <!-- Voice Chat Modal -->
+        <div id="voiceChatModal" class="modal">
+          <div class="modal-content">
+            <span class="modal-close" id="closeVoiceModal" aria-label="Close voice chat">
+              <i class="ri-close-line text-gray-700 ri-lg"></i>
+            </span>
+            <h3 class="text-lg font-semibold mb-4">Voice Chat with FarmAssist AI</h3>
+            <div id="voiceChat" class="mb-4">
+              <p id="chatStatus" class="text-sm text-gray-600 mb-2">Click the microphone to start speaking</p>
+              <div id="chatOutput" class="bg-gray-50 rounded-lg p-4 min-h-32 text-left">
+                <p class="text-gray-400 italic">Conversation will appear here...</p>
+              </div>
+            </div>
+            <button
+              id="chatVoiceButton"
+              class="voice-button bg-primary text-white px-4 py-2 rounded-lg flex items-center justify-center mx-auto !rounded-button"
+              aria-label="Start voice input"
+            >
+              <i class="ri-mic-line mr-2"></i> Start Voice Chat
+            </button>
+            <div class="mt-4">
+              <h4 class="text-sm font-medium mb-2">API Configuration</h4>
+              <input
+                id="apiKey"
+                type="text"
+                placeholder="Enter Grok 3 API Key"
+                class="w-full p-2 border rounded-lg mb-2"
+                aria-label="Grok 3 API Key"
+              />
+              <input
+                id="apiEndpoint"
+                type="text"
+                placeholder="Enter API Endpoint"
+                value="https://api.x.ai/v1/grok"
+                class="w-full p-2 border rounded-lg"
+                aria-label="API Endpoint"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Plant Scanning Section -->
+      <section class="mb-8">
+        <div
+          class="bg-white rounded-xl shadow-sm p-6 text-center max-w-2xl mx-auto"
+          role="region"
+          aria-label="Plant Scanning"
+        >
+          <h2 class="text-xl font-semibold mb-3">Plant Scanning</h2>
+          <p class="text-gray-600 mb-6">
+            Scan leaves, fruits, or other plant parts to detect diseases and learn more about your plants
+          </p>
+
+          <div id="plantScanCenter" class="flex flex-col items-center">
+            <button
+              id="scanButton"
+              class="bg-primary text-white px-4 py-2 rounded-lg flex items-center justify-center mb-4 !rounded-button"
+              aria-label="Start plant scan"
+            >
+              <i class="ri-camera-line mr-2"></i> Start Scan
+            </button>
+
+            <div
+              id="scanStatus"
+              class="text-sm font-medium text-gray-500 mb-2"
+            >
+              Tap to start scanning
+            </div>
+
+            <div
+              id="scanResult"
+              class="bg-gray-50 rounded-lg p-4 w-full max-w-lg min-h-16 text-left"
+              role="log"
+              aria-live="polite"
+            >
+              <p class="text-gray-400 italic">
+                Scan results will appear here...
+              </p>
+            </div>
+
+            <div id="plantDetails" class="mt-4 text-sm text-gray-600 hidden">
+              <h3 class="font-medium mb-2">Plant Details</h3>
+              <p id="plantName">Loading...</p>
+              <p id="plantDisease">Loading...</p>
+              <p id="plantInfo">Loading...</p>
+            </div>
+
+            <div class="mt-4 text-sm text-gray-500">
+              Point your camera at a leaf or fruit to identify diseases or get plant details
+            </div>
+          </div>
+        </div>
+
+        <!-- Plant Scan Modal -->
+        <div id="plantScanModal" class="modal">
+          <div class="modal-content">
+            <span class="modal-close" id="closeScanModal" aria-label="Close plant scan">
+              <i class="ri-close-line text-gray-700 ri-lg"></i>
+            </span>
+            <h3 class="text-lg font-semibold mb-4">Plant Scan</h3>
+            <div id="plantScan" class="mb-4">
+              <video id="cameraFeed" autoplay class="mb-4"></video>
+              <button
+                id="captureButton"
+                class="bg-primary text-white px-4 py-2 rounded-lg flex items-center justify-center mx-auto !rounded-button"
+                aria-label="Capture plant image"
+              >
+                <i class="ri-camera-line mr-2"></i> Capture Image
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- AI Insights Dashboard -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold mb-4">AI Insights Dashboard</h2>
+
+        <div
+          id="insightsDashboard"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+          role="region"
+          aria-label="AI Insights Dashboard"
+        >
+          <!-- Crop Health Card -->
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-medium">Crop Health</h3>
+              <div
+                class="w-8 h-8 flex items-center justify-center bg-green-50 rounded-full text-primary"
+              >
+                <i class="ri-plant-line"></i>
+              </div>
+            </div>
+
+            <div id="cropHealth" class="flex items-center space-x-3 mb-3">
+              <div
+                class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center"
+              >
+                <span class="text-green-600 font-semibold">Loading...</span>
+              </div>
+              <div>
+                <p class="font-medium text-green-600">Loading...</p>
+                <p class="text-xs text-gray-500">Loading...</p>
+              </div>
+            </div>
+
+            <div class="text-sm text-gray-600">
+              <p>Loading...</p>
+            </div>
+          </div>
+
+          <!-- Soil Condition Card -->
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-medium">Soil Condition</h3>
+              <div
+                class="w-8 h-8 flex items-center justify-center bg-amber-50 rounded-full text-amber-600"
+              >
+                <i class="ri-landscape-line"></i>
+              </div>
+            </div>
+
+            <div id="soilCondition" class="grid grid-cols-3 gap-2 mb-3">
+              <div class="bg-gray-50 p-2 rounded-lg text-center">
+                <p class="text-xs text-gray-500">Moisture</p>
+                <p class="font-medium">Loading...</p>
+              </div>
+              <div class="bg-gray-50 p-2 rounded-lg text-center">
+                <p class="text-xs text-gray-500">pH Level</p>
+                <p class="font-medium">Loading...</p>
+              </div>
+              <div class="bg-gray-50 p-2 rounded-lg text-center">
+                <p class="text-xs text-gray-500">Nutrients</p>
+                <p class="font-medium">Loading...</p>
+              </div>
+            </div>
+
+            <div class="text-sm text-gray-600">
+              <p>Loading...</p>
+            </div>
+          </div>
+
+          <!-- Weather Forecast Card -->
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-medium">Weather Forecast</h3>
+              <div
+                class="w-8 h-8 flex items-center justify-center bg-blue-50 rounded-full text-blue-600"
+              >
+                <i class="ri-cloud-line"></i>
+              </div>
+            </div>
+
+            <div id="weatherForecast" class="flex items-center space-x-3 mb-3">
+              <div
+                class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center"
+              >
+                <i class="ri-sun-line text-blue-600 ri-lg"></i>
+              </div>
+              <div>
+                <p class="font-medium">Loading...</p>
+                <p class="text-xs text-gray-500">Loading...</p>
+              </div>
+            </div>
+
+            <div id="forecastDays" class="flex justify-between text-sm text-gray-600">
+              <div class="text-center">
+                <p class="text-xs text-gray-500">Loading...</p>
+                <i class="ri-sun-line"></i>
+                <p>Loading...</p>
+              </div>
+              <div class="text-center">
+                <p class="text-xs text-gray-500">Loading...</p>
+                <i class="ri-cloudy-line"></i>
+                <p>Loading...</p>
+              </div>
+              <div class="text-center">
+                <p class="text-xs text-gray-500">Loading...</p>
+                <i class="ri-showers-line"></i>
+                <p>Loading...</p>
+              </div>
+              <div class="text-center">
+                <p class="text-xs text-gray-500">Loading...</p>
+                <i class="ri-sun-line"></i>
+                <p>Loading...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recommendations Card -->
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-medium">AI Recommendations</h3>
+              <div
+                class="w-8 h-8 flex items-center justify-center bg-purple-50 rounded-full text-purple-600"
+              >
+                <i class="ri-lightbulb-line"></i>
+              </div>
+            </div>
+
+            <ul id="recommendations" class="space-y-2 text-sm">
+              <li>Loading...</li>
+            </ul>
+
+            <button
+              id="viewRecommendations"
+              class="mt-3 text-primary text-sm font-medium flex items-center !rounded-button"
+              aria-label="View all recommendations"
+            >
+              View all recommendations
+              <i class="ri-arrow-right-line ml-1"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- IoT Device Integration -->
+      <section class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold">IoT Devices</h2>
+          <button
+            id="addDevice"
+            class="bg-primary text-white px-4 py-2 rounded-lg flex items-center !rounded-button whitespace-nowrap"
+            aria-label="Add Device"
+          >
+            <i class="ri-add-line mr-1"></i>
+            Add Device
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-sm p-4 h-full">
+              <h3 class="font-medium mb-3">Device Locations</h3>
+              <div id="deviceMap" class="rounded-lg overflow-hidden h-64"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="bg-white rounded-xl shadow-sm p-4">
+              <h3 class="font-medium mb-3">Connected Devices</h3>
+              <div id="connectedDevices" class="space-y-3">
+                <p>Loading...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Data Analytics Section -->
+      <section class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold">Data Analytics</h2>
+          <div class="flex bg-gray-100 rounded-full p-1">
+            <button
+              class="tab-button active px-4 py-1 rounded-full text-sm font-medium !rounded-button whitespace-nowrap"
+              data-tab="day"
+              aria-label="View daily data"
+            >
+              Day
+            </button>
+            <button
+              class="tab-button px-4 py-1 rounded-full text-sm font-medium !rounded-button whitespace-nowrap"
+              data-tab="week"
+              aria-label="View weekly data"
+            >
+              Week
+            </button>
+            <button
+              class="tab-button px-4 py-1 rounded-full text-sm font-medium !rounded-button whitespace-nowrap"
+              data-tab="month"
+              aria-label="View monthly data"
+            >
+              Month
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="grid grid-cols-1 lg:grid-cols-2 gap-4"
+          role="region"
+          aria-label="Data Analytics"
+        >
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <h3 class="font-medium mb-4">Soil Moisture Trends</h3>
+            <div id="soilMoistureChart" class="h-64"></div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <h3 class="font-medium mb-4">Temperature Variations</h3>
+            <div id="temperatureChart" class="h-64"></div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <h3 class="font-medium mb-4">Crop Growth Timeline</h3>
+            <div id="cropGrowthChart" class="h-64"></div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <h3 class="font-medium mb-4">Soil Health Indicators</h3>
+            <div id="soilHealthChart" class="h-64"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Action Center -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold mb-4">Action Center</h2>
+        <div
+          class="grid grid-cols-1 md:grid-cols-3 gap-4"
+          role="region"
+          aria-label="Action Center"
+        >
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <h3 class="font-medium mb-3">Quick Actions</h3>
+            <div id="quickActions" class="grid grid-cols-2 gap-3">
+              <p>Loading...</p>
+            </div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <h3 class="font-medium mb-3">Today's Schedule</h3>
+            <div id="schedule" class="space-y-3">
+              <p>Loading...</p>
+            </div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <h3 class="font-medium mb-3">Critical Alerts</h3>
+            <div id="alerts" class="space-y-3">
+              <p>Loading...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav
+      class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-4"
+      role="navigation"
+      aria-label="Main navigation"
+    >
+      <div class="container mx-auto">
+        <div class="flex justify-between items-center">
+          <button
+            class="nav-button flex flex-col items-center text-primary"
+            data-section="home"
+            aria-label="Home"
+          >
+            <div class="w-6 h-6 flex items-center justify-center">
+              <i class="ri-home-5-line"></i>
+            </div>
+            <span class="text-xs mt-1">Home</span>
+          </button>
+          <button
+            class="nav-button flex flex-col items-center text-gray-500"
+            data-section="analytics"
+            aria-label="Analytics"
+          >
+            <div class="w-6 h-6 flex items-center justify-center">
+              <i class="ri-bar-chart-line"></i>
+            </div>
+            <span class="text-xs mt-1">Analytics</span>
+          </button>
+          <button
+            class="nav-button flex flex-col items-center text-gray-500"
+            data-section="devices"
+            aria-label="Devices"
+          >
+            <div class="w-6 h-6 flex items-center justify-center">
+              <i class="ri-device-line"></i>
+            </div>
+            <span class="text-xs mt-1">Devices</span>
+          </button>
+          <button
+            class="nav-button flex flex-col items-center text-gray-500"
+            data-section="reports"
+            aria-label="Reports"
+          >
+            <div class="w-6 h-6 flex items-center justify-center">
+              <i class="ri-file-list-3-line"></i>
+            </div>
+            <span class="text-xs mt-1">Reports</span>
+          </button>
+          <button
+            class="nav-button flex flex-col items-center text-gray-500"
+            data-section="profile"
+            aria-label="Profile"
+          >
+            <div class="w-6 h-6 flex items-center justify-center">
+              <i class="ri-user-line"></i>
+            </div>
+            <span class="text-xs mt-1">Profile</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <script>
+      // Mock API functions (extended with new functionality)
+      const mockApi = {
+        getUserProfile: () =>
+          Promise.resolve({
+            initials: "JD",
+            name: "John Deere",
+            accountType: "Premium Account",
+          }),
+        getLocationWeather: () =>
+          Promise.resolve({
+            location: "Sacramento, CA",
+            weather: { temp: 72, condition: "Sunny" },
+          }),
+        getNotifications: () =>
+          Promise.resolve({
+            unread: 2,
+            latest: [
+              { id: 1, message: "Low soil moisture detected in North Field", time: "10:45 AM" },
+              { id: 2, message: "Pest activity reported in Eastern Corn Field", time: "9:30 AM" },
+              { id: 3, message: "Weather alert: Heavy rain expected tomorrow", time: "8:00 AM" },
+            ],
+          }),
+        getCropHealth: () =>
+          Promise.resolve({
+            health: 85,
+            condition: "Good Condition",
+            lastUpdated: "Today, 10:45 AM",
+            description:
+              "Your corn crop is showing healthy growth patterns with minimal signs of stress.",
+          }),
+        getSoilCondition: () =>
+          Promise.resolve({
+            moisture: 68,
+            pH: 6.5,
+            nutrients: "Good",
+            description: "Soil conditions are optimal for current crop growth stage.",
+          }),
+        getWeatherForecast: () =>
+          Promise.resolve({
+            current: { temp: 72, condition: "Sunny", date: "Jun 2, 2025" },
+            forecast: [
+              { day: "Tue", icon: "ri-sun-line", temp: 75 },
+              { day: "Wed", icon: "ri-cloudy-line", temp: 70 },
+              { day: "Thu", icon: "ri-showers-line", temp: 68 },
+              { day: "Fri", icon: "ri-sun-line", temp: 73 },
+            ],
+          }),
+        getRecommendations: () =>
+          Promise.resolve([
+            "Consider irrigation on Thursday to prepare for warmer weekend",
+            "Apply nitrogen fertilizer within the next 5 days",
+            "Monitor for corn borer activity in the eastern field",
+          ]),
+        getDevices: () =>
+          Promise.resolve([
+            {
+              id: 1,
+              name: "Moisture Sensor",
+              icon: "ri-water-flash-line",
+              color: "green",
+              status: "Online",
+              active: true,
+              coords: [38.5816, -121.4944],
+            },
+            {
+              id: 2,
+              name: "Temperature Sensor",
+              icon: "ri-temp-cold-line",
+              color: "blue",
+              status: "Online",
+              active: true,
+              coords: [38.582, -121.493],
+            },
+            {
+              id: 3,
+              name: "Soil pH Sensor",
+              icon: "ri-test-tube-line",
+              color: "amber",
+              status: "Online",
+              active: true,
+              coords: [38.580, -121.495],
+            },
+            {
+              id: 4,
+              name: "Field Camera",
+              icon: "ri-camera-line",
+              color: "red",
+              status: "Offline",
+              active: false,
+              coords: [38.581, -121.492],
+            },
+          ]),
+        getChartData: (tab) =>
+          Promise.resolve({
+            soilMoisture: {
+              labels:
+                tab === "day"
+                  ? ["6AM", "8AM", "10AM", "12PM", "2PM", "4PM", "6PM"]
+                  : tab === "week"
+                  ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                  : ["Week 1", "Week 2", "Week 3", "Week 4"],
+              data:
+                tab === "day"
+                  ? [65, 68, 62, 59, 63, 67, 68]
+                  : tab === "week"
+                  ? [60, 62, 65, 68, 66, 64, 67]
+                  : [55, 60, 65, 68],
+            },
+            temperature: {
+              labels:
+                tab === "day"
+                  ? ["6AM", "8AM", "10AM", "12PM", "2PM", "4PM", "6PM"]
+                  : tab === "week"
+                  ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                  : ["Week 1", "Week 2", "Week 3", "Week 4"],
+              data:
+                tab === "day"
+                  ? [58, 62, 68, 72, 75, 73, 70]
+                  : tab === "week"
+                  ? [55, 60, 65, 70, 72, 68, 66]
+                  : [60, 65, 68, 70],
+            },
+            cropGrowth: {
+              labels:
+                tab === "day"
+                  ? ["6AM", "8AM", "10AM", "12PM", "2PM", "4PM", "6PM"]
+                  : tab === "week"
+                  ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                  : ["Week 1", "Week 2", "Week 3", "Week 4"],
+              data:
+                tab === "day"
+                  ? [80, 81, 82, 83, 84, 85, 85]
+                  : tab === "week"
+                  ? [75, 77, 79, 81, 83, 84, 85]
+                  : [70, 75, 80, 85],
+            },
+            soilHealth: {
+              data: [
+                { value: 40, name: "Nitrogen", itemStyle: { color: "rgba(87, 181, 231, 1)" } },
+                { value: 25, name: "Phosphorus", itemStyle: { color: "rgba(141, 211, 199, 1)" } },
+                { value: 20, name: "Potassium", itemStyle: { color: "rgba(251, 191, 114, 1)" } },
+                { value: 15, name: "Other Nutrients", itemStyle: { color: "rgba(252, 141, 98, 1)" } },
+              ],
+            },
+          }),
+        getQuickActions: () =>
+          Promise.resolve([
+            {
+              name: "Start Irrigation",
+              icon: "ri-water-flash-line",
+              color: "blue",
+              action: () => alert("Irrigation started"),
+            },
+            {
+              name: "Log Planting",
+              icon: "ri-seedling-line",
+              color: "green",
+              action: () => alert("Planting logged"),
+            },
+            {
+              name: "Soil Test",
+              icon: "ri-test-tube-line",
+              color: "amber",
+              action: () => alert("Soil test initiated"),
+            },
+            {
+              name: "New Report",
+              icon: "ri-file-list-3-line",
+              color: "purple",
+              action: () => alert("Report created"),
+            },
+          ]),
+        getSchedule: () =>
+          Promise.resolve([
+            {
+              name: "Irrigation - North Field",
+              icon: "ri-water-flash-line",
+              color: "blue",
+              time: "2:00 PM - 4:00 PM",
+            },
+            {
+              name: "Fertilizer Application",
+              icon: "ri-leaf-line",
+              color: "green",
+              time: "4:30 PM - 6:00 PM",
+            },
+            {
+              name: "Meeting with Agronomist",
+              icon: "ri-user-line",
+              color: "purple",
+              time: "7:00 PM (Virtual)",
+            },
+          ]),
+        getAlerts: () =>
+          Promise.resolve([
+            {
+              name: "Low Soil Moisture",
+              icon: "ri-alert-line",
+              color: "red",
+              description: "Eastern Corn Field - 32% (Below threshold)",
+              actionText: "Take Action",
+              action: () => alert("Action taken for low soil moisture"),
+            },
+            {
+              name: "Pest Detection",
+              icon: "ri-bug-line",
+              color: "amber",
+              description: "Potential corn borer activity detected",
+              actionText: "View Details",
+              action: () => alert("Viewing pest details"),
+            },
+            {
+              name: "Weather Alert",
+              icon: "ri-cloud-line",
+              color: "blue",
+              description: "Heavy rain forecast for Thursday",
+              actionText: "Prepare Plan",
+              action: () => alert("Preparing weather plan"),
+            },
+          ]),
+        updateDeviceStatus: (id, active) =>
+          Promise.resolve({ success: true, id, active }),
+        processVoiceInput: async (text, apiKey, apiEndpoint) => {
+          // Mock Grok 3 API call
+          // In production, use: fetch(`${apiEndpoint}`, { headers: { Authorization: `Bearer ${apiKey}` }, ... })
+          return Promise.resolve({
+            question: text,
+            response: `For question "${text}", the Grok 3 API would provide a detailed response. Example: The current soil moisture in your corn field is at 68%, optimal for growth. Configure your API key and endpoint for real responses. See https://x.ai/api for details.`
+          });
+        },
+        scanPlant: async (imageData) => {
+          // Mock plant disease detection API (e.g., Plant.id)
+          return Promise.resolve({
+            plantName: "Corn",
+            disease: "Healthy",
+            diseaseProbability: 0.95,
+            details: "Zea mays, commonly known as corn, is a cereal grain and a staple crop. Your plant shows no signs of disease, with healthy leaves and strong growth patterns."
+          });
+        },
+      };
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        // Initialize charts
+        const soilMoistureChart = echarts.init(document.getElementById("soilMoistureChart"));
+        const temperatureChart = echarts.init(document.getElementById("temperatureChart"));
+        const cropGrowthChart = echarts.init(document.getElementById("cropGrowthChart"));
+        const soilHealthChart = echarts.init(document.getElementById("soilHealthChart"));
+
+        // Initialize map
+        const map = L.map("deviceMap").setView([38.5816, -121.4944], 13);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        }).addTo(map);
+
+        // Header: Load user profile, location, and notifications
+        async function loadHeader() {
+          try {
+            const [user, locationWeather, notifications] = await Promise.all([
+              mockApi.getUserProfile(),
+              mockApi.getLocationWeather(),
+              mockApi.getNotifications(),
+            ]);
+            document.getElementById("userInitials").textContent = user.initials;
+            document.getElementById("userName").textContent = user.name;
+            document.getElementById("userAccountType").textContent = user.accountType;
+            document.getElementById("location").textContent = locationWeather.location;
+            document.getElementById("weather").innerHTML = `
+              <i class="ri-sun-line mr-1"></i>
+              <span>${locationWeather.weather.temp}°F, ${locationWeather.weather.condition}</span>
+            `;
+            document.getElementById("notificationBadge").style.display =
+              notifications.unread > 0 ? "block" : "none";
+            document.getElementById("latestNotifications").innerHTML = notifications.latest
+              .slice(0, 3)
+              .map(
+                (notif) => `
+                <div class="flex items-start space-x-2 p-2 border-b border-gray-100">
+                  <i class="ri-notification-3-line text-gray-500 mt-1"></i>
+                  <div>
+                    <p class="text-sm text-gray-700">${notif.message}</p>
+                    <p class="text-xs text-gray-500">${notif.time}</p>
+                  </div>
+                </div>
+              `
+              )
+              .join("");
+          } catch (error) {
+            console.error("Error loading header:", error);
+          }
+        }
+
+        // Voice Command Center: Web Speech API with Grok 3 Integration
+        const voiceButton = document.getElementById("voiceButton");
+        const voiceChatModal = document.getElementById("voiceChatModal");
+        const closeVoiceModal = document.getElementById("closeVoiceModal");
+        const chatVoiceButton = document.getElementById("chatVoiceButton");
+        const chatStatus = document.getElementById("chatStatus");
+        const chatOutput = document.getElementById("chatOutput");
+        const apiKeyInput = document.getElementById("apiKey");
+        const apiEndpointInput = document.getElementById("apiEndpoint");
+        let recognition = null;
+
+        if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+          recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+          recognition.lang = "en-US";
+          recognition.interimResults = false;
+          recognition.maxAlternatives = 1;
+
+          recognition.onstart = () => {
+            chatVoiceButton.classList.add("listening");
+            chatVoiceButton.innerHTML = '<i class="ri-mic-fill text-white mr-2"></i> Listening...';
+            chatStatus.textContent = "Listening...";
+            chatOutput.innerHTML = '<p class="text-gray-600">I\'m listening to you...</p>';
+          };
+
+          recognition.onresult = async (event) => {
+            const transcript = event.results[0][0].transcript;
+            chatOutput.innerHTML = `<p class="text-gray-700 font-medium">You: ${transcript}</p>`;
+            try {
+              const apiKey = apiKeyInput.value;
+              const apiEndpoint = apiEndpointInput.value;
+              const response = await mockApi.processVoiceInput(transcript, apiKey, apiEndpoint);
+              chatOutput.innerHTML += `
+                <div class="mt-2">
+                  <p class="text-gray-700 font-medium">FarmAssist AI: ${response.response}</p>
+                </div>
+              `;
+            } catch (error) {
+              chatOutput.innerHTML += '<p class="text-red-600 mt-2">Error processing voice input</p>';
+            }
+          };
+
+          recognition.onend = () => {
+            chatVoiceButton.classList.remove("listening");
+            chatVoiceButton.innerHTML = '<i class="ri-mic-line text-white mr-2"></i> Start Voice Chat';
+            chatStatus.textContent = "Click the microphone to start speaking";
+          };
+
+          recognition.onerror = () => {
+            chatOutput.innerHTML += '<p class="text-red-600 mt-2">Error in voice recognition</p>';
+            chatVoiceButton.classList.remove("listening");
+            chatVoiceButton.innerHTML = '<i class="ri-mic-line text-white mr-2"></i> Start Voice Chat';
+            chatStatus.textContent = "Click the microphone to start speaking";
+          };
+        }
+
+        voiceButton.addEventListener("click", () => {
+          voiceChatModal.style.display = "flex";
+          document.getElementById("voiceText").innerHTML = '<p class="text-gray-400 italic">Voice chat opened...</p>';
+        });
+
+        closeVoiceModal.addEventListener("click", () => {
+          voiceChatModal.style.display = "none";
+          if (recognition && recognition.state === "running") {
+            recognition.stop();
+          }
+        });
+
+        chatVoiceButton.addEventListener("click", () => {
+          if (recognition) {
+            if (chatVoiceButton.classList.contains("listening")) {
+              recognition.stop();
+            } else {
+              recognition.start();
+            }
+          } else {
+            chatOutput.innerHTML = '<p class="text-red-600">Voice recognition not supported</p>';
+          }
+        });
+
+        // Plant Scanning: Camera and API Integration
+        const scanButton = document.getElementById("scanButton");
+        const plantScanModal = document.getElementById("plantScanModal");
+        const closeScanModal = document.getElementById("closeScanModal");
+        const cameraFeed = document.getElementById("cameraFeed");
+        const captureButton = document.getElementById("captureButton");
+        const scanStatus = document.getElementById("scanStatus");
+        const scanResult = document.getElementById("scanResult");
+        const plantDetails = document.getElementById("plantDetails");
+        let stream = null;
+
+        scanButton.addEventListener("click", async () => {
+          plantScanModal.style.display = "flex";
+          scanStatus.textContent = "Starting camera...";
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            cameraFeed.srcObject = stream;
+            scanStatus.textContent = "Camera active. Click capture to scan.";
+          } catch (error) {
+            scanStatus.textContent = "Error accessing camera";
+            scanResult.innerHTML = '<p class="text-red-600">Unable to access camera</p>';
+            console.error("Camera error:", error);
+          }
+        });
+
+        captureButton.addEventListener("click", async () => {
+          scanStatus.textContent = "Processing scan...";
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = cameraFeed.videoWidth;
+            canvas.height = cameraFeed.videoHeight;
+            canvas.getContext("2d").drawImage(cameraFeed, 0, 0);
+            const imageData = canvas.toDataURL("image/jpeg");
+            const result = await mockApi.scanPlant(imageData);
+            scanResult.innerHTML = `
+              <p class="text-gray-700 font-medium">Scan Result: ${result.disease}</p>
+              <p class="text-gray-600">Confidence: ${(result.diseaseProbability * 100).toFixed(2)}%</p>
+            `;
+            plantDetails.classList.remove("hidden");
+            document.getElementById("plantName").textContent = `Name: ${result.plantName}`;
+            document.getElementById("plantDisease").textContent = `Disease: ${result.disease}`;
+            document.getElementById("plantInfo").textContent = `Details: ${result.details}`;
+            plantScanModal.style.display = "none";
+            if (stream) {
+              stream.getTracks().forEach(track => track.stop());
+            }
+            scanStatus.textContent = "Tap to start scanning";
+          } catch (error) {
+            scanResult.innerHTML = '<p class="text-red-600">Error processing scan</p>';
+            console.error("Scan error:", error);
+          }
+        });
+
+        closeScanModal.addEventListener("click", () => {
+          plantScanModal.style.display = "none";
+          if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+          }
+          scanStatus.textContent = "Tap to start scanning";
+        });
+
+        // AI Insights Dashboard
+        async function loadInsights() {
+          try {
+            const [cropHealth, soilCondition, weatherForecast, recommendations] = await Promise.all([
+              mockApi.getCropHealth(),
+              mockApi.getSoilCondition(),
+              mockApi.getWeatherForecast(),
+              mockApi.getRecommendations(),
+            ]);
+
+            document.getElementById("cropHealth").innerHTML = `
+              <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                <span class="text-green-600 font-semibold">${cropHealth.health}%</span>
+              </div>
+              <div>
+                <p class="font-medium text-green-600">${cropHealth.condition}</p>
+                <p class="text-xs text-gray-500">${cropHealth.lastUpdated}</p>
+              </div>
+            `;
+            document.querySelector("#cropHealth + div").innerHTML = `<p>${cropHealth.description}</p>`;
+
+            document.getElementById("soilCondition").innerHTML = `
+              <div class="bg-gray-50 p-2 rounded-lg text-center">
+                <p class="text-xs text-gray-500">Moisture</p>
+                <p class="font-medium">${soilCondition.moisture}%</p>
+              </div>
+              <div class="bg-gray-50 p-2 rounded-lg text-center">
+                <p class="text-xs text-gray-500">pH Level</p>
+                <p class="font-medium">${soilCondition.pH}</p>
+              </div>
+              <div class="bg-gray-50 p-2 rounded-lg text-center">
+                <p class="text-xs text-gray-500">Nutrients</p>
+                <p class="font-medium">${soilCondition.nutrients}</p>
+              </div>
+            `;
+            document.querySelector("#soilCondition + div").innerHTML = `<p>${soilCondition.description}</p>`;
+
+            document.getElementById("weatherForecast").innerHTML = `
+              <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <i class="ri-sun-line text-blue-600 ri-lg"></i>
+              </div>
+              <div>
+                <p class="font-medium">${weatherForecast.current.temp}°F | ${weatherForecast.current.condition}</p>
+                <p class="text-xs text-gray-500">${weatherForecast.current.date}</p>
+              </div>
+            `;
+            document.getElementById("forecastDays").innerHTML = weatherForecast.forecast
+              .map(
+                (day) => `
+                <div class="text-center">
+                  <p class="text-xs text-gray-500">${day.day}</p>
+                  <i class="${day.icon}"></i>
+                  <p>${day.temp}°F</p>
+                </div>
+              `
+              )
+              .join("");
+
+            document.getElementById("recommendations").innerHTML = recommendations
+              .map(
+                (rec) => `
+                <li class="flex items-start space-x-2">
+                  <div class="w-5 h-5 flex-shrink-0 flex items-center justify-center mt-0.5 text-primary">
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <p>${rec}</p>
+                </li>
+              `
+              )
+              .join("");
+          } catch (error) {
+            console.error("Error loading insights:", error);
+          }
+        }
+
+        // IoT Device Integration
+        async function loadDevices() {
+          try {
+            const devices = await mockApi.getDevices();
+            const deviceList = document.getElementById("connectedDevices");
+            deviceList.innerHTML = devices
+              .map(
+                (device) => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 flex items-center justify-center bg-${device.color}-100 rounded-full text-${device.color}-600">
+                      <i class="${device.icon}"></i>
+                    </div>
+                    <div>
+                      <p class="font-medium">${device.name}</p>
+                      <div class="flex items-center text-xs text-${
+                        device.status === "Online" ? "green" : "gray"
+                      }-600">
+                        <span class="w-2 h-2 bg-${
+                          device.status === "Online" ? "green" : "gray"
+                        }-600 rounded-full mr-1"></span>
+                        ${device.status}
+                      </div>
+                    </div>
+                  </div>
+                  <label class="custom-switch">
+                    <input type="checkbox" ${
+                      device.active ? "checked" : ""
+                    } data-device-id="${device.id}" aria-label="Toggle ${
+                  device.name
+                } status">
+                    <span class="switch-slider"></span>
+                  </label>
+                </div>
+              `
+              )
+              .join("");
+
+            // Add device markers to map
+            devices.forEach((device) => {
+              L.marker(device.coords)
+                .addTo(map)
+                .bindPopup(`${device.name}: ${device.status}`)
+                .openPopup();
+            });
+
+            // Device toggle handlers
+            document.querySelectorAll(".custom-switch input").forEach((input) => {
+              input.addEventListener("change", async (e) => {
+                const deviceId = e.target.dataset.deviceId;
+                const active = e.target.checked;
+                try {
+                  await mockApi.updateDeviceStatus(deviceId, active);
+                  loadDevices(); // Refresh device list
+                } catch (error) {
+                  console.error("Error updating device status:", error);
+                  e.target.checked = !active; // Revert on error
+                }
+              });
+            });
+          } catch (error) {
+            console.error("Error loading devices:", error);
+          }
+        }
+
+        // Data Analytics
+        async function loadCharts(tab = "day") {
+          try {
+            const data = await mockApi.getChartData(tab);
+            soilMoistureChart.setOption({
+              animation: false,
+              tooltip: { trigger: "axis", backgroundColor: "rgba(255, 255, 255, 0.8)", textStyle: { color: "#1f2937" } },
+              grid: { top: 10, right: 10, bottom: 20, left: 50 },
+              xAxis: { type: "category", data: data.soilMoisture.labels, axisLine: { lineStyle: { color: "#d1d5db" } }, axisLabel: { color: "#1f2937" } },
+              yAxis: { type: "value", min: 0, max: 100, axisLine: { lineStyle: { color: "#d1d5db" } }, axisLabel: { color: "#1f2937", formatter: "{value}%" }, splitLine: { lineStyle: { color: "#f3f4f6" } } },
+              series: [
+                {
+                  name: "Moisture",
+                  type: "line",
+                  smooth: true,
+                  symbol: "none",
+                  data: data.soilMoisture.data,
+                  lineStyle: { color: "rgba(87, 181, 231, 1)", width: 3 },
+                  areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                      { offset: 0, color: "rgba(87, 181, 231, 0.3)" },
+                      { offset: 1, color: "rgba(87, 181, 231, 0.1)" },
+                    ]),
+                  },
+                },
+              ],
+            });
+
+            temperatureChart.setOption({
+              animation: false,
+              tooltip: { trigger: "axis", backgroundColor: "rgba(255, 255, 255, 0.8)", textStyle: { color: "#1f2937" } },
+              grid: { top: 10, right: 10, bottom: 20, left: 50 },
+              xAxis: { type: "category", data: data.temperature.labels, axisLine: { lineStyle: { color: "#d1d5db" } }, axisLabel: { color: "#1f2937" } },
+              yAxis: { type: "value", min: 50, max: 85, axisLine: { lineStyle: { color: "#d1d5db" } }, axisLabel: { color: "#1f2937", formatter: "{value}°F" }, splitLine: { lineStyle: { color: "#f3f4f6" } } },
+              series: [
+                {
+                  name: "Temperature",
+                  type: "line",
+                  smooth: true,
+                  symbol: "none",
+                  data: data.temperature.data,
+                  lineStyle: { color: "rgba(252, 141, 98, 1)", width: 3 },
+                  areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                      { offset: 0, color: "rgba(252, 141, 98, 0.3)" },
+                      { offset: 1, color: "rgba(252, 141, 98, 0.1)" },
+                    ]),
+                  },
+                },
+              ],
+            });
+
+            cropGrowthChart.setOption({
+              animation: false,
+              tooltip: { trigger: "axis", backgroundColor: "rgba(255, 255, 255, 0.8)", textStyle: { color: "#1f2937" } },
+              grid: { top: 10, right: 10, bottom: 20, left: 50 },
+              xAxis: { type: "category", data: data.cropGrowth.labels, axisLine: { lineStyle: { color: "#d1d5db" } }, axisLabel: { color: "#1f2937" } },
+              yAxis: { type: "value", min: 0, max: 100, axisLine: { lineStyle: { color: "#d1d5db" } }, axisLabel: { color: "#1f2937", formatter: "{value}%" }, splitLine: { lineStyle: { color: "#f3f4f6" } } },
+              series: [
+                {
+                  name: "Growth",
+                  type: "line",
+                  smooth: true,
+                  symbol: "none",
+                  data: data.cropGrowth.data,
+                  lineStyle: { color: "rgba(141, 211, 199, 1)", width: 3 },
+                  areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                      { offset: 0, color: "rgba(141, 211, 199, 0.3)" },
+                      { offset: 1, color: "rgba(141, 211, 199, 0.1)" },
+                    ]),
+                  },
+                },
+              ],
+            });
+
+            soilHealthChart.setOption({
+              animation: false,
+              tooltip: { trigger: "item", backgroundColor: "rgba(255, 255, 255, 0.8)", textStyle: { color: "#1f2937" } },
+              legend: { orient: "vertical", right: 10, top: "center", textStyle: { color: "#1f2937" } },
+              series: [
+                {
+                  name: "Soil Health",
+                  type: "pie",
+                  radius: ["40%", "70%"],
+                  avoidLabelOverlap: false,
+                  itemStyle: { borderRadius: 8, borderColor: "#fff", borderWidth: 2 },
+                  label: { show: false },
+                  emphasis: { label: { show: false } },
+                  labelLine: { show: false },
+                  data: data.soilHealth.data,
+                },
+              ],
+            });
+          } catch (error) {
+            console.error("Error loading charts:", error);
+          }
+        }
+
+        // Action Center
+        async function loadActionCenter() {
+          try {
+            const [quickActions, schedule, alerts] = await Promise.all([
+              mockApi.getQuickActions(),
+              mockApi.getSchedule(),
+              mockApi.getAlerts(),
+            ]);
+
+            document.getElementById("quickActions").innerHTML = quickActions
+              .map(
+                (action) => `
+                <button class="bg-gray-50 p-3 rounded-lg flex flex-col items-center justify-center !rounded-button whitespace-nowrap" onclick="${action.action.toString().replace(/function\s*\(\)\s*{\s*alert\('(.*?)'\);\s*}/, "alert('$1')")}">
+                  <div class="w-10 h-10 flex items-center justify-center bg-${action.color}-100 rounded-full text-${action.color}-600 mb-2">
+                    <i class="${action.icon}"></i>
+                  </div>
+                  <span class="text-sm font-medium">${action.name}</span>
+                </button>
+              `
+              )
+              .join("");
+
+            document.getElementById("schedule").innerHTML = schedule
+              .map(
+                (item) => `
+                <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <div class="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-${item.color}-100 rounded-full text-${item.color}-600">
+                    <i class="${item.icon}"></i>
+                  </div>
+                  <div>
+                    <p class="font-medium">${item.name}</p>
+                    <p class="text-xs text-gray-500">${item.time}</p>
+                  </div>
+                </div>
+              `
+              )
+              .join("");
+
+            document.getElementById("alerts").innerHTML = alerts
+              .map(
+                (alert) => `
+                <div class="flex items-start space-x-3 p-3 bg-${alert.color}-50 rounded-lg border border-${alert.color}-100">
+                  <div class="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-${alert.color}-100 rounded-full text-${alert.color}-600">
+                    <i class="${alert.icon}"></i>
+                  </div>
+                  <div>
+                    <p class="font-medium text-${alert.color}-600">${alert.name}</p>
+                    <p class="text-xs text-gray-700">${alert.description}</p>
+                    <button class="mt-1 text-xs text-${alert.color}-600 font-medium !rounded-button whitespace-nowrap" onclick="${alert.action.toString().replace(/function\s*\(\)\s*{\s*alert\('(.*?)'\);\s*}/, "alert('$1')")}">
+                      ${alert.actionText}
+                    </button>
+                  </div>
+                </div>
+              `
+              )
+              .join("");
+          } catch (error) {
+            console.error("Error loading action center:", error);
+          }
+        }
+
+        // Bottom Navigation
+        const navButtons = document.querySelectorAll(".nav-button");
+        navButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            navButtons.forEach((btn) => {
+              btn.classList.remove("text-primary");
+              btn.classList.add("text-gray-500");
+            });
+            button.classList.remove("text-gray-500");
+            button.classList.add("text-primary");
+            const section = button.dataset.section;
+            document.querySelector(`[aria-label="${section.charAt(0).toUpperCase() + section.slice(1)}"]`)?.scrollIntoView({ behavior: "smooth" });
+          });
+        });
+
+        // Tab Buttons for Data Analytics
+        const tabButtons = document.querySelectorAll(".tab-button");
+        tabButtons.forEach((button) => {
+          button.addEventListener("click", async () => {
+            tabButtons.forEach((btn) => btn.classList.remove("active"));
+            button.classList.add("active");
+            await loadCharts(button.dataset.tab);
+          });
+        });
+
+        // Initialize all sections
+        await Promise.all([
+          loadHeader(),
+          loadInsights(),
+          loadDevices(),
+          loadCharts(),
+          loadActionCenter(),
+        ]);
+
+        // Resize charts on window resize
+        window.addEventListener("resize", () => {
+          soilMoistureChart.resize();
+          temperatureChart.resize();
+          cropGrowthChart.resize();
+          soilHealthChart.resize();
+        });
+
+        // Add device button (mock action)
+        document.getElementById("addDevice").addEventListener("click", () => {
+          alert("Add device functionality not implemented");
+        });
+
+        // View recommendations button (mock action)
+        document.getElementById("viewRecommendations").addEventListener("click", () => {
+          alert("Viewing all recommendations");
+        });
+      });
+    </script>
+  </body>
+</html>
