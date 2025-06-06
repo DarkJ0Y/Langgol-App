@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmer John Doe's Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+        }
+        .primary-color {
+            background-color: #4caf50;
+        }
+        .profile-img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border: 4px solid #4caf50;
+            border-radius: 50%;
+        }
+        .section {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background-color: #4caf50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .progress-bar {
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress {
+            background-color: #4caf50;
+            height: 5px;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <header class="primary-color text-white text-center py-6">
+        <img src="../pic/logoGreen.png" alt="Farmer John Doe" class="profile-img mx-auto mb-4">
+        <h1 class="text-4xl font-bold">Sudipto Sarkar</h1>
+        <p class="text-lg">Green Acres Farm, Springfield</p>
+    </header>
+
+    <main class="py-8">
+        <!-- Farm Overview -->
+        <section class="section mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">About Green Acres Farm</h2>
+            <p class="text-gray-600">
+                Green Acres Farm is a 50-acre, family-run organic farm established in 1995. We specialize in sustainable agriculture, growing fresh vegetables and raising free-range poultry. Certified USDA Organic, we’re committed to quality and community.
+            </p>
+        </section>
+
+        <!-- Skills -->
+        <section class="section mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Farmer Skills</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-gray-600">Organic Farming</label>
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 90%;"></div>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-gray-600">Animal Husbandry</label>
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 75%;"></div>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-gray-600">Crop Rotation</label>
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 85%;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Crops Grown -->
+        <section class="section mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Crops Grown</h2>
+            <canvas id="cropsChart" height="200"></canvas>
+        </section>
+
+        <!-- Previous Year's Production -->
+        <section class="section mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">2024 Production</h2>
+            <canvas id="productionChart" height="200"></canvas>
+        </section>
+
+        <!-- Income Probability -->
+        <section class="section mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Income Probability (Estimated)</h2>
+            <canvas id="incomeChart" height="200"></canvas>
+        </section>
+
+        <!-- Land Fertility Rate -->
+        <section class="section mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Land Fertility Rate (2020-2024)</h2>
+            <canvas id="fertilityChart" height="200"></canvas>
+        </section>
+
+        <!-- Subscriptions -->
+        <section class="section mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Subscriptions</h2>
+            <p class="text-gray-600"><strong>Current Subscription:</strong> SuperGrok (Higher usage quotas for Grok 3 on grok.com)</p>
+            <p class="text-gray-600"><strong>Recommended Subscription:</strong> X Premium for enhanced Grok 3 access on x.com. Learn more at <a href="https://help.x.com/en/using-x/x-premium" class="text-blue-500 hover:underline">X Premium</a>.</p>
+            <p class="text-gray-600 mt-2">For API access to Grok 3, explore options at <a href="https://x.ai/api" class="text-blue-500 hover:underline">xAI API</a>.</p>
+        </section>
+
+        <!-- Products and Services -->
+        <section class="section mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Our Products</h2>
+            <ul class="list-disc list-inside text-gray-600">
+                <li>Fresh vegetables: Tomatoes, carrots, lettuce, and more</li>
+                <li>Free-range eggs and pasture-raised chickens</li>
+                <li>Homemade jams and preserves</li>
+                <li>Seasonal CSA subscriptions available</li>
+            </ul>
+            <p class="text-gray-600 mt-4">
+                Visit us at the Springfield Farmers' Market every Saturday or shop online for delivery.
+            </p>
+            <a href="#contact" class="btn inline-block mt-4">Shop Now</a>
+        </section>
+
+        <!-- Farm Philosophy -->
+        <section class="section mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Our Philosophy</h2>
+            <p class="text-gray-600">
+                At Green Acres, we nurture the land and our community. Farming is our passion, driven by sustainability and providing wholesome, organic food. John, a third-generation farmer, brings 20 years of expertise to every harvest.
+            </p>
+        </section>
+
+        <!-- Contact Information -->
+        <section id="contact" class="section">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Get in Touch</h2>
+            <p class="text-gray-600">Email: john.doe@greenacresfarm.com</p>
+            <p class="text-gray-600">Phone: (123) 456-7890</p>
+            <p class="text-gray-600">Follow us: 
+                <a href="#" class="text-blue-500 hover:underline">info@langgol.com</a>
+            </p>
+            <p class="text-gray-600 mt-4">Visit us: 123 Farm Road, Springfield, IL</p>
+            <a href="#" class="btn inline-block mt-4">Join Our Newsletter</a>
+        </section>
+    </main>
+
+    <footer class="primary-color text-white text-center py-4">
+        <p>© 2025 Langgol All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Crops Pie Chart
+        const cropsCtx = document.getElementById('cropsChart').getContext('2d');
+        new Chart(cropsCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Tomatoes', 'Carrots', 'Lettuce', 'Corn'],
+                datasets: [{
+                    data: [40, 25, 20, 15],
+                    backgroundColor: ['#4caf50', '#66bb6a', '#81c784', '#a5d6a7']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // Production Bar Chart
+        const productionCtx = document.getElementById('productionChart').getContext('2d');
+        new Chart(productionCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Tomatoes', 'Carrots', 'Lettuce', 'Corn'],
+                datasets: [{
+                    label: 'Production (tons)',
+                    data: [10, 8, 6, 4],
+                    backgroundColor: '#4caf50'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Tons' } }
+                }
+            }
+        });
+
+        // Income Probability Line Chart
+        const incomeCtx = document.getElementById('incomeChart').getContext('2d');
+        new Chart(incomeCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Apr', 'Jul', 'Oct'],
+                datasets: [{
+                    label: 'Income Probability ($)',
+                    data: [5000, 6000, 7500, 8000],
+                    borderColor: '#4caf50',
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Income ($)' } }
+                }
+            }
+        });
+
+        // Fertility Rate Time Series
+        const fertilityCtx = document.getElementById('fertilityChart').getContext('2d');
+        new Chart(fertilityCtx, {
+            type: 'line',
+            data: {
+                labels: ['2020', '2021', '2022', '2023', '2024'],
+                datasets: [{
+                    label: 'Fertility Rate (%)',
+                    data: [75, 78, 80, 82, 85],
+                    borderColor: '#4caf50',
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true, max: 100, title: { display: true, text: 'Fertility (%)' } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
