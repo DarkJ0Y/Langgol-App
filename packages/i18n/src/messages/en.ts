@@ -7,7 +7,12 @@
 
 import type { bn } from './bn.js'
 
-type Catalogue = typeof bn
+/**
+ * The Bangla catalogue is `as const`, so its values are literal types. Widening them to `string`
+ * is what lets English mirror its SHAPE without having to mirror its text — while still failing
+ * to compile if a key is missing, added, or nested differently.
+ */
+export type Catalogue = { [K in keyof typeof bn]: { [M in keyof (typeof bn)[K]]: string } }
 
 export const en: Catalogue = {
   common: {

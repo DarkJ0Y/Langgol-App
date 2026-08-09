@@ -13,13 +13,13 @@
 
 import { Money, Quantity, toBanglaDigits, type Poisha, type SaleUnit } from '@langgol/domain'
 import { bn } from './messages/bn.js'
-import { en } from './messages/en.js'
+import { en, type Catalogue } from './messages/en.js'
 
 export type Locale = 'bn' | 'en'
 export const LOCALES: readonly Locale[] = ['bn', 'en']
 export const DEFAULT_LOCALE: Locale = 'bn'
 
-export type Messages = typeof bn
+export type Messages = Catalogue
 export const catalogues: Record<Locale, Messages> = { bn, en }
 
 export function isLocale(value: string): value is Locale {
