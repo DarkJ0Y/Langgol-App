@@ -171,6 +171,16 @@ class InMemoryUsers implements UserRepository {
     return Promise.resolve(null)
   }
 
+  grantSelfRole(
+    userId: string,
+    role: string,
+  ): Promise<{ roles: readonly string[]; added: boolean }> {
+    const record = this.rows?.find((row: { id: string }) => row.id === userId)
+    const roles = record === undefined ? [role] : [...new Set([...record.roles, role])]
+    if (record !== undefined) Object.assign(record, { roles })
+    return Promise.resolve({ roles, added: true })
+  }
+
   markPhoneVerified(userId: string, at: Date): Promise<void> {
     const row = this.rows.find((candidate) => candidate.id === userId)
     if (row) row.phoneVerifiedAt = at

@@ -110,6 +110,11 @@ export interface UserRepository {
    * real user. docs/03_ARCHITECTURE.md ADR-22
    */
   findDevelopmentFixture(phone: string): Promise<UserRecord | null>
+  /**
+   * Add a self-selected role. Idempotent: choosing a role already held is not an error, because
+   * a farmer tapping twice on a slow connection is not a conflict.
+   */
+  grantSelfRole(userId: string, role: string): Promise<{ roles: readonly string[]; added: boolean }>
   markPhoneVerified(userId: string, at: Date): Promise<void>
   recordLogin(userId: string, at: Date): Promise<void>
 }

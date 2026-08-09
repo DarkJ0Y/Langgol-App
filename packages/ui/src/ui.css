@@ -1,0 +1,365 @@
+/*
+ * Langgol component styles.
+ *
+ * Written against the generated token variables — no colour, spacing or size literal appears
+ * here, so the stylesheet cannot drift from `tokens.ts`.
+ *
+ * Mobile-first throughout. The design target is a low-cost Android phone held in a field, not a
+ * desktop that happens to be narrowed.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* 16px minimum. Bangla conjuncts below this are unreadable in sunlight. */
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--lg-font-sans);
+  font-size: var(--lg-text-base);
+  color: var(--lg-text-primary);
+  background: var(--lg-surface);
+  line-height: var(--lg-leading-en-normal);
+}
+
+/* Bangla needs looser leading at every step: matras and conjuncts collide otherwise. */
+:lang(bn) body,
+[lang='bn'] {
+  line-height: var(--lg-leading-bn-normal);
+}
+
+/*
+ * Focus is always visible. Removing the outline is the single most common accessibility
+ * regression, so the rule is stated once, positively, and never overridden.
+ */
+:focus-visible {
+  outline: 3px solid var(--lg-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--lg-radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ------------------------------------------------------------------- layout */
+
+.lg-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.lg-main {
+  flex: 1;
+  width: 100%;
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: var(--lg-space-5) var(--lg-space-4) var(--lg-space-12);
+}
+
+.lg-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-4);
+}
+
+.lg-stack-tight {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-2);
+}
+
+.lg-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lg-space-3);
+  flex-wrap: wrap;
+}
+
+/* ------------------------------------------------------------------ heading */
+
+.lg-title {
+  font-size: var(--lg-text-2xl);
+  line-height: var(--lg-leading-bn-tight);
+  font-weight: 600;
+  margin: 0 0 var(--lg-space-2);
+}
+
+.lg-subtitle {
+  color: var(--lg-text-secondary);
+  margin: 0 0 var(--lg-space-5);
+}
+
+/* --------------------------------------------------------------------- card */
+
+.lg-card {
+  background: var(--lg-surface-raised);
+  border: 1px solid var(--lg-border);
+  border-radius: var(--lg-radius-lg);
+  padding: var(--lg-space-5);
+}
+
+/* ------------------------------------------------------------------- button */
+
+.lg-button {
+  /* 48px, not the 44px floor — cracked screen protector, wet or soil-covered hands. */
+  min-height: var(--lg-touch-min);
+  min-width: var(--lg-touch-min);
+  width: 100%;
+  padding: var(--lg-space-3) var(--lg-space-5);
+  font-family: inherit;
+  font-size: var(--lg-text-lg);
+  font-weight: 600;
+  line-height: var(--lg-leading-bn-snug);
+  border-radius: var(--lg-radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--lg-motion-base) var(--lg-motion-easing);
+}
+
+.lg-button--primary {
+  background: var(--lg-action-primary);
+  color: var(--lg-text-on-action);
+}
+
+.lg-button--primary:hover:not(:disabled) {
+  background: var(--lg-action-primary-hover);
+}
+
+.lg-button--secondary {
+  background: var(--lg-surface-raised);
+  color: var(--lg-text-primary);
+  border-color: var(--lg-border-strong);
+}
+
+.lg-button--ghost {
+  background: transparent;
+  color: var(--lg-action-primary);
+  width: auto;
+  font-size: var(--lg-text-base);
+  padding: var(--lg-space-2) var(--lg-space-3);
+}
+
+.lg-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------- form */
+
+.lg-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-2);
+}
+
+.lg-label {
+  font-weight: 600;
+  line-height: var(--lg-leading-bn-snug);
+}
+
+.lg-hint {
+  color: var(--lg-text-secondary);
+  font-size: var(--lg-text-sm);
+  line-height: var(--lg-leading-bn-snug);
+}
+
+.lg-input {
+  min-height: var(--lg-touch-min);
+  width: 100%;
+  padding: var(--lg-space-3);
+  font-family: inherit;
+  /* 16px minimum also stops iOS zooming the viewport on focus. */
+  font-size: var(--lg-text-lg);
+  color: var(--lg-text-primary);
+  background: var(--lg-surface-raised);
+  border: 1px solid var(--lg-border-strong);
+  border-radius: var(--lg-radius-md);
+}
+
+.lg-input[aria-invalid='true'] {
+  border-color: var(--lg-color-danger-500);
+  border-width: 2px;
+}
+
+.lg-input--code {
+  /* One-time codes: wide tracking, tabular figures, centred — easy to read back aloud. */
+  font-size: var(--lg-text-2xl);
+  letter-spacing: 0.4em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  padding-inline-start: 0.4em;
+}
+
+.lg-error {
+  color: var(--lg-color-danger-700);
+  font-size: var(--lg-text-sm);
+  line-height: var(--lg-leading-bn-snug);
+  font-weight: 500;
+}
+
+/* -------------------------------------------------------------------- alert */
+
+.lg-alert {
+  padding: var(--lg-space-4);
+  border-radius: var(--lg-radius-md);
+  border: 1px solid transparent;
+  line-height: var(--lg-leading-bn-snug);
+}
+
+.lg-alert--error {
+  background: var(--lg-color-danger-100);
+  color: var(--lg-color-danger-700);
+  border-color: var(--lg-color-danger-500);
+}
+
+.lg-alert--warning {
+  background: var(--lg-color-warning-100);
+  color: var(--lg-color-warning-700);
+  border-color: var(--lg-color-warning-500);
+}
+
+.lg-alert--success {
+  background: var(--lg-color-success-100);
+  color: var(--lg-color-success-700);
+  border-color: var(--lg-color-success-500);
+}
+
+.lg-alert--info {
+  background: var(--lg-color-info-100);
+  color: var(--lg-color-info-700);
+  border-color: var(--lg-color-info-500);
+}
+
+/* ------------------------------------------------------------------ choices */
+
+.lg-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lg-space-3);
+  width: 100%;
+  min-height: var(--lg-touch-min);
+  padding: var(--lg-space-4);
+  text-align: start;
+  background: var(--lg-surface-raised);
+  border: 1px solid var(--lg-border-strong);
+  border-radius: var(--lg-radius-md);
+  font-family: inherit;
+  font-size: var(--lg-text-lg);
+  color: var(--lg-text-primary);
+  cursor: pointer;
+}
+
+.lg-choice[aria-pressed='true'],
+.lg-choice--selected {
+  border-color: var(--lg-action-primary);
+  border-width: 2px;
+  background: var(--lg-color-leaf-50);
+}
+
+.lg-choice__label {
+  font-weight: 600;
+}
+
+.lg-choice__description {
+  display: block;
+  font-size: var(--lg-text-sm);
+  font-weight: 400;
+  color: var(--lg-text-secondary);
+  line-height: var(--lg-leading-bn-snug);
+}
+
+/* ------------------------------------------------------------------ loading */
+
+.lg-spinner {
+  display: inline-block;
+  width: 1.25em;
+  height: 1.25em;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--lg-radius-full);
+  animation: lg-spin 700ms linear infinite;
+}
+
+@keyframes lg-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* -------------------------------------------------------- development banner */
+
+/*
+ * Deliberately loud. A development session must never be mistaken for a real one, and the cost
+ * of an unmissable stripe is far lower than the cost of that confusion.
+ */
+.lg-dev-banner {
+  background: var(--lg-color-warning-500);
+  color: var(--lg-color-neutral-0);
+  padding: var(--lg-space-2) var(--lg-space-4);
+  font-size: var(--lg-text-sm);
+  font-weight: 600;
+  text-align: center;
+  line-height: var(--lg-leading-bn-snug);
+}
+
+/* ------------------------------------------------------------------- header */
+
+.lg-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lg-space-3);
+  padding: var(--lg-space-3) var(--lg-space-4);
+  border-bottom: 1px solid var(--lg-border);
+  background: var(--lg-surface-raised);
+}
+
+.lg-brand {
+  font-weight: 700;
+  font-size: var(--lg-text-lg);
+  color: var(--lg-text-primary);
+  text-decoration: none;
+}
+
+/* ------------------------------------------------------------------ utility */
+
+.lg-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.lg-skip-link {
+  position: absolute;
+  inset-inline-start: var(--lg-space-2);
+  top: -100%;
+  z-index: 10;
+  padding: var(--lg-space-3);
+  background: var(--lg-surface-raised);
+  border: 2px solid var(--lg-action-primary);
+  border-radius: var(--lg-radius-md);
+}
+
+.lg-skip-link:focus {
+  top: var(--lg-space-2);
+}

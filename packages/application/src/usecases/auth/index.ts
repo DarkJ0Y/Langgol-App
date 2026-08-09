@@ -19,3 +19,9 @@ export {
   type DevelopmentSignInDeps,
 } from './development-sign-in.js'
 export { signOut, type SignOutCommand, type SignOutResult, type SignOutDeps } from './sign-out.js'
+export {
+  selectRole,
+  type SelectRoleCommand,
+  type SelectRoleResult,
+  type SelectRoleDeps,
+} from './select-role.js'

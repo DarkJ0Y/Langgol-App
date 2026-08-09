@@ -3,9 +3,10 @@ packages:
   - 'packages/*'
 
 # Every allowed install script is an explicit, reviewed decision — this is supply-chain surface.
-# esbuild and the Prisma engines ship prebuilt binaries their install scripts must place.
+# These four ship prebuilt binaries their install scripts must place.
 allowBuilds:
   esbuild: true
   '@prisma/client': true
   '@prisma/engines': true
   prisma: true
+  sharp: true

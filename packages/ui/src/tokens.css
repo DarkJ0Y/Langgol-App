@@ -1,0 +1,112 @@
+/*
+ * Langgol design tokens as CSS custom properties.
+ *
+ * GENERATED from packages/ui/src/tokens.ts. A test asserts this file matches the generator, so
+ * a hand-edit fails CI rather than silently drifting from the values the code reads.
+ */
+
+:root {
+  --lg-color-soil-50: #f6f4f0;
+  --lg-color-soil-100: #e8e3da;
+  --lg-color-soil-200: #d2c8b6;
+  --lg-color-soil-300: #b5a68c;
+  --lg-color-soil-400: #96846a;
+  --lg-color-soil-500: #7a6a52;
+  --lg-color-soil-600: #5f5240;
+  --lg-color-soil-700: #483e31;
+  --lg-color-soil-800: #332c23;
+  --lg-color-soil-900: #211d17;
+  --lg-color-leaf-50: #f0f7f0;
+  --lg-color-leaf-100: #dbecdb;
+  --lg-color-leaf-200: #b5d8b6;
+  --lg-color-leaf-300: #84bd87;
+  --lg-color-leaf-400: #559d5a;
+  --lg-color-leaf-500: #357f3c;
+  --lg-color-leaf-600: #26652d;
+  --lg-color-leaf-700: #1e5024;
+  --lg-color-leaf-800: #193f1e;
+  --lg-color-leaf-900: #132f17;
+  --lg-color-harvest-50: #fdf6ec;
+  --lg-color-harvest-100: #f8e6c8;
+  --lg-color-harvest-200: #f0cb90;
+  --lg-color-harvest-300: #e5ac55;
+  --lg-color-harvest-400: #d18f2a;
+  --lg-color-harvest-500: #ad731d;
+  --lg-color-harvest-600: #8a5a17;
+  --lg-color-harvest-700: #6b4513;
+  --lg-color-harvest-800: #4c3110;
+  --lg-color-harvest-900: #31200b;
+  --lg-color-neutral-0: #ffffff;
+  --lg-color-neutral-50: #f8f9fa;
+  --lg-color-neutral-100: #eef0f2;
+  --lg-color-neutral-200: #dde1e5;
+  --lg-color-neutral-300: #c2c8cf;
+  --lg-color-neutral-400: #98a1ab;
+  --lg-color-neutral-500: #6f7982;
+  --lg-color-neutral-600: #525b63;
+  --lg-color-neutral-700: #3c444b;
+  --lg-color-neutral-800: #262c31;
+  --lg-color-neutral-900: #14181b;
+  --lg-color-danger-100: #fbe6e4;
+  --lg-color-danger-500: #b3261e;
+  --lg-color-danger-700: #8c1d17;
+  --lg-color-warning-100: #fdf1d8;
+  --lg-color-warning-500: #8a5a17;
+  --lg-color-warning-700: #6b4513;
+  --lg-color-success-100: #dbecdb;
+  --lg-color-success-500: #26652d;
+  --lg-color-success-700: #1e5024;
+  --lg-color-info-100: #dfe9f5;
+  --lg-color-info-500: #215a91;
+  --lg-color-info-700: #194671;
+  --lg-background: #ffffff;
+  --lg-surface: #f8f9fa;
+  --lg-surface-raised: #ffffff;
+  --lg-border: #c2c8cf;
+  --lg-border-strong: #6f7982;
+  --lg-text-primary: #14181b;
+  --lg-text-secondary: #525b63;
+  --lg-text-inverse: #ffffff;
+  --lg-text-on-action: #ffffff;
+  --lg-action-primary: #1e5024;
+  --lg-action-primary-hover: #193f1e;
+  --lg-action-secondary: #483e31;
+  --lg-accent: #8a5a17;
+  --lg-focus-ring: #215a91;
+  --lg-space-0: 0;
+  --lg-space-1: 0.25rem;
+  --lg-space-2: 0.5rem;
+  --lg-space-3: 0.75rem;
+  --lg-space-4: 1rem;
+  --lg-space-5: 1.25rem;
+  --lg-space-6: 1.5rem;
+  --lg-space-8: 2rem;
+  --lg-space-10: 2.5rem;
+  --lg-space-12: 3rem;
+  --lg-space-16: 4rem;
+  --lg-radius-none: 0;
+  --lg-radius-sm: 0.25rem;
+  --lg-radius-md: 0.5rem;
+  --lg-radius-lg: 0.75rem;
+  --lg-radius-full: 9999px;
+  --lg-text-xs: 0.8125rem;
+  --lg-text-sm: 0.9375rem;
+  --lg-text-base: 1rem;
+  --lg-text-lg: 1.125rem;
+  --lg-text-xl: 1.375rem;
+  --lg-text-2xl: 1.75rem;
+  --lg-text-3xl: 2.25rem;
+  --lg-leading-bn-tight: 1.4;
+  --lg-leading-bn-snug: 1.55;
+  --lg-leading-bn-normal: 1.75;
+  --lg-leading-bn-relaxed: 1.9;
+  --lg-leading-en-tight: 1.2;
+  --lg-leading-en-snug: 1.35;
+  --lg-leading-en-normal: 1.5;
+  --lg-leading-en-relaxed: 1.65;
+  --lg-font-sans:
+    'Noto Sans Bengali', 'Noto Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --lg-touch-min: 48px;
+  --lg-motion-base: 200ms;
+  --lg-motion-easing: cubic-bezier(0.2, 0, 0.2, 1);
+}

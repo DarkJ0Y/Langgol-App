@@ -146,6 +146,32 @@ export const userRepository: UserRepository = {
     return row === null ? null : toUser(row)
   },
 
+  async grantSelfRole(userId, role) {
+    // upsert on the (user, role) unique key: a repeated tap is a no-op, not a duplicate row.
+    const before = await prisma.userRoleAssignment.findUnique({
+      where: { userId_role: { userId, role: role as 'FARMER' | 'CONSUMER' | 'RETAILER' } },
+      select: { id: true, revokedAt: true },
+    })
+
+    if (before === null || before.revokedAt !== null) {
+      await prisma.userRoleAssignment.upsert({
+        where: { userId_role: { userId, role: role as 'FARMER' | 'CONSUMER' | 'RETAILER' } },
+        create: { userId, role: role as 'FARMER' | 'CONSUMER' | 'RETAILER' },
+        update: { revokedAt: null },
+      })
+    }
+
+    const rows = await prisma.userRoleAssignment.findMany({
+      where: { userId, revokedAt: null },
+      select: { role: true },
+    })
+
+    return {
+      roles: rows.map((row) => row.role),
+      added: before === null || before.revokedAt !== null,
+    }
+  },
+
   async markPhoneVerified(userId, at) {
     await prisma.user.update({ where: { id: userId }, data: { phoneVerifiedAt: at } })
   },

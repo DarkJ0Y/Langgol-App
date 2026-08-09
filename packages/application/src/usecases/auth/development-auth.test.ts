@@ -80,6 +80,16 @@ class InMemoryUsers implements UserRepository {
     return Promise.reject(new Error('development sign-in must never create an account'))
   }
 
+  grantSelfRole(
+    userId: string,
+    role: string,
+  ): Promise<{ roles: readonly string[]; added: boolean }> {
+    const record = [...this.fixtures.values()].find((row) => row.id === userId)
+    const roles = record === undefined ? [role] : [...new Set([...record.roles, role])]
+    if (record !== undefined) Object.assign(record, { roles })
+    return Promise.resolve({ roles, added: true })
+  }
+
   markPhoneVerified(): Promise<void> {
     return Promise.resolve()
   }
