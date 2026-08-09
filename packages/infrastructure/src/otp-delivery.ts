@@ -9,26 +9,11 @@
  */
 
 import { prisma } from '@langgol/db'
-import type { Locale, OtpDeliveryPort } from '@langgol/application'
+import type { OtpDeliveryPort } from '@langgol/application'
 import { Money } from '@langgol/domain/money'
+import { isSensitive, renderTemplate } from '@langgol/domain/notifications'
 import { env } from '@langgol/shared'
 import { smsProvider } from './sms/index.js'
-
-/**
- * OTP message copy.
- *
- * Bangla is the default. Kept deliberately short: a Bangla SMS is Unicode, which fits far fewer
- * characters per segment and therefore costs more per message — every extra word is money and a
- * longer delivery queue. This moves into the message catalogue when the notification template
- * registry lands.
- */
-function renderOtpMessage(code: string, locale: Locale, expiresInSeconds: number): string {
-  const minutes = Math.max(1, Math.round(expiresInSeconds / 60))
-  if (locale === 'bn') {
-    return `আপনার লংগল কোড ${code}। ${String(minutes)} মিনিটে মেয়াদ শেষ। কাউকে জানাবেন না।`
-  }
-  return `Your Langgol code is ${code}. It expires in ${String(minutes)} minutes. Do not share it.`
-}
 
 export function createOtpDelivery(): OtpDeliveryPort {
   const config = env()
@@ -38,8 +23,13 @@ export function createOtpDelivery(): OtpDeliveryPort {
     dailyBudget: Money.fromPoisha(config.SMS_DAILY_BUDGET_POISHA),
 
     async deliver({ phone, code, locale, expiresInSeconds }) {
-      const body = renderOtpMessage(code, locale, expiresInSeconds)
-      const result = await smsProvider().send({ to: phone, body, unicode: locale === 'bn' })
+      const minutes = Math.max(1, Math.round(expiresInSeconds / 60))
+      const message = renderTemplate('auth.otp', locale, { code, minutes }, 'SMS')
+      const result = await smsProvider().send({
+        to: phone,
+        body: message.body,
+        unicode: message.unicode,
+      })
 
       // The notification row records the template and its variables — never the rendered body,
       // which contains the code itself. docs/07_SECURITY.md §9.2
@@ -49,7 +39,11 @@ export function createOtpDelivery(): OtpDeliveryPort {
           channel: 'SMS',
           template: 'auth.otp',
           locale: locale === 'bn' ? 'BN' : 'EN',
-          payload: { expiresInSeconds },
+          // The template is marked sensitive, so its rendered body — which contains the code —
+          // is never persisted. Only the non-secret variables are.
+          payload: isSensitive('auth.otp')
+            ? { minutes, segments: message.segments }
+            : { minutes, segments: message.segments, body: message.body },
           status: result.accepted ? 'SENT' : 'FAILED',
           providerRef: result.providerRef ?? null,
           error: result.error ?? null,
