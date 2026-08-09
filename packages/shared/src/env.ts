@@ -28,6 +28,8 @@ const schema = z.object({
   SMS_API_KEY: z.string().optional(),
   SMS_SENDER_ID: z.string().default('LANGGOL'),
   SMS_DAILY_BUDGET_POISHA: z.coerce.number().int().positive().default(500000),
+  // Approximate cost of one message, used by the spend circuit breaker.
+  SMS_UNIT_COST_POISHA: z.coerce.number().int().positive().default(50),
 
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
   ERROR_REPORTING_DSN: z.string().optional(),
