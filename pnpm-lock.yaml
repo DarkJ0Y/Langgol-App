@@ -55,6 +55,36 @@ importers:
         version: 5.9.3
 
   packages/domain:
+    dependencies:
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
+  packages/infrastructure:
+    dependencies:
+      '@langgol/db':
+        specifier: workspace:*
+        version: link:../db
+      '@langgol/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@langgol/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
+  packages/shared:
+    dependencies:
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
     devDependencies:
       typescript:
         specifier: ^5.7.3
@@ -1405,6 +1435,9 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
 snapshots:
 
   '@ampproject/remapping@2.3.0':
@@ -2667,3 +2700,5 @@ snapshots:
       strip-ansi: 7.2.0
 
   yocto-queue@0.1.0: {}
+
+  zod@3.25.76: {}
