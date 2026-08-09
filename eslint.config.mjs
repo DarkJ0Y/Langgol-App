@@ -75,6 +75,16 @@ export default tseslint.config(
     rules: { 'langgol/no-business-rate-literal': 'off' },
   },
 
+  /*
+   * sRGB relative-luminance coefficients (0.2126 / 0.7152 / 0.0722) are physical constants from
+   * the WCAG specification, not business parameters — there is no version of Langgol in which
+   * they belong in PlatformConfig. Scoped to the one file that does colour maths.
+   */
+  {
+    files: ['packages/ui/src/contrast.ts'],
+    rules: { 'langgol/no-business-rate-literal': 'off' },
+  },
+
   /* Local ESLint plugin sources are plain JS with JSDoc types. */
   {
     files: ['packages/config/eslint/**/*.js', 'eslint.config.mjs', '**/*.config.js'],
