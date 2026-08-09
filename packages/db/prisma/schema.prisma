@@ -1,0 +1,329 @@
+// Langgol database schema — Phase 1 foundation.
+//
+// This file contains ONLY the tables the platform foundation needs: identity and access,
+// geography and addresses, versioned platform configuration, audit, notifications and
+// idempotency. Listings, orders, the ledger, settlement and economic measurement arrive with
+// their own phases (docs/09_ROADMAP.md) and are specified in docs/02_DATABASE.md.
+//
+// Objects Prisma cannot express — CHECK constraints, append-only rules, PostGIS geography
+// columns and their triggers, GIST indexes — live in hand-authored migrations alongside the
+// generated ones. They are part of the security model, not a convenience.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------- identity & access
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum Role {
+  FARMER
+  CONSUMER
+  RETAILER
+  OPS_AGENT
+  ADMIN
+}
+
+enum Language {
+  BN
+  EN
+}
+
+model User {
+  id                String     @id @default(uuid()) @db.Uuid
+  /// E.164, always +8801XXXXXXXXX. The primary identifier: Bangladeshi users authenticate by phone.
+  phone             String     @unique
+  phoneVerifiedAt   DateTime?  @map("phone_verified_at")
+  email             String?    @unique
+  fullName          String     @map("full_name")
+  preferredLanguage Language   @default(BN) @map("preferred_language")
+  status            UserStatus @default(ACTIVE)
+  lastLoginAt       DateTime?  @map("last_login_at")
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+  deletedAt         DateTime?  @map("deleted_at")
+
+  roles     UserRoleAssignment[]
+  sessions  Session[]
+  addresses Address[]
+
+  @@index([status])
+  @@map("users")
+}
+
+/// A user may hold several roles over time — a farmer who also buys is one account, not two.
+model UserRoleAssignment {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  role        Role
+  grantedAt   DateTime  @default(now()) @map("granted_at")
+  /// Null when self-selected at signup; set when an admin granted it.
+  grantedById String?   @map("granted_by_id") @db.Uuid
+  revokedAt   DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+  @@index([role])
+  @@map("user_role_assignments")
+}
+
+/// Database-backed sessions: revocable, unlike a stateless JWT. docs/07_SECURITY.md §3.3
+model Session {
+  id           String    @id @default(uuid()) @db.Uuid
+  /// Stored as a SHA-256 hash. A leaked database must not yield usable session tokens.
+  tokenHash    String    @unique @map("token_hash")
+  userId       String    @map("user_id") @db.Uuid
+  expiresAt    DateTime  @map("expires_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  lastUsedAt   DateTime  @default(now()) @map("last_used_at")
+  ipAddress    String?   @map("ip_address")
+  userAgent    String?   @map("user_agent")
+  revokedAt    DateTime? @map("revoked_at")
+  revokedById  String?   @map("revoked_by_id") @db.Uuid
+  revokeReason String?   @map("revoke_reason")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+enum OtpPurpose {
+  LOGIN
+  PHONE_CHANGE
+  PAYOUT_CHANGE
+  DELIVERY_CONFIRM
+}
+
+/// Short-lived OTP challenge. The code is stored hashed and is never logged. docs/07_SECURITY.md §3.1
+model OtpChallenge {
+  id            String     @id @default(uuid()) @db.Uuid
+  phone         String
+  codeHash      String     @map("code_hash")
+  purpose       OtpPurpose
+  expiresAt     DateTime   @map("expires_at")
+  attempts      Int        @default(0)
+  maxAttempts   Int        @default(5) @map("max_attempts")
+  consumedAt    DateTime?  @map("consumed_at")
+  requestIp     String?    @map("request_ip")
+  requestDevice String?    @map("request_device")
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  @@index([phone, purpose, createdAt])
+  @@index([expiresAt])
+  @@map("otp_challenges")
+}
+
+// ------------------------------------------------------------ geography & addresses
+
+enum AdminAreaType {
+  DIVISION
+  DISTRICT
+  UPAZILA
+  UNION
+}
+
+enum LocationPrecision {
+  EXACT
+  APPROXIMATE
+  AREA_CENTROID
+}
+
+/// Seeded reference data: 8 divisions → 64 districts → upazilas → unions.
+///
+/// This tree is the PRIMARY location model. Many rural addresses have no street address and no
+/// reliable postcode; "village, union, upazila, near the school" is a complete address in
+/// practice. The map pin is an enhancement. docs/08_BANGLADESH_CONTEXT.md §2
+model AdminArea {
+  id          String        @id @default(uuid()) @db.Uuid
+  type        AdminAreaType
+  parentId    String?       @map("parent_id") @db.Uuid
+  nameEn      String        @map("name_en")
+  nameBn      String        @map("name_bn")
+  /// Official statistical code where one is available.
+  code        String?       @unique
+  centroidLat Decimal?      @map("centroid_lat") @db.Decimal(9, 6)
+  centroidLng Decimal?      @map("centroid_lng") @db.Decimal(9, 6)
+  /// Maintained by trigger from centroid_lat/lng. See the PostGIS migration.
+  geo         Unsupported("geography(Point, 4326)")?
+  isActive    Boolean       @default(true) @map("is_active")
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  parent   AdminArea?  @relation("AreaTree", fields: [parentId], references: [id])
+  children AdminArea[] @relation("AreaTree")
+  addresses Address[]
+
+  @@index([type, parentId])
+  @@index([parentId, nameEn])
+  @@map("admin_areas")
+}
+
+model Address {
+  id             String            @id @default(uuid()) @db.Uuid
+  userId         String            @map("user_id") @db.Uuid
+  label          String?
+  recipientName  String            @map("recipient_name")
+  recipientPhone String            @map("recipient_phone")
+  /// Union where known, otherwise upazila. Never null — the hierarchy is the address.
+  adminAreaId    String            @map("admin_area_id") @db.Uuid
+  villageOrArea  String?           @map("village_or_area")
+  addressLine    String            @map("address_line")
+  landmark       String?
+  latitude       Decimal?          @db.Decimal(9, 6)
+  longitude      Decimal?          @db.Decimal(9, 6)
+  /// Records what we actually know, so distance-based pricing can widen its error bars
+  /// honestly instead of implying metre accuracy from a union centroid.
+  precision      LocationPrecision @default(AREA_CENTROID)
+  /// Maintained by trigger from latitude/longitude. See the PostGIS migration.
+  geo            Unsupported("geography(Point, 4326)")?
+  isDefault      Boolean           @default(false) @map("is_default")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+  deletedAt      DateTime?         @map("deleted_at")
+
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  area AdminArea @relation(fields: [adminAreaId], references: [id])
+
+  @@index([userId, isDefault])
+  @@index([adminAreaId])
+  @@map("addresses")
+}
+
+// ------------------------------------------------------------- platform configuration
+
+/// Versioned business configuration: commission rate, delivery tariffs, funding models,
+/// settlement policy, risk tiers, pilot budget, cancellation policy.
+///
+/// Never hard-coded. Every quote and order records the config version it was priced under, so
+/// historical pricing stays reproducible years later. docs/03_ARCHITECTURE.md §7
+model PlatformConfig {
+  id            String   @id @default(uuid()) @db.Uuid
+  key           String
+  value         Json
+  version       Int
+  effectiveFrom DateTime @map("effective_from")
+  note          String?
+  updatedById   String?  @map("updated_by_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@unique([key, version])
+  @@index([key, effectiveFrom])
+  @@map("platform_configs")
+}
+
+// ------------------------------------------------------------------ audit & delivery
+
+/// Append-only. Every privileged action, every state change that matters, every money movement.
+/// Enforced immutable by database rule, not by policy. docs/07_SECURITY.md §10
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  actorUserId String?  @map("actor_user_id") @db.Uuid
+  actorRole   Role?    @map("actor_role")
+  action      String
+  entityType  String   @map("entity_type")
+  entityId    String   @map("entity_id")
+  before      Json?
+  after       Json?
+  reason      String?
+  requestId   String?  @map("request_id")
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+enum NotificationChannel {
+  SMS
+  IN_APP
+  EMAIL
+  PUSH
+  /// Reserved. Not implemented at MVP — see docs/03_ARCHITECTURE.md §8.1.
+  IVR
+  USSD
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+}
+
+model Notification {
+  id          String              @id @default(uuid()) @db.Uuid
+  userId      String?             @map("user_id") @db.Uuid
+  /// Denormalised destination so a notification remains auditable if the user record changes.
+  destination String
+  channel     NotificationChannel
+  template    String
+  locale      Language
+  /// Template variables only. Never a rendered body containing personal data.
+  payload     Json
+  status      NotificationStatus  @default(QUEUED)
+  providerRef String?             @map("provider_ref")
+  error       String?
+  attempts    Int                 @default(0)
+  sentAt      DateTime?           @map("sent_at")
+  createdAt   DateTime            @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("notifications")
+}
+
+/// Transactional outbox. Domain events are written in the same transaction as the state change
+/// and dispatched asynchronously, so a state change is never lost because a gateway was down.
+model OutboxEvent {
+  id            String    @id @default(uuid()) @db.Uuid
+  aggregateType String    @map("aggregate_type")
+  aggregateId   String    @map("aggregate_id")
+  eventType     String    @map("event_type")
+  payload       Json
+  attempts      Int       @default(0)
+  availableAt   DateTime  @default(now()) @map("available_at")
+  processedAt   DateTime? @map("processed_at")
+  lastError     String?   @map("last_error")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@index([processedAt, availableAt])
+  @@index([aggregateType, aggregateId])
+  @@map("outbox_events")
+}
+
+/// Request-level idempotency for every state-changing command. Assume the connection drops
+/// mid-request — on this network it will. docs/06_FINANCIAL_ARCHITECTURE.md §7
+model IdempotencyRecord {
+  id             String    @id @default(uuid()) @db.Uuid
+  scope          String
+  key            String
+  userId         String?   @map("user_id") @db.Uuid
+  requestHash    String    @map("request_hash")
+  responseStatus Int?      @map("response_status")
+  responseBody   Json?     @map("response_body")
+  lockedAt       DateTime? @map("locked_at")
+  completedAt    DateTime? @map("completed_at")
+  expiresAt      DateTime  @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@unique([scope, key])
+  @@index([expiresAt])
+  @@map("idempotency_records")
+}

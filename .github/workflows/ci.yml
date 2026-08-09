@@ -86,11 +86,17 @@ jobs:
       - name: Apply migrations
         run: pnpm db:migrate:deploy
 
-      - name: Verify migrations match the schema
-        run: pnpm --filter @langgol/db run migrate:check
+      - name: Verify migration status
+        run: pnpm --filter @langgol/db run migrate:status
+
+      - name: Verify database guarantees exist
+        run: pnpm --filter @langgol/db run verify:guarantees
 
       - name: Seed reference data
         run: pnpm db:seed
+
+      - name: Verify database guarantees actually bite
+        run: pnpm --filter @langgol/db run verify:behaviour
 
   secret-scan:
     name: Secret and dependency scan
