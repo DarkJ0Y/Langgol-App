@@ -27,14 +27,16 @@ DECLARE
     'platform_config_version_positive',
     'notifications_attempts_nonneg',
     'outbox_attempts_nonneg',
-    'idempotency_expiry_after_creation'
+    'idempotency_expiry_after_creation',
+    'users_dev_fixture_reserved_block'
   ];
 
   expected_indexes text[] := ARRAY[
     'addresses_geo_gix',
     'admin_areas_geo_gix',
     'addresses_one_default_per_user',
-    'outbox_events_pending'
+    'outbox_events_pending',
+    'users_development_fixtures'
   ];
 
   expected_triggers text[] := ARRAY[

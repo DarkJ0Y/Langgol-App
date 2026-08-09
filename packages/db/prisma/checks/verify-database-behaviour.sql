@@ -50,6 +50,17 @@ BEGIN
   END;
 
   ----------------------------------------------------------------------------
+  -- The development-fixture flag cannot be attached to a real user's number.
+  ----------------------------------------------------------------------------
+  BEGIN
+    INSERT INTO users (id, phone, full_name, is_development_fixture, updated_at)
+    VALUES (gen_random_uuid(), '+8801712345678', 'Fake Fixture', true, now());
+    RAISE EXCEPTION 'users_dev_fixture_reserved_block allowed a fixture flag outside the reserved block';
+  EXCEPTION WHEN check_violation THEN
+    NULL;
+  END;
+
+  ----------------------------------------------------------------------------
   -- The audit log is append-only.
   ----------------------------------------------------------------------------
   INSERT INTO audit_logs (id, action, entity_type, entity_id)

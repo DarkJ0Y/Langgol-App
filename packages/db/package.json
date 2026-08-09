@@ -23,7 +23,8 @@
     "verify:behaviour": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f prisma/checks/verify-database-behaviour.sql"
   },
   "dependencies": {
-    "@prisma/client": "^6.3.0"
+    "@prisma/client": "^6.3.0",
+    "@langgol/domain": "workspace:*"
   },
   "devDependencies": {
     "prisma": "^6.3.0",

@@ -166,6 +166,11 @@ class InMemoryUsers implements UserRepository {
     return Promise.resolve(row)
   }
 
+  findDevelopmentFixture(): Promise<UserRecord | null> {
+    // OTP mode has no fixtures. Returning null keeps the two paths provably separate.
+    return Promise.resolve(null)
+  }
+
   markPhoneVerified(userId: string, at: Date): Promise<void> {
     const row = this.rows.find((candidate) => candidate.id === userId)
     if (row) row.phoneVerifiedAt = at

@@ -1,4 +1,18 @@
 export {
+  AUTH_MODES,
+  DEVELOPMENT_IDENTITIES,
+  DEVELOPMENT_PHONE_PREFIX,
+  isAuthMode,
+  isModePermitted,
+  assertModePermitted,
+  findDevelopmentIdentity,
+  isDevelopmentPhone,
+  AuthModeError,
+  type AuthMode,
+  type AppEnvironment,
+  type DevelopmentIdentity,
+} from './auth-mode.js'
+export {
   normalizePhone,
   tryNormalizePhone,
   isE164Phone,

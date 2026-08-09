@@ -12,3 +12,10 @@ export {
   type VerifyOtpResult,
   type VerifyOtpDeps,
 } from './verify-otp.js'
+export {
+  developmentSignIn,
+  type DevelopmentSignInCommand,
+  type DevelopmentSignInResult,
+  type DevelopmentSignInDeps,
+} from './development-sign-in.js'
+export { signOut, type SignOutCommand, type SignOutResult, type SignOutDeps } from './sign-out.js'

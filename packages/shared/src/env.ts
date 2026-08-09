@@ -8,6 +8,7 @@
  * Refs: docs/03_ARCHITECTURE.md §7, docs/07_SECURITY.md §11
  */
 
+import { assertModePermitted, isAuthMode } from '@langgol/domain/identity'
 import { z } from 'zod'
 
 const NON_PRODUCTION = new Set(['development', 'test', 'staging'])
@@ -22,6 +23,15 @@ const schema = z.object({
 
   // 32 bytes minimum. A short session secret is a forgeable session.
   AUTH_SECRET: z.string().min(32, 'AUTH_SECRET must be at least 32 characters'),
+
+  /**
+   * How users authenticate.
+   *
+   * `otp` is the production mechanism. `development` allows sign-in as one of a fixed set of
+   * fixture identities so engineering can proceed before SMS infrastructure exists — and is
+   * refused outright in production, below. docs/03_ARCHITECTURE.md ADR-22
+   */
+  AUTH_MODE: z.enum(['development', 'otp']).default('development'),
 
   SMS_PROVIDER: z.enum(['console', 'memory', 'http']).default('console'),
   SMS_API_URL: z.string().optional(),
@@ -40,6 +50,7 @@ const schema = z.object({
 export type Env = z.infer<typeof schema> & {
   readonly isProduction: boolean
   readonly isTest: boolean
+  readonly isDevelopmentAuth: boolean
 }
 
 export class EnvironmentError extends Error {
@@ -69,7 +80,18 @@ export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
   const env = parsed.data
   const isProduction = env.APP_ENV === 'production'
 
-  if (env.SMS_PROVIDER === 'http' && (!env.SMS_API_URL || !env.SMS_API_KEY)) {
+  // Production must never silently fall back to development authentication. A system that
+  // degrades from "no SMS provider" to "anyone may sign in as an administrator" has chosen the
+  // wrong direction to fail in, so this is a startup failure. docs/03_ARCHITECTURE.md ADR-22
+  assertModePermitted(env.APP_ENV, env.AUTH_MODE)
+
+  // An SMS provider is only required when OTP is the active mechanism. Development mode must
+  // not be blocked on infrastructure that does not exist yet.
+  if (
+    env.AUTH_MODE === 'otp' &&
+    env.SMS_PROVIDER === 'http' &&
+    (!env.SMS_API_URL || !env.SMS_API_KEY)
+  ) {
     throw new EnvironmentError(
       'SMS_PROVIDER=http requires SMS_API_URL and SMS_API_KEY. Without them, OTP delivery ' +
         'fails at send time rather than at boot.',
@@ -91,7 +113,12 @@ export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
     )
   }
 
-  return Object.freeze({ ...env, isProduction, isTest: env.APP_ENV === 'test' })
+  return Object.freeze({
+    ...env,
+    isProduction,
+    isTest: env.APP_ENV === 'test',
+    isDevelopmentAuth: env.AUTH_MODE === 'development',
+  })
 }
 
 let cached: Env | undefined
@@ -103,6 +130,8 @@ export function env(): Env {
 }
 
 /** Test-only: reset the memoised environment. */
+export { isAuthMode }
+
 export function resetEnvCache(): void {
   cached = undefined
 }

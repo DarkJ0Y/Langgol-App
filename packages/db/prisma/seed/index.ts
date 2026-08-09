@@ -12,6 +12,7 @@
 import { Prisma, PrismaClient, type AdminAreaType } from '../../generated/client/index.js'
 import { DIVISIONS, type AreaSeed } from './admin-areas.js'
 import { PLATFORM_CONFIG_V1 } from './platform-config.js'
+import { seedDevelopmentFixtures } from './development-fixtures.js'
 
 const prisma = new PrismaClient()
 
@@ -102,6 +103,16 @@ async function main(): Promise<void> {
 
   const config = await seedPlatformConfig()
   console.log(`  platform config:  ${config.created} created, ${config.existing} already present`)
+
+  const appEnv = process.env['APP_ENV'] ?? 'development'
+  const fixtures = await seedDevelopmentFixtures(prisma, appEnv)
+  if (fixtures.skipped) {
+    console.log('  dev fixtures:     skipped (APP_ENV=production)')
+  } else {
+    console.log(
+      `  dev fixtures:     ${fixtures.created} created, ${fixtures.existing} already present`,
+    )
+  }
 
   const withoutCentroid = await prisma.adminArea.count({ where: { centroidLat: null } })
   if (withoutCentroid > 0) {

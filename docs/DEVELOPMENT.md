@@ -91,6 +91,56 @@ Several `PlatformConfig` values are `null` because they are **open product decis
 (pilot loss budget Q1, settlement hold hours Q2, cancellation fee schedule Q3). Code paths that
 need them refuse to proceed rather than assuming a value.
 
+## 3b. Authentication modes
+
+OTP is the production mechanism. `development` mode exists so engineering can proceed before
+SMS infrastructure is contracted — **not** as a fallback.
+
+```bash
+AUTH_MODE=development    # local: no SMS, no OTP, no provider credentials
+AUTH_MODE=otp            # staging while trialling OTP, and production (enforced)
+```
+
+### Development mode
+
+Sign in as one of a **fixed set of fixture identities**: `farmer`, `consumer`, `retailer`,
+`ops`, `admin`, `farmer-consumer`. They are created by `pnpm db:seed` outside production.
+
+```text
+Development authentication → select test identity → session → role selection
+```
+
+It is deliberately **not** an impersonation tool:
+
+| Property                   | How                                                                                                                                           |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| No arbitrary user access   | The only input is a key from a closed allowlist. A user id, phone number or search term is meaningless                                        |
+| No role escalation         | Each fixture's roles are declared in the domain and are not selectable by the caller                                                          |
+| No real accounts reachable | The lookup is scoped in SQL to `is_development_fixture`, and a CHECK constraint confines that flag to the reserved block `+880170000000[1-9]` |
+| Auditable                  | Every sign-in and every rejected attempt writes an `AuditLog` row marked as a development session                                             |
+
+### OTP mode
+
+```text
+Phone → request OTP → verify OTP → session → role selection
+```
+
+Unchanged: phone normalisation, scrypt hashing, expiry, attempt caps, resend cooldown, rate
+limits, SMS spend circuit breaker, SMS adapter, session creation, authorization.
+
+### Production safety
+
+Three independent guards, because one is a convention and three is a control:
+
+1. **Startup** — `APP_ENV=production` with any mode other than `otp` throws `AuthModeError` in
+   `parseEnv`. Production **fails to start**; it never silently permits a development login.
+2. **Use case** — `developmentSignIn` re-asserts the rule, so a mis-wired dependency or a stale
+   cached config cannot open the door.
+3. **Database** — the fixture flag is confined by CHECK to a reserved phone block, and the seed
+   refuses to create fixtures when `APP_ENV=production`.
+
+Enforced entirely server-side. No `NEXT_PUBLIC_*` variable participates in this decision.
+
 ## 4. Everyday commands
 
 ```bash

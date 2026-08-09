@@ -136,6 +136,16 @@ export const userRepository: UserRepository = {
     return toUser(row)
   },
 
+  async findDevelopmentFixture(phone) {
+    // The fixture flag is in the WHERE clause, not checked afterwards. A code path that forgot
+    // the check would return nothing rather than a real user.
+    const row = await prisma.user.findFirst({
+      where: { phone, isDevelopmentFixture: true },
+      include: { roles: { where: { revokedAt: null }, select: { role: true } } },
+    })
+    return row === null ? null : toUser(row)
+  },
+
   async markPhoneVerified(userId, at) {
     await prisma.user.update({ where: { id: userId }, data: { phoneVerifiedAt: at } })
   },

@@ -51,6 +51,9 @@ model User {
   preferredLanguage Language   @default(BN) @map("preferred_language")
   status            UserStatus @default(ACTIVE)
   lastLoginAt       DateTime?  @map("last_login_at")
+  /// Development sign-in can authenticate ONLY these rows, and a CHECK constraint confines the
+  /// flag to a reserved phone block. See the development_auth_fixtures migration.
+  isDevelopmentFixture Boolean @default(false) @map("is_development_fixture")
   createdAt         DateTime   @default(now()) @map("created_at")
   updatedAt         DateTime   @updatedAt @map("updated_at")
   deletedAt         DateTime?  @map("deleted_at")

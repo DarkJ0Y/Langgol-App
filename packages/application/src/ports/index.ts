@@ -104,6 +104,12 @@ export interface UserRepository {
     readonly preferredLanguage: 'BN' | 'EN'
     readonly verifiedAt: Date
   }): Promise<UserRecord>
+  /**
+   * Look up a development fixture BY PHONE, scoped at the database to rows carrying the fixture
+   * flag. Deliberately not a general finder: there is no argument by which this could return a
+   * real user. docs/03_ARCHITECTURE.md ADR-22
+   */
+  findDevelopmentFixture(phone: string): Promise<UserRecord | null>
   markPhoneVerified(userId: string, at: Date): Promise<void>
   recordLogin(userId: string, at: Date): Promise<void>
 }

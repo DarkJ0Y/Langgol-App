@@ -56,6 +56,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@langgol/domain':
+        specifier: workspace:*
+        version: link:../domain
       '@prisma/client':
         specifier: ^6.3.0
         version: 6.19.3(prisma@6.19.3(magicast@0.3.5)(typescript@5.9.3))(typescript@5.9.3)
@@ -111,6 +114,9 @@ importers:
 
   packages/shared:
     dependencies:
+      '@langgol/domain':
+        specifier: workspace:*
+        version: link:../domain
       zod:
         specifier: ^3.24.1
         version: 3.25.76
