@@ -79,6 +79,8 @@ export function middleware(request: NextRequest): NextResponse {
 
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set('x-nonce', nonce)
+  // The layout reads this so the language switch returns to the page you were on.
+  requestHeaders.set('x-pathname', request.nextUrl.pathname)
   // Correlates a request across middleware, server components, actions and logs.
   requestHeaders.set('x-request-id', request.headers.get('x-request-id') ?? crypto.randomUUID())
 

@@ -86,10 +86,29 @@ export const DEVELOPMENT_PHONE_PREFIX = '+880170000000'
 export interface DevelopmentIdentity {
   readonly key: string
   readonly phone: string
+  /** Stored on the user row. Locale-independent; screens render the localised label instead. */
   readonly fullName: string
+  readonly nameBn: string
+  readonly nameEn: string
+  readonly descriptionBn: string
+  readonly descriptionEn: string
   readonly roles: readonly string[]
   readonly preferredLanguage: 'BN' | 'EN'
-  readonly description: string
+}
+
+/** The label to show a reader, in their language. Never a key, an id or a phone number. */
+export function developmentIdentityLabel(
+  identity: DevelopmentIdentity,
+  locale: 'bn' | 'en',
+): { name: string; description: string } {
+  return locale === 'bn'
+    ? { name: identity.nameBn, description: identity.descriptionBn }
+    : { name: identity.nameEn, description: identity.descriptionEn }
+}
+
+/** Resolve a fixture from its phone number. Server-side only — the phone never reaches a page. */
+export function findDevelopmentIdentityByPhone(phone: string): DevelopmentIdentity | undefined {
+  return DEVELOPMENT_IDENTITIES.find((identity) => identity.phone === phone)
 }
 
 /**
@@ -104,49 +123,67 @@ export const DEVELOPMENT_IDENTITIES: readonly DevelopmentIdentity[] = [
     key: 'farmer',
     phone: `${DEVELOPMENT_PHONE_PREFIX}1`,
     fullName: 'Dev Farmer',
+    nameBn: 'ডেভ কৃষক',
+    nameEn: 'Dev Farmer',
+    descriptionBn: 'বাংলা-প্রথম কৃষক — যাঁকে সামনে রেখে পণ্যটি বিচার করা হয়',
+    descriptionEn: 'Bangla-first farmer — the primary user the product is judged against',
     roles: ['FARMER'],
     preferredLanguage: 'BN',
-    description: 'Bangla-first farmer — the primary user the product is judged against',
   },
   {
     key: 'consumer',
     phone: `${DEVELOPMENT_PHONE_PREFIX}2`,
     fullName: 'Dev Consumer',
+    nameBn: 'ডেভ ক্রেতা',
+    nameEn: 'Dev Consumer',
+    descriptionBn: 'ঘরের জন্য যিনি কেনেন',
+    descriptionEn: 'Household buyer',
     roles: ['CONSUMER'],
     preferredLanguage: 'BN',
-    description: 'Household buyer',
   },
   {
     key: 'retailer',
     phone: `${DEVELOPMENT_PHONE_PREFIX}3`,
     fullName: 'Dev Retailer',
+    nameBn: 'ডেভ রিটেইলার',
+    nameEn: 'Dev Retailer',
+    descriptionBn: 'দোকান বা হোটেল, পাইকারি কেনে',
+    descriptionEn: 'Shop or restaurant buying in bulk',
     roles: ['RETAILER'],
     preferredLanguage: 'EN',
-    description: 'Shop or restaurant buying in bulk',
   },
   {
     key: 'ops',
     phone: `${DEVELOPMENT_PHONE_PREFIX}4`,
     fullName: 'Dev Ops Agent',
+    nameBn: 'ডেভ মাঠকর্মী',
+    nameEn: 'Dev Ops Agent',
+    descriptionBn: 'মাঠকর্মী — নিবন্ধন ও ডেলিভারি সমন্বয়',
+    descriptionEn: 'Field agent — assisted onboarding and delivery coordination',
     roles: ['OPS_AGENT'],
     preferredLanguage: 'BN',
-    description: 'Field agent — assisted onboarding and delivery coordination',
   },
   {
     key: 'admin',
     phone: `${DEVELOPMENT_PHONE_PREFIX}5`,
     fullName: 'Dev Admin',
+    nameBn: 'ডেভ অ্যাডমিন',
+    nameEn: 'Dev Admin',
+    descriptionBn: 'প্রশাসক — অ্যাডমিন স্ক্রিন তৈরির জন্য',
+    descriptionEn: 'Administrator — exists so the admin surface can be built and reviewed',
     roles: ['ADMIN'],
     preferredLanguage: 'EN',
-    description: 'Administrator — exists so the admin surface can be built and reviewed',
   },
   {
     key: 'farmer-consumer',
     phone: `${DEVELOPMENT_PHONE_PREFIX}6`,
     fullName: 'Dev Farmer & Buyer',
+    nameBn: 'ডেভ কৃষক ও ক্রেতা',
+    nameEn: 'Dev Farmer & Buyer',
+    descriptionBn: 'এক অ্যাকাউন্টে দুই ভূমিকা — কৃষক যিনি কেনেনও',
+    descriptionEn: 'One account holding two roles — a farmer who also buys',
     roles: ['FARMER', 'CONSUMER'],
     preferredLanguage: 'BN',
-    description: 'One account holding two roles — a farmer who also buys',
   },
 ] as const
 

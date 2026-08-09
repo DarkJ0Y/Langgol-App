@@ -13,7 +13,7 @@
 
 export const bn = {
   common: {
-    appName: 'লংগল',
+    appName: 'লাঙ্গল',
     continue: 'এগিয়ে যান',
     back: 'পেছনে',
     cancel: 'বাতিল',
@@ -25,7 +25,7 @@ export const bn = {
   },
 
   auth: {
-    signInTitle: 'লংগলে প্রবেশ করুন',
+    signInTitle: 'লাঙ্গলে প্রবেশ করুন',
     signInSubtitle: 'আপনার মোবাইল নম্বর দিন। আমরা একটি কোড পাঠাব।',
     phoneLabel: 'মোবাইল নম্বর',
     phonePlaceholder: '01XXXXXXXXX',
@@ -53,7 +53,7 @@ export const bn = {
     codeExpired: 'কোডের মেয়াদ শেষ। নতুন কোড নিন।',
     tooManyAttempts: 'অনেকবার ভুল হয়েছে। একটু পরে আবার চেষ্টা করুন।',
     rateLimited: '{seconds} সেকেন্ড পর আবার চেষ্টা করুন',
-    accountSuspended: 'আপনার অ্যাকাউন্ট বন্ধ আছে। লংগলের সাথে যোগাযোগ করুন।',
+    accountSuspended: 'আপনার অ্যাকাউন্ট বন্ধ আছে। লাঙ্গলের সাথে যোগাযোগ করুন।',
     smsUnavailable: 'এখন এসএমএস পাঠানো যাচ্ছে না। একটু পরে চেষ্টা করুন।',
     network: 'ইন্টারনেট সংযোগ পাওয়া যাচ্ছে না। আবার চেষ্টা করুন।',
     unexpected: 'কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।',

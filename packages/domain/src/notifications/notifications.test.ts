@@ -20,7 +20,7 @@ describe('templates', () => {
     const bn = renderTemplate('auth.otp', 'bn', { code: '123456', minutes: 5 })
     const en = renderTemplate('auth.otp', 'en', { code: '123456', minutes: 5 })
     expect(bn.body).toContain('123456')
-    expect(bn.body).toContain('লংগল')
+    expect(bn.body).toContain('লাঙ্গল')
     expect(en.body).toBe('Your Langgol code is 123456. It expires in 5 minutes. Do not share it.')
   })
 

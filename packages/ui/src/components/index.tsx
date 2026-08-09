@@ -13,6 +13,7 @@
  */
 
 import type {
+  AnchorHTMLAttributes,
   ButtonHTMLAttributes,
   InputHTMLAttributes,
   ReactNode,
@@ -51,6 +52,30 @@ export function Button({
       {loading ? ' ' : null}
       {children}
     </button>
+  )
+}
+
+/**
+ * A link styled as a button.
+ *
+ * Exists because `<a><button/></a>` is invalid HTML — React warns about it, screen readers
+ * announce two nested interactive controls, and keyboard users get two tab stops for one action.
+ * Navigation is a link; submission is a button. They are not interchangeable.
+ */
+export function LinkButton({
+  href,
+  variant = 'primary',
+  children,
+  ...rest
+}: {
+  readonly href: string
+  readonly variant?: 'primary' | 'secondary' | 'ghost' | undefined
+  readonly children: ReactNode
+} & AnchorHTMLAttributes<HTMLAnchorElement>) {
+  return (
+    <a {...rest} href={href} className={classNames('lg-button', `lg-button--${variant}`)}>
+      {children}
+    </a>
   )
 }
 

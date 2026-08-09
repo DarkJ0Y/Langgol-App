@@ -56,7 +56,7 @@ const TEMPLATES: Record<TemplateId, TemplateDefinition> = {
     sensitive: true,
     render: {
       bn: (v) =>
-        `আপনার লংগল কোড ${String(v['code'])}। ${String(v['minutes'])} মিনিটে মেয়াদ শেষ। কাউকে জানাবেন না।`,
+        `আপনার লাঙ্গল কোড ${String(v['code'])}। ${String(v['minutes'])} মিনিটে মেয়াদ শেষ। কাউকে জানাবেন না।`,
       en: (v) =>
         `Your Langgol code is ${String(v['code'])}. It expires in ${String(v['minutes'])} minutes. Do not share it.`,
     },
@@ -68,7 +68,7 @@ const TEMPLATES: Record<TemplateId, TemplateDefinition> = {
     required: ['when'],
     sensitive: false,
     render: {
-      bn: (v) => `নতুন ডিভাইস থেকে আপনার লংগল অ্যাকাউন্টে প্রবেশ হয়েছে (${String(v['when'])})।`,
+      bn: (v) => `নতুন ডিভাইস থেকে আপনার লাঙ্গল অ্যাকাউন্টে প্রবেশ হয়েছে (${String(v['when'])})।`,
       en: (v) => `Your Langgol account was signed in from a new device (${String(v['when'])}).`,
     },
   },
@@ -79,7 +79,7 @@ const TEMPLATES: Record<TemplateId, TemplateDefinition> = {
     required: ['role'],
     sensitive: false,
     render: {
-      bn: (v) => `আপনার লংগল অ্যাকাউন্টে নতুন ভূমিকা যোগ হয়েছে: ${String(v['role'])}।`,
+      bn: (v) => `আপনার লাঙ্গল অ্যাকাউন্টে নতুন ভূমিকা যোগ হয়েছে: ${String(v['role'])}।`,
       en: (v) => `A new role was added to your Langgol account: ${String(v['role'])}.`,
     },
   },

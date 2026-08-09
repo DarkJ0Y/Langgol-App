@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { DEVELOPMENT_IDENTITIES } from '@langgol/domain/identity'
+import { DEVELOPMENT_IDENTITIES, developmentIdentityLabel } from '@langgol/domain/identity'
 import { createTranslator } from '@langgol/i18n'
 import { Alert, Card } from '@langgol/ui/components'
 import { getLocale } from '@/lib/locale'
@@ -22,11 +22,12 @@ export default async function DevelopmentAuthPage() {
   const locale = await getLocale()
   const t = createTranslator(locale)
 
-  const identities = DEVELOPMENT_IDENTITIES.map((identity) => ({
-    key: identity.key,
-    label: identity.fullName,
-    description: identity.description,
-  }))
+  // The key is the only internal value that crosses to the browser, and it is opaque. No id,
+  // no phone number, no role control — and the label is in the reader's language.
+  const identities = DEVELOPMENT_IDENTITIES.map((identity) => {
+    const localised = developmentIdentityLabel(identity, locale)
+    return { key: identity.key, label: localised.name, description: localised.description }
+  })
 
   return (
     <div className="lg-stack">

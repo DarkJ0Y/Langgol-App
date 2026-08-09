@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
-import { Alert, Button, FormField, OtpInput } from '@langgol/ui/components'
+import { Alert, Button, FormField, LinkButton, OtpInput } from '@langgol/ui/components'
 import { verifyOtpAction } from '@/app/actions/auth'
 import { idleActionState } from '@/app/actions/state'
 
@@ -53,11 +53,9 @@ export function VerifyForm({ labels }: { labels: VerifyFormLabels }) {
         {pending ? labels.loading : labels.submit}
       </Button>
 
-      <a href="/auth/phone">
-        <Button type="button" variant="ghost">
-          {labels.resend}
-        </Button>
-      </a>
+      <LinkButton href="/auth/phone" variant="ghost">
+        {labels.resend}
+      </LinkButton>
     </form>
   )
 }

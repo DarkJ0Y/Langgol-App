@@ -363,3 +363,99 @@ body {
 .lg-skip-link:focus {
   top: var(--lg-space-2);
 }
+
+/* ---------------------------------------------------------------- responsive */
+
+/*
+ * Mobile-first foundation. The design target is a 320px-wide low-cost Android phone; wider
+ * screens get a little breathing room and nothing else. This is a foundation, not a desktop
+ * design — that arrives when there are screens worth designing for.
+ */
+
+/* Nothing may push the page sideways. Long Bangla words, farm names and phone numbers all wrap. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.lg-title,
+.lg-subtitle,
+.lg-label,
+.lg-hint,
+.lg-error,
+.lg-alert,
+.lg-choice__label,
+.lg-choice__description,
+.lg-brand {
+  overflow-wrap: anywhere;
+}
+
+/* Media, inputs and buttons never exceed their container. */
+img,
+svg,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+.lg-input,
+.lg-button,
+.lg-choice,
+.lg-card {
+  max-width: 100%;
+}
+
+/* At 320px the card's own padding is most of the screen; trim it and the page gutter. */
+@media (max-width: 24rem) {
+  .lg-main {
+    padding-inline: var(--lg-space-3);
+  }
+
+  .lg-card {
+    padding: var(--lg-space-4);
+  }
+
+  .lg-title {
+    font-size: var(--lg-text-xl);
+  }
+}
+
+/* The header must survive a long brand plus a language button without wrapping into a mess. */
+.lg-header {
+  flex-wrap: wrap;
+  row-gap: var(--lg-space-2);
+}
+
+/* Beyond the reading column, centre rather than stretch. Long lines are hard to read in any
+   script and worse in Bangla. */
+@media (min-width: 48rem) {
+  .lg-main {
+    padding-block: var(--lg-space-10);
+  }
+
+  .lg-header {
+    padding-inline: var(--lg-space-6);
+  }
+}
+
+/* A ghost button is inline-sized, so give it a real hit area rather than just text. */
+.lg-button--ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* LinkButton is an anchor wearing button styles; anchors are inline by default. */
+a.lg-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  text-align: center;
+}
+
+a.lg-button--primary,
+a.lg-button--secondary {
+  display: flex;
+}

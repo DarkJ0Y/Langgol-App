@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { Money, Quantity } from '@langgol/domain'
+import { DEVELOPMENT_IDENTITIES, developmentIdentityLabel } from '@langgol/domain/identity'
 import { bn, en, createTranslator, isLocale, LOCALES, DEFAULT_LOCALE } from './index.js'
 
 describe('catalogues', () => {
@@ -33,8 +34,8 @@ describe('Bangla text characteristics', () => {
   const t = createTranslator('bn')
 
   it('renders Bangla, not transliterated English', () => {
-    expect(t.t('auth.signInTitle')).toBe('লংগলে প্রবেশ করুন')
-    expect(t.t('common.appName')).toBe('লংগল')
+    expect(t.t('auth.signInTitle')).toBe('লাঙ্গলে প্রবেশ করুন')
+    expect(t.t('common.appName')).toBe('লাঙ্গল')
   })
 
   it('keeps button labels short enough for a narrow phone', () => {
@@ -93,7 +94,7 @@ describe('numerals', () => {
   it('honours a reader who prefers Western digits inside a Bangla interface', () => {
     const t = createTranslator('bn', { banglaNumerals: false })
     expect(t.digits(1234)).toBe('1234')
-    expect(t.t('auth.signInTitle')).toBe('লংগলে প্রবেশ করুন')
+    expect(t.t('auth.signInTitle')).toBe('লাঙ্গলে প্রবেশ করুন')
   })
 })
 
@@ -139,5 +140,58 @@ describe('dates', () => {
   it('renders date and time together', () => {
     expect(createTranslator('en').formatDateTime(midday)).toBe('10 August 2026, 12:00')
     expect(createTranslator('bn').formatDateTime(midday)).toBe('১০ আগস্ট ২০২৬, ১২:০০')
+  })
+})
+
+describe('brandmark', () => {
+  // Langgol is লাঙ্গল — the plough. The brand is named after the implement, so the Bangla
+  // wordmark is the actual word, not a phonetic respelling of the English.
+  const BANGLA_BRAND = 'লাঙ্গল'
+
+  it('uses the agricultural Bangla wordmark, and the English brand unchanged', () => {
+    expect(bn.common.appName).toBe(BANGLA_BRAND)
+    expect(en.common.appName).toBe('Langgol')
+  })
+
+  it('cannot diverge between locales — every Bangla string using the brand uses this spelling', () => {
+    // Catches a copy edit that reintroduces a phonetic variant in one string but not another.
+    const strings = (value: unknown): string[] =>
+      typeof value === 'string' ? [value] : Object.values(value as object).flatMap(strings)
+
+    for (const message of strings(bn)) {
+      // Any Bangla message mentioning the brand must spell it the approved way. Detect a
+      // near-miss by looking for the phonetic variant explicitly.
+      expect(message).not.toContain('লংগল')
+    }
+    expect(strings(bn).some((message) => message.includes(BANGLA_BRAND))).toBe(true)
+  })
+})
+
+describe('development fixture labels', () => {
+  it('are localised in both languages, with no key, id or phone number', () => {
+    for (const identity of DEVELOPMENT_IDENTITIES) {
+      const banglaLabel = developmentIdentityLabel(identity, 'bn')
+      const englishLabel = developmentIdentityLabel(identity, 'en')
+
+      expect(banglaLabel.name).toMatch(/[ঀ-৿]/) // contains Bangla
+      expect(englishLabel.name).toBe(identity.fullName)
+
+      for (const label of [banglaLabel, englishLabel]) {
+        expect(label.name).not.toContain(identity.phone)
+        expect(label.name).not.toContain(identity.key)
+        expect(label.description.length).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('keeps the internal keys unchanged', () => {
+    expect(DEVELOPMENT_IDENTITIES.map((identity) => identity.key)).toEqual([
+      'farmer',
+      'consumer',
+      'retailer',
+      'ops',
+      'admin',
+      'farmer-consumer',
+    ])
   })
 })

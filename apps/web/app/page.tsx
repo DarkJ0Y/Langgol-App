@@ -1,5 +1,6 @@
 import { createTranslator } from '@langgol/i18n'
-import { Alert, Button, Card } from '@langgol/ui/components'
+import { developmentIdentityLabel, findDevelopmentIdentityByPhone } from '@langgol/domain/identity'
+import { Alert, Button, Card, LinkButton } from '@langgol/ui/components'
 import { getLocale } from '@/lib/locale'
 import { getSession } from '@/lib/session'
 import { signOutAction } from './actions/auth'
@@ -14,17 +15,22 @@ export default async function HomePage() {
       <Card>
         <h1 className="lg-title">{t.t('common.appName')}</h1>
         <p className="lg-subtitle">{t.t('auth.signInSubtitle')}</p>
-        <a href="/auth">
-          <Button type="button">{t.t('auth.signInTitle')}</Button>
-        </a>
+        <LinkButton href="/auth">{t.t('auth.signInTitle')}</LinkButton>
       </Card>
     )
   }
 
+  // A fixture shows its localised label; a real account shows the name it was registered with.
+  const fixture = session.isDevelopmentFixture
+    ? findDevelopmentIdentityByPhone(session.phone)
+    : undefined
+  const displayName =
+    fixture === undefined ? session.fullName : developmentIdentityLabel(fixture, locale).name
+
   return (
     <div className="lg-stack">
       <Card>
-        <h1 className="lg-title">{session.fullName}</h1>
+        <h1 className="lg-title">{displayName}</h1>
         <p className="lg-subtitle">
           {session.roles.length === 0
             ? t.t('auth.chooseRole')

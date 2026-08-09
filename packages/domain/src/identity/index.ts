@@ -6,6 +6,8 @@ export {
   isModePermitted,
   assertModePermitted,
   findDevelopmentIdentity,
+  findDevelopmentIdentityByPhone,
+  developmentIdentityLabel,
   isDevelopmentPhone,
   AuthModeError,
   type AuthMode,

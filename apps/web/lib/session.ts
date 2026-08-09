@@ -38,6 +38,8 @@ export interface SessionUser {
   readonly status: 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED'
   readonly preferredLanguage: 'BN' | 'EN'
   readonly isDevelopmentFixture: boolean
+  /** Server-side only. Never rendered; used to resolve a fixture’s localised label. */
+  readonly phone: string
   readonly expiresAt: Date
 }
 
@@ -63,6 +65,7 @@ export async function getSession(): Promise<SessionUser | null> {
       user: {
         select: {
           id: true,
+          phone: true,
           fullName: true,
           status: true,
           preferredLanguage: true,
@@ -79,6 +82,7 @@ export async function getSession(): Promise<SessionUser | null> {
   return {
     userId: row.user.id,
     fullName: row.user.fullName,
+    phone: row.user.phone,
     roles: row.user.roles.map((assignment) => assignment.role),
     status: row.user.status,
     preferredLanguage: row.user.preferredLanguage,
