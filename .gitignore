@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# Test output
+coverage/
+.vitest/
+
+# Environment — NEVER commit real secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Prisma generated client
+packages/db/generated/
+
+# Local scratch
+tmp/
+scratch/

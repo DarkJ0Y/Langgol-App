@@ -1,0 +1,14 @@
+{
+  "name": "@langgol/config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared TypeScript, ESLint and lint-rule configuration for the Langgol monorepo",
+  "exports": {
+    "./tsconfig/library.json": "./tsconfig/library.json",
+    "./tsconfig/next.json": "./tsconfig/next.json",
+    "./eslint": "./eslint/index.js",
+    "./eslint-rules": "./eslint/rules/index.js"
+  },
+  "files": ["tsconfig", "eslint"]
+}
