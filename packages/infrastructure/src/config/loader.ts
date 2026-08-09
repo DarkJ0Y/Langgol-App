@@ -12,11 +12,12 @@ import { prisma } from '@langgol/db'
 import { createConfigSnapshot, type ConfigEntry, type ConfigSnapshot } from '@langgol/domain/config'
 
 /**
- * Cache lifetime. Long enough that config is not a per-request query; short enough that a rate
+ * Cache lifetime — an infrastructure constant, not a business parameter.
+ * Long enough that config is not a per-request query; short enough that a rate
  * change reaches every instance within a minute without a deploy. A rate change is a product
  * decision, and product decisions should not require an engineer.
  */
-const CACHE_TTL_MS = 60_000
+const CACHE_LIFETIME_MS = 60_000
 
 interface CacheEntry {
   readonly snapshot: ConfigSnapshot
@@ -46,7 +47,7 @@ export async function loadConfigSnapshot(now: Date = new Date()): Promise<Config
 /** Cached accessor for request paths. */
 export async function getConfig(now: Date = new Date()): Promise<ConfigSnapshot> {
   const age = cache === undefined ? Infinity : now.getTime() - cache.loadedAt
-  if (cache !== undefined && age < CACHE_TTL_MS) return cache.snapshot
+  if (cache !== undefined && age < CACHE_LIFETIME_MS) return cache.snapshot
 
   const snapshot = await loadConfigSnapshot(now)
   cache = { snapshot, loadedAt: now.getTime() }
