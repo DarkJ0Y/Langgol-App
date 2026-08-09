@@ -15,6 +15,8 @@
  * Refs: docs/06_FINANCIAL_ARCHITECTURE.md §2, §4
  */
 
+import { toAsciiDigits } from '../intl/numerals.js'
+import { divideRounded } from '../math/integer.js'
 import { MoneyError } from './errors.js'
 import type { Poisha, RoundingMode } from './types.js'
 
@@ -118,16 +120,9 @@ export function fromTaka(value: string): Poisha {
   return guard(negative ? -magnitude : magnitude, 'fromTaka')
 }
 
-const BANGLA_DIGITS = '০১২৩৪৫৬৭৮৯'
-
 /** Convert Bangla digits to ASCII so a farmer typing `১২৩` is understood. */
 export function normalizeDigits(input: string): string {
-  let out = ''
-  for (const character of input) {
-    const index = BANGLA_DIGITS.indexOf(character)
-    out += index === -1 ? character : String(index)
-  }
-  return out
+  return toAsciiDigits(input)
 }
 
 /**
@@ -184,20 +179,7 @@ function divideBigInt(numerator: bigint, denominator: bigint, mode: RoundingMode
   if (denominator === 0n) {
     throw new MoneyError('DIVISION_BY_ZERO', 'Division by zero in money arithmetic')
   }
-
-  // Normalise so the denominator is positive; the sign rides on the numerator.
-  const n = denominator < 0n ? -numerator : numerator
-  const d = denominator < 0n ? -denominator : denominator
-
-  const quotient = n / d
-  const remainder = n % d
-  if (remainder === 0n) return quotient
-  if (mode === 'TRUNCATE') return quotient
-
-  // HALF_UP: ties round away from zero.
-  const twiceRemainder = (remainder < 0n ? -remainder : remainder) * 2n
-  if (twiceRemainder >= d) return remainder > 0n ? quotient + 1n : quotient - 1n
-  return quotient
+  return divideRounded(numerator, denominator, mode)
 }
 
 /** Divide by a whole number, rounding half-up by default. */

@@ -12,21 +12,11 @@
  * Refs: docs/08_BANGLADESH_CONTEXT.md §1, §5
  */
 
+import { toBanglaDigits } from '../intl/numerals.js'
 import { POISHA_PER_TAKA } from './money.js'
 import type { FormatOptions, MoneyLocale, Poisha } from './types.js'
 
 const TAKA_SYMBOL = '৳'
-const BANGLA_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'] as const
-
-function toBanglaDigits(input: string): string {
-  let out = ''
-  for (const character of input) {
-    const digit = BANGLA_DIGITS[character.charCodeAt(0) - 48]
-    out += digit === undefined ? character : digit
-  }
-  return out
-}
-
 /** `123456` → `1,23,456`. */
 function groupSouthAsian(digits: string): string {
   if (digits.length <= 3) return digits

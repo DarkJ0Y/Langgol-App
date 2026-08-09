@@ -11,7 +11,7 @@
 | -------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | Primary keys   | UUID v7 (`gen_random_uuid()` at MVP; migrate to v7 generator in app layer for index locality). Never expose sequential ids |
 | Money          | `BigInt` **poisha** (1 BDT = 100 poisha). Never `Float`, never `Decimal` for money. Column names end in `Poisha`           |
-| Quantity       | `BigInt` in the product's **base unit** (grams, millilitres, or pieces). Column names end in `Base`                        |
+| Quantity       | `BigInt` in the product's **base unit** (milligrams, millilitres, or pieces). Column names end in `Base`. See §6.1         |
 | Time           | `timestamptz`, UTC in the database, rendered in `Asia/Dhaka` (UTC+6) in the UI                                             |
 | Naming         | Tables `snake_case` plural via `@@map`; Prisma models `PascalCase` singular; enums `SCREAMING_SNAKE`                       |
 | Deletes        | No hard deletes on any financial, order, or identity record. `deletedAt` + status enums                                    |
@@ -360,8 +360,8 @@ model RetailerProfile {
 ## 6. Schema — farms, catalogue, listings
 
 ```prisma
-enum BaseUnit         { GRAM  MILLILITRE  PIECE }
-enum SaleUnit         { KG  GRAM  PIECE  DOZEN  MON  LITRE }   // MON = 40 seer ≈ 37.324 kg
+enum BaseUnit         { MILLIGRAM  MILLILITRE  PIECE }   // see §6.1
+enum SaleUnit         { KG  GRAM  MILLIGRAM  MON  SEER  PIECE  HALI  DOZEN  LITRE  MILLILITRE }
 enum PerishabilityClass { HIGHLY_PERISHABLE  PERISHABLE  SEMI_DURABLE  DURABLE }
 enum ListingStatus    { DRAFT  PENDING_REVIEW  PUBLISHED  PAUSED  SOLD_OUT  EXPIRED  REMOVED }
 enum QualityGrade     { A  B  C  UNGRADED }
@@ -523,6 +523,21 @@ model ListingReservation {
   @@map("listing_reservations")
 }
 ```
+
+### 6.1 Why mass is stored in milligrams, not grams
+
+**Changed during P1 implementation.** The original design specified grams as the mass base unit. Implementing the unit-conversion table showed that grams cannot represent the local units exactly:
+
+| Unit        | Exact metric value   | In grams                   | In milligrams |
+| ----------- | -------------------- | -------------------------- | ------------- |
+| Seer        | 0.93310 kg (80 tola) | 933.1 — **not an integer** | 933,100 ✓     |
+| Mon (maund) | 37.3240 kg (40 seer) | 37,324 ✓                   | 37,324,000 ✓  |
+
+A gram base forces `SEER` to round to 933 g, a 0.1 g error per seer and 4 g per mon. That is small — roughly 0.01% — but it is a **silent, systematic** error that accumulates in exactly the direction nobody notices, and it lands on the farmer whenever produce is quoted in seer and settled in kilograms. Since [`00_PRODUCT_VISION.md`](00_PRODUCT_VISION.md) §11 forbids claiming precision we do not have, storing an approximation as though it were exact is not acceptable.
+
+Milligrams make every supported unit an exact integer, cost nothing (`BIGINT` either way — a 500 kg order is 5×10^8 mg, far inside range), and remove a whole class of reconciliation disputes.
+
+`sale_unit_in_base_units` therefore holds: `KG` = 1,000,000 · `GRAM` = 1,000 · `SEER` = 933,100 · `MON` = 37,324,000.
 
 **Why a curated `Product` catalogue rather than free-text.** Free-text product names destroy search, make listings incomparable, break the delivered-cost engine (which needs perishability and density), and make `PriceObservation` matching impossible. A field agent can add catalogue entries; farmers select. This is a deliberate constraint on farmer input, and the farmer app must make selection fast (recent products, icons, Bangla-first search).
 

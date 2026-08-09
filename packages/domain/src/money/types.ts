@@ -20,17 +20,8 @@ declare const poishaBrand: unique symbol
  */
 export type Poisha = bigint & { readonly [poishaBrand]: 'Poisha' }
 
-/**
- * Rounding behaviour for division.
- *
- * - `HALF_UP` — ties round **away from zero** (2.5 → 3, −2.5 → −3). This is the normative
- *   rounding rule for line totals and fees. See docs/02_DATABASE.md §1.1.
- * - `TRUNCATE` — drop the remainder, rounding **toward zero**. Used where a conservative
- *   share is wanted and the remainder is redistributed explicitly (see `allocate`).
- */
-export type RoundingMode = 'HALF_UP' | 'TRUNCATE'
+export type { RoundingMode } from '../math/integer.js'
 
-/** Supported display locales. Bangla is the default for farmer-facing surfaces. */
 export type MoneyLocale = 'bn' | 'en'
 
 export interface FormatOptions {
