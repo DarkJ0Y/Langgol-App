@@ -21,17 +21,7 @@ import { isErr } from '@langgol/shared'
 import { authMode, developmentDeps, otpDeps, authDeps } from '@/lib/deps'
 import { getLocale } from '@/lib/locale'
 import { clearSessionCookie, getSession, readSessionToken, setSessionCookie } from '@/lib/session'
-import type { MessageKey } from '@langgol/i18n'
-
-export interface ActionState {
-  readonly status: 'idle' | 'error'
-  /** A message KEY, not a message — the client renders it in the reader's language. */
-  readonly errorKey?: MessageKey | undefined
-  readonly errorValues?: Record<string, string | number> | undefined
-  readonly field?: string | undefined
-}
-
-const IDLE: ActionState = { status: 'idle' }
+import type { ActionState } from './state'
 
 /** Client-supplied strings are never trusted; the request's own metadata is. */
 async function requestMeta(): Promise<{ ipAddress: string | null; userAgent: string | null }> {
@@ -218,5 +208,3 @@ export async function signOutAction(formData: FormData): Promise<void> {
   await clearSessionCookie()
   redirect('/')
 }
-
-export { IDLE as idleActionState }

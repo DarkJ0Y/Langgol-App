@@ -2,7 +2,8 @@
 
 import { useActionState } from 'react'
 import { Alert, Button, Choice } from '@langgol/ui/components'
-import { idleActionState, selectRoleAction } from '@/app/actions/auth'
+import { selectRoleAction } from '@/app/actions/auth'
+import { idleActionState } from '@/app/actions/state'
 
 export interface RoleOption {
   readonly value: string

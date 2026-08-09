@@ -2,7 +2,8 @@
 
 import { useActionState } from 'react'
 import { Alert, Button, FormField, PhoneInput } from '@langgol/ui/components'
-import { idleActionState, requestOtpAction } from '@/app/actions/auth'
+import { requestOtpAction } from '@/app/actions/auth'
+import { idleActionState } from '@/app/actions/state'
 
 export interface PhoneFormLabels {
   readonly phone: string

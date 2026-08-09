@@ -2,7 +2,8 @@
 
 import { useActionState } from 'react'
 import { Alert, Button, Choice } from '@langgol/ui/components'
-import { developmentSignInAction, idleActionState } from '@/app/actions/auth'
+import { developmentSignInAction } from '@/app/actions/auth'
+import { idleActionState } from '@/app/actions/state'
 
 export interface IdentityOption {
   readonly key: string

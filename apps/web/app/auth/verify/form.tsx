@@ -2,7 +2,8 @@
 
 import { useActionState } from 'react'
 import { Alert, Button, FormField, OtpInput } from '@langgol/ui/components'
-import { idleActionState, verifyOtpAction } from '@/app/actions/auth'
+import { verifyOtpAction } from '@/app/actions/auth'
+import { idleActionState } from '@/app/actions/state'
 
 export interface VerifyFormLabels {
   readonly code: string

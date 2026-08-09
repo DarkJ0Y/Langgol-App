@@ -101,7 +101,10 @@ export const PLATFORM_CONFIG_V1: readonly ConfigSeed[] = [
   },
   {
     key: 'settlement.holdHours',
-    value: { NEW: null, STANDARD: null, TRUSTED: null },
+    // null, not an object of nulls: null is the convention for an open product decision, and
+    // require() then raises CONFIG_NOT_SET at the point of use. An object of nulls instead fails
+    // SCHEMA validation, which takes down the whole snapshot and stops the app booting at all.
+    value: null,
     note: 'UNSET — open decision Q2. Null means the settlement job refuses to release rather than guessing.',
   },
 

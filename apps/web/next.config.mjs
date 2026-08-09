@@ -24,6 +24,17 @@ const nextConfig = {
   // Windows, hits the protected 'Application Data' junction in the user's home directory.
   outputFileTracingRoot: path.join(import.meta.dirname, '../..'),
 
+  // Workspace sources use Node16-style '.js' specifiers that point at '.ts' files. tsx and
+  // vitest resolve these natively; webpack needs to be told. Without it every cross-package
+  // import fails with 'Can't resolve ./client.js'.
+  webpack: (config) => {
+    config.resolve.extensionAlias = {
+      ...(config.resolve.extensionAlias ?? {}),
+      '.js': ['.ts', '.tsx', '.js'],
+    }
+    return config
+  },
+
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: false },
 }
