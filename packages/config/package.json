@@ -10,5 +10,8 @@
     "./eslint": "./eslint/index.js",
     "./eslint-rules": "./eslint/rules/index.js"
   },
-  "files": ["tsconfig", "eslint"]
+  "files": [
+    "tsconfig",
+    "eslint"
+  ]
 }

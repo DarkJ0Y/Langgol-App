@@ -16,7 +16,7 @@ Langgol is a digital operating system for the agricultural ecosystem of Banglade
 
 Langgol is not "an online grocery marketplace." The hypothesis under test is narrower and harder:
 
-> **Can Langgol connect agricultural supply with nearby demand such that the farmer's realized price rises *and* the buyer's delivered cost falls, at the same time, on the same transaction — and can we measure it?**
+> **Can Langgol connect agricultural supply with nearby demand such that the farmer's realized price rises _and_ the buyer's delivered cost falls, at the same time, on the same transaction — and can we measure it?**
 
 Both sides can only improve simultaneously if the margin Langgol removes from the existing chain exceeds the cost Langgol adds back (logistics, handling, payments, platform). That is an empirical question, not a slogan. See [`01_MVP_REQUIREMENTS.md`](01_MVP_REQUIREMENTS.md) §7 for how we measure it and [`08_BANGLADESH_CONTEXT.md`](08_BANGLADESH_CONTEXT.md) §6 for the existing chain we are competing with.
 
@@ -24,18 +24,18 @@ Both sides can only improve simultaneously if the margin Langgol removes from th
 
 For every candidate match the platform must eventually reason over:
 
-| Input | Why it matters |
-|---|---|
-| Farm-gate price | Farmer's ask |
-| Quantity | Determines per-unit logistics amortization |
-| Distance & route | Dominates delivered cost at small basket sizes |
-| Transport cost | Vehicle class, fuel, load factor, backhaul |
-| Handling / packing | Crates, loading, grading, wastage |
-| Delivery time | Freshness decay, buyer patience |
-| Spoilage risk | Perishability × time × handling × temperature |
-| Quality / grade | Two "tomatoes" are not the same good |
-| Seller reliability | Fulfilment probability, cancellation history |
-| Platform fees | Commission, payment cost |
+| Input              | Why it matters                                 |
+| ------------------ | ---------------------------------------------- |
+| Farm-gate price    | Farmer's ask                                   |
+| Quantity           | Determines per-unit logistics amortization     |
+| Distance & route   | Dominates delivered cost at small basket sizes |
+| Transport cost     | Vehicle class, fuel, load factor, backhaul     |
+| Handling / packing | Crates, loading, grading, wastage              |
+| Delivery time      | Freshness decay, buyer patience                |
+| Spoilage risk      | Perishability × time × handling × temperature  |
+| Quality / grade    | Two "tomatoes" are not the same good           |
+| Seller reliability | Fulfilment probability, cancellation history   |
+| Platform fees      | Commission, payment cost                       |
 
 **The cheapest farm-gate price is not the cheapest delivered price. The nearest farmer is not always the best supplier.** Ranking by distance alone, or by price alone, is a product failure. The mechanism is specified in [`04_MARKETPLACE.md`](04_MARKETPLACE.md).
 
@@ -49,18 +49,20 @@ Illustrative figures only — real coefficients come from the pilot.
 
 Farmer B is ৳5/kg cheaper at the farm gate. But 5 kg cannot amortize a 240 km round trip. Once transport, handling and spoilage are attributed, Farmer A is decisively cheaper delivered. At **500 kg**, on a shared route, with a return load, the answer may invert.
 
-The product's job is to compute that, show the breakdown, and let the buyer see *why*. This is the difference between Langgol and a listings site.
+The product's job is to compute that, show the breakdown, and let the buyer see _why_. This is the difference between Langgol and a listings site.
 
 ---
 
 ## 3. What Langgol is — and is not
 
 **Is:**
+
 - A matching and coordination layer for agricultural supply and demand
 - A transaction system of record with real financial rigour
 - A measurement instrument for agricultural economics in Bangladesh
 
 **Is not (yet, and not by accident):**
+
 - A lender, bank, or holder of customer funds
 - A cryptocurrency or an open-value wallet
 - A logistics fleet owner
@@ -97,7 +99,7 @@ Farmers → Supply → Buyers → Transactions → Transaction history
    → Higher production → More supply
 ```
 
-Lending without transaction history is not fintech, it is charity with extra steps and a regulatory violation. The marketplace *is* the underwriting data-collection programme. See [`08_BANGLADESH_CONTEXT.md`](08_BANGLADESH_CONTEXT.md) §7.4 on why unlicensed lending is not an option in Bangladesh regardless of product appetite.
+Lending without transaction history is not fintech, it is charity with extra steps and a regulatory violation. The marketplace _is_ the underwriting data-collection programme. See [`08_BANGLADESH_CONTEXT.md`](08_BANGLADESH_CONTEXT.md) §7.4 on why unlicensed lending is not an option in Bangladesh regardless of product appetite.
 
 ---
 
@@ -115,7 +117,7 @@ The flywheel only spins with **density**. Ten farmers spread across eight distri
 
 ## 7. Product principle: do not destroy every intermediary
 
-The Bangladeshi chain — *foria* (village collector), *bepari* (trader), *aratdar* (commission agent at the wholesale market), *paikar* (wholesaler), retailer — is often described as pure rent extraction. It is not. Those actors supply real services:
+The Bangladeshi chain — _foria_ (village collector), _bepari_ (trader), _aratdar_ (commission agent at the wholesale market), _paikar_ (wholesaler), retailer — is often described as pure rent extraction. It is not. Those actors supply real services:
 
 aggregation · pre-harvest financing · transport · storage · grading · market access · price risk absorption · trust enforcement
 
@@ -123,7 +125,7 @@ Langgol's objective:
 
 > **Remove unnecessary cost and opacity — not useful economic activity.**
 
-Where an aggregator genuinely adds value, Langgol should onboard and coordinate them as a first-class role rather than route around them. The competitive attack surface is *opacity and unnecessary hops*, not intermediation itself.
+Where an aggregator genuinely adds value, Langgol should onboard and coordinate them as a first-class role rather than route around them. The competitive attack surface is _opacity and unnecessary hops_, not intermediation itself.
 
 ---
 
@@ -175,15 +177,15 @@ If that holds, everything in §4 can grow around it. If it does not, no amount o
 
 ## Related documents
 
-| Doc | Contents |
-|---|---|
-| [`01_MVP_REQUIREMENTS.md`](01_MVP_REQUIREMENTS.md) | Pilot scope, user stories, acceptance criteria, metrics |
-| [`02_DATABASE.md`](02_DATABASE.md) | Schema, constraints, indexes, migrations |
-| [`03_ARCHITECTURE.md`](03_ARCHITECTURE.md) | Stack, layering, provider abstractions, ADRs |
-| [`04_MARKETPLACE.md`](04_MARKETPLACE.md) | Delivered-cost engine, ranking, quotes, inventory |
-| [`05_ORDER_SYSTEM.md`](05_ORDER_SYSTEM.md) | Order state machine, fulfilment, cancellation, disputes |
-| [`06_FINANCIAL_ARCHITECTURE.md`](06_FINANCIAL_ARCHITECTURE.md) | Money, ledger, settlement, idempotency, tax |
-| [`07_SECURITY.md`](07_SECURITY.md) | Threat model, authn/authz, audit, abuse |
-| [`08_BANGLADESH_CONTEXT.md`](08_BANGLADESH_CONTEXT.md) | Geography, language, payments, market structure, regulation |
-| [`09_ROADMAP.md`](09_ROADMAP.md) | Phases, gates, risks, kill criteria |
-| [`10_ECONOMIC_MEASUREMENT.md`](10_ECONOMIC_MEASUREMENT.md) | Metrics, formulas, baselines, experiments, loss budget, go/no-go gates |
+| Doc                                                            | Contents                                                               |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| [`01_MVP_REQUIREMENTS.md`](01_MVP_REQUIREMENTS.md)             | Pilot scope, user stories, acceptance criteria, metrics                |
+| [`02_DATABASE.md`](02_DATABASE.md)                             | Schema, constraints, indexes, migrations                               |
+| [`03_ARCHITECTURE.md`](03_ARCHITECTURE.md)                     | Stack, layering, provider abstractions, ADRs                           |
+| [`04_MARKETPLACE.md`](04_MARKETPLACE.md)                       | Delivered-cost engine, ranking, quotes, inventory                      |
+| [`05_ORDER_SYSTEM.md`](05_ORDER_SYSTEM.md)                     | Order state machine, fulfilment, cancellation, disputes                |
+| [`06_FINANCIAL_ARCHITECTURE.md`](06_FINANCIAL_ARCHITECTURE.md) | Money, ledger, settlement, idempotency, tax                            |
+| [`07_SECURITY.md`](07_SECURITY.md)                             | Threat model, authn/authz, audit, abuse                                |
+| [`08_BANGLADESH_CONTEXT.md`](08_BANGLADESH_CONTEXT.md)         | Geography, language, payments, market structure, regulation            |
+| [`09_ROADMAP.md`](09_ROADMAP.md)                               | Phases, gates, risks, kill criteria                                    |
+| [`10_ECONOMIC_MEASUREMENT.md`](10_ECONOMIC_MEASUREMENT.md)     | Metrics, formulas, baselines, experiments, loss budget, go/no-go gates |

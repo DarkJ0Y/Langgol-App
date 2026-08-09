@@ -7,17 +7,17 @@
 
 ## 1. Conventions
 
-| Rule | Decision |
-|---|---|
-| Primary keys | UUID v7 (`gen_random_uuid()` at MVP; migrate to v7 generator in app layer for index locality). Never expose sequential ids |
-| Money | `BigInt` **poisha** (1 BDT = 100 poisha). Never `Float`, never `Decimal` for money. Column names end in `Poisha` |
-| Quantity | `BigInt` in the product's **base unit** (grams, millilitres, or pieces). Column names end in `Base` |
-| Time | `timestamptz`, UTC in the database, rendered in `Asia/Dhaka` (UTC+6) in the UI |
-| Naming | Tables `snake_case` plural via `@@map`; Prisma models `PascalCase` singular; enums `SCREAMING_SNAKE` |
-| Deletes | No hard deletes on any financial, order, or identity record. `deletedAt` + status enums |
-| Money mutation | Only through the ledger (§9). No table stores a balance that is not derivable from ledger entries |
-| Timestamps | Every table has `createdAt`; mutable tables have `updatedAt` |
-| Concurrency | Rows subject to concurrent mutation carry an integer `version` for optimistic locking |
+| Rule           | Decision                                                                                                                   |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Primary keys   | UUID v7 (`gen_random_uuid()` at MVP; migrate to v7 generator in app layer for index locality). Never expose sequential ids |
+| Money          | `BigInt` **poisha** (1 BDT = 100 poisha). Never `Float`, never `Decimal` for money. Column names end in `Poisha`           |
+| Quantity       | `BigInt` in the product's **base unit** (grams, millilitres, or pieces). Column names end in `Base`                        |
+| Time           | `timestamptz`, UTC in the database, rendered in `Asia/Dhaka` (UTC+6) in the UI                                             |
+| Naming         | Tables `snake_case` plural via `@@map`; Prisma models `PascalCase` singular; enums `SCREAMING_SNAKE`                       |
+| Deletes        | No hard deletes on any financial, order, or identity record. `deletedAt` + status enums                                    |
+| Money mutation | Only through the ledger (§9). No table stores a balance that is not derivable from ledger entries                          |
+| Timestamps     | Every table has `createdAt`; mutable tables have `updatedAt`                                                               |
+| Concurrency    | Rows subject to concurrent mutation carry an integer `version` for optimistic locking                                      |
 
 ### 1.1 Rounding rule (normative)
 
@@ -1571,23 +1571,23 @@ Zero rows returned ⇒ insufficient stock ⇒ the transaction aborts with a type
 
 ## 14. Indexing summary
 
-| Query | Index |
-|---|---|
-| Radius discovery | `listings USING GIST (geo)` + `(status, available_to)` |
-| Product filter | `listings (product_id, status)` |
-| Farmer order inbox | `orders (seller_farmer_profile_id, status, placed_at)` |
-| Buyer order history | `orders (buyer_user_id, status, placed_at)` |
-| Acceptance-timeout sweeper | `orders (status, acceptance_deadline)` |
-| Reservation expiry sweeper | `listing_reservations (status, expires_at)` |
-| Outbox dispatcher | `outbox_events (processed_at, available_at)` |
-| Account balance | `ledger_entries (account_id, created_at)` |
-| Audit search | `audit_logs (entity_type, entity_id, created_at)`, `(actor_user_id, created_at)` |
-| Baseline lookup | `price_observations (product_id, admin_area_id, market_level, observed_on)` |
-| Segment matrix report | `order_economics (basket_band, delivery_model, buyer_segment)` |
-| Daily economics rollup | `order_economics (computed_at)`, `(district_id, computed_at)` |
-| Farmer uplift by cohort | `order_economics (farmer_profile_id, computed_at)` |
-| Trip costing queue | `delivery_trips (status, planned_start_at)` |
-| Delivery-model comparison | `delivery_trips (delivery_model, completed_at)` |
+| Query                      | Index                                                                            |
+| -------------------------- | -------------------------------------------------------------------------------- |
+| Radius discovery           | `listings USING GIST (geo)` + `(status, available_to)`                           |
+| Product filter             | `listings (product_id, status)`                                                  |
+| Farmer order inbox         | `orders (seller_farmer_profile_id, status, placed_at)`                           |
+| Buyer order history        | `orders (buyer_user_id, status, placed_at)`                                      |
+| Acceptance-timeout sweeper | `orders (status, acceptance_deadline)`                                           |
+| Reservation expiry sweeper | `listing_reservations (status, expires_at)`                                      |
+| Outbox dispatcher          | `outbox_events (processed_at, available_at)`                                     |
+| Account balance            | `ledger_entries (account_id, created_at)`                                        |
+| Audit search               | `audit_logs (entity_type, entity_id, created_at)`, `(actor_user_id, created_at)` |
+| Baseline lookup            | `price_observations (product_id, admin_area_id, market_level, observed_on)`      |
+| Segment matrix report      | `order_economics (basket_band, delivery_model, buyer_segment)`                   |
+| Daily economics rollup     | `order_economics (computed_at)`, `(district_id, computed_at)`                    |
+| Farmer uplift by cohort    | `order_economics (farmer_profile_id, computed_at)`                               |
+| Trip costing queue         | `delivery_trips (status, planned_start_at)`                                      |
+| Delivery-model comparison  | `delivery_trips (delivery_model, completed_at)`                                  |
 
 ---
 

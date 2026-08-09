@@ -27,11 +27,11 @@ Effective Delivered Cost
 
 Conflating these is the most common way agricultural marketplaces lie to themselves.
 
-| # | Cost | Who sees it | Purpose |
-|---|---|---|---|
-| **1. Tariff** — the cost-recovering price | Buyer | Published, slab-based, in `PlatformConfig` | What delivery *should* cost the buyer |
-| **2. Expected platform cost** | Internal | Modelled transport + payment + fulfilment + expected spoilage | Ranking, feasibility filtering, margin forecasting |
-| **3. Actual cost** | Internal, post-hoc | Recorded on the **trip** by ops, then allocated to orders | Truth. Calibrates (2), proves or disproves the thesis |
+| #                                         | Cost               | Who sees it                                                   | Purpose                                               |
+| ----------------------------------------- | ------------------ | ------------------------------------------------------------- | ----------------------------------------------------- |
+| **1. Tariff** — the cost-recovering price | Buyer              | Published, slab-based, in `PlatformConfig`                    | What delivery _should_ cost the buyer                 |
+| **2. Expected platform cost**             | Internal           | Modelled transport + payment + fulfilment + expected spoilage | Ranking, feasibility filtering, margin forecasting    |
+| **3. Actual cost**                        | Internal, post-hoc | Recorded on the **trip** by ops, then allocated to orders     | Truth. Calibrates (2), proves or disproves the thesis |
 
 Between the tariff and what the buyer is actually charged sits the **funding model** (§3.1). Any difference is a subsidy, and subsidies are never hidden inside product economics:
 
@@ -49,13 +49,13 @@ See [`06_FINANCIAL_ARCHITECTURE.md`](06_FINANCIAL_ARCHITECTURE.md) §6 and [`10_
 
 Slab by chargeable weight and distance beyond an included radius. All values live in `PlatformConfig`, versioned; **none of these numbers are hard-coded**. The table below is illustrative structure, not calibrated values — the pilot's first job is to replace it with measured ones.
 
-| Chargeable weight | Base fee | Included distance | Per additional km |
-|---|---|---|---|
-| ≤ 5 kg | ৳40 | 5 km | ৳8 |
-| 5–20 kg | ৳70 | 5 km | ৳10 |
-| 20–100 kg | ৳150 | 5 km | ৳14 |
-| 100–500 kg | ৳450 | 10 km | ৳22 |
-| > 500 kg | quote-only (ops) | — | — |
+| Chargeable weight | Base fee         | Included distance | Per additional km |
+| ----------------- | ---------------- | ----------------- | ----------------- |
+| ≤ 5 kg            | ৳40              | 5 km              | ৳8                |
+| 5–20 kg           | ৳70              | 5 km              | ৳10               |
+| 20–100 kg         | ৳150             | 5 km              | ৳14               |
+| 100–500 kg        | ৳450             | 10 km             | ৳22               |
+| > 500 kg          | quote-only (ops) | —                 | —                 |
 
 ```text
 deliveryFee = baseFee(weightBand) + perKm(weightBand) × max(0, distanceKm − includedKm)
@@ -68,14 +68,14 @@ Distance at MVP is **haversine × a road-circuity factor** (default 1.30, config
 
 Who actually pays for delivery is an explicit, recorded decision per order.
 
-| Model | Buyer pays | Others pay | When it is used |
-|---|---|---|---|
-| **`COST_RECOVERING`** (default) | Full tariff | — | Normal operation |
-| `PROMOTIONAL_SUBSIDY` | Tariff − subsidy | Platform absorbs the subsidy | Market seeding, experiments — **requires a reason and budget headroom** |
-| `FREE_DELIVERY` | Zero | Platform absorbs all | Acquisition offers — **requires a reason and budget headroom** |
-| `RETAILER_FUNDED` | Retailer pays directly, possibly above tariff | — | Retailer wants priority or a specific window |
-| `SELLER_FUNDED` | Zero or reduced | Farmer absorbs it from `sellerNet` | Farmer chooses to offer delivered pricing as a selling advantage |
-| `SHARED` | Explicit ratio | Explicit ratio | Negotiated splits, mainly B2B |
+| Model                           | Buyer pays                                    | Others pay                         | When it is used                                                         |
+| ------------------------------- | --------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------- |
+| **`COST_RECOVERING`** (default) | Full tariff                                   | —                                  | Normal operation                                                        |
+| `PROMOTIONAL_SUBSIDY`           | Tariff − subsidy                              | Platform absorbs the subsidy       | Market seeding, experiments — **requires a reason and budget headroom** |
+| `FREE_DELIVERY`                 | Zero                                          | Platform absorbs all               | Acquisition offers — **requires a reason and budget headroom**          |
+| `RETAILER_FUNDED`               | Retailer pays directly, possibly above tariff | —                                  | Retailer wants priority or a specific window                            |
+| `SELLER_FUNDED`                 | Zero or reduced                               | Farmer absorbs it from `sellerNet` | Farmer chooses to offer delivered pricing as a selling advantage        |
+| `SHARED`                        | Explicit ratio                                | Explicit ratio                     | Negotiated splits, mainly B2B                                           |
 
 ```text
 split = applyFunding(tariff, model, context)
@@ -122,6 +122,7 @@ contributionMargin    = commission + platformFee + deliveryRecovered − langgol
 Ranking is **not** by distance, and **not** by price alone.
 
 ### 5.1 Candidate generation
+
 1. `status = PUBLISHED`, within the availability window, `quantityAvailableBase ≥ requestedQuantity` (or ≥ `minOrderBase` for partial fills where allowed)
 2. Within the configured radius cap for the buyer's role
 3. Seller not suspended; listing not under moderation hold
@@ -129,14 +130,14 @@ Ranking is **not** by distance, and **not** by price alone.
 
 ### 5.2 Per-candidate factors
 
-| Factor | Definition | Range |
-|---|---|---|
-| `priceScore` | `minDeliveredUnitPrice / thisDeliveredUnitPrice` | (0, 1] |
-| `reliabilityScore` | Laplace-smoothed completion: `(completed + k·prior) / (accepted + k)`, `k = 5`, `prior = 0.70` | (0, 1] |
-| `freshnessScore` | Fraction of shelf life remaining at expected delivery: `max(0, 1 − hoursSinceHarvestAtDelivery / shelfLifeHours)` | [0, 1] |
-| `speedScore` | `1 / (1 + hoursUntilDelivery / 24)` | (0, 1] |
-| `quantityFitScore` | `1.0` if the listing fully covers the request; `0.7` if only a partial fill | {0.7, 1.0} |
-| `ratingScore` | Bayesian-smoothed star rating normalised to [0,1] | [0, 1] |
+| Factor             | Definition                                                                                                        | Range      |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------- | ---------- |
+| `priceScore`       | `minDeliveredUnitPrice / thisDeliveredUnitPrice`                                                                  | (0, 1]     |
+| `reliabilityScore` | Laplace-smoothed completion: `(completed + k·prior) / (accepted + k)`, `k = 5`, `prior = 0.70`                    | (0, 1]     |
+| `freshnessScore`   | Fraction of shelf life remaining at expected delivery: `max(0, 1 − hoursSinceHarvestAtDelivery / shelfLifeHours)` | [0, 1]     |
+| `speedScore`       | `1 / (1 + hoursUntilDelivery / 24)`                                                                               | (0, 1]     |
+| `quantityFitScore` | `1.0` if the listing fully covers the request; `0.7` if only a partial fill                                       | {0.7, 1.0} |
+| `ratingScore`      | Bayesian-smoothed star rating normalised to [0,1]                                                                 | [0, 1]     |
 
 ```text
 score = 0.45·priceScore + 0.18·reliabilityScore + 0.14·freshnessScore
@@ -155,7 +156,9 @@ Weights live in `PlatformConfig`, are versioned, and every quote stores the `pri
 Ranking sellers by how much Langgol earns from them is how marketplaces lose farmer trust, and farmer trust is the entire asset. If we ever relax this, it must be disclosed in the UI.
 
 ### 5.4 Cold start
+
 With few listings and no completion history:
+
 - `reliabilityScore` falls back to the prior (0.70) for new farmers, so they are neither privileged nor buried
 - New verified farmers receive a small, time-limited exposure boost (configurable, decaying over the first 5 orders) to break the no-orders → no-reputation → no-orders loop
 - This boost is logged and reported; it is a deliberate market-making intervention, not a secret
@@ -207,13 +210,13 @@ Setup, per [`00_PRODUCT_VISION.md`](00_PRODUCT_VISION.md) §2.2. Illustrative ta
 
 ### 7.1 Consumer buying 5 kg
 
-| | Farmer A (12 km) | Farmer B (120 km) |
-|---|---|---|
-| Product | ৳150.00 | ৳125.00 |
-| Delivery | 40 + 7×8 = **৳96.00** | 40 + 115×8 = **৳960.00** |
-| Handling | ৳10.00 | ৳10.00 |
-| **Delivered total** | **৳256.00** | **৳1,095.00** |
-| **Per kg** | **৳51.20** | **৳219.00** |
+|                     | Farmer A (12 km)      | Farmer B (120 km)        |
+| ------------------- | --------------------- | ------------------------ |
+| Product             | ৳150.00               | ৳125.00                  |
+| Delivery            | 40 + 7×8 = **৳96.00** | 40 + 115×8 = **৳960.00** |
+| Handling            | ৳10.00                | ৳10.00                   |
+| **Delivered total** | **৳256.00**           | **৳1,095.00**            |
+| **Per kg**          | **৳51.20**            | **৳219.00**              |
 
 Farmer A wins by more than 4×. The ৳5/kg farm-gate advantage is annihilated by 115 km of road.
 
@@ -231,24 +234,24 @@ This is precisely why [`01_MVP_REQUIREMENTS.md`](01_MVP_REQUIREMENTS.md) §2 rec
 
 ### 7.2 Retailer buying 100 kg
 
-| | Farmer A | Farmer B |
-|---|---|---|
-| Product | ৳3,000.00 | ৳2,500.00 |
-| Delivery | 150 + 7×14 = **৳248.00** | 450 + 110×22 = **৳2,870.00** |
-| Handling | ৳50.00 | ৳50.00 |
-| **Delivered total** | **৳3,298.00** | **৳5,420.00** |
-| **Per kg** | **৳32.98** | **৳54.20** |
+|                     | Farmer A                 | Farmer B                     |
+| ------------------- | ------------------------ | ---------------------------- |
+| Product             | ৳3,000.00                | ৳2,500.00                    |
+| Delivery            | 150 + 7×14 = **৳248.00** | 450 + 110×22 = **৳2,870.00** |
+| Handling            | ৳50.00                   | ৳50.00                       |
+| **Delivered total** | **৳3,298.00**            | **৳5,420.00**                |
+| **Per kg**          | **৳32.98**               | **৳54.20**                   |
 
 Farmer A still wins decisively, and now the delivered price is close to the farm-gate price — the economics work.
 
 ### 7.3 Institutional buyer taking 500 kg
 
-| | Farmer A | Farmer B |
-|---|---|---|
-| Product | ৳15,000.00 | ৳12,500.00 |
-| Delivery | 450 + 2×22 = **৳494.00** | 450 + 110×22 = **৳2,870.00** |
-| **Delivered total** | **৳15,494.00** | **৳15,370.00** |
-| **Per kg** | **৳30.99** | **৳30.74** |
+|                     | Farmer A                 | Farmer B                     |
+| ------------------- | ------------------------ | ---------------------------- |
+| Product             | ৳15,000.00               | ৳12,500.00                   |
+| Delivery            | 450 + 2×22 = **৳494.00** | 450 + 110×22 = **৳2,870.00** |
+| **Delivered total** | **৳15,494.00**           | **৳15,370.00**               |
+| **Per kg**          | **৳30.99**               | **৳30.74**                   |
 
 **The ranking inverts.** The distant farmer is now marginally cheaper delivered.
 
@@ -270,12 +273,12 @@ At 500 kg the gap is ৳0.25/kg — 0.8%. At that margin, `reliabilityScore` and
 
 Every order is tagged with the model that actually moved the goods, and each is costed separately at trip level:
 
-| Model | Shape | What it is testing |
-|---|---|---|
-| **A · `INDIVIDUAL`** | One order → one dedicated trip | The honest worst case. The §7.1 baseline |
-| **B · `AGGREGATED_ROUTE`** | Several nearby orders → one route | Whether pooling actually reduces cost per order, and at what order density it starts to |
-| **C · `RETAILER_BULK`** | Farmer → retailer, typically one large drop | Whether volume alone makes the economics work |
-| **D · `PICKUP`** | Buyer collects from the farm or a pickup point | The floor: near-zero logistics cost to Langgol, and the fallback when nothing else pays |
+| Model                      | Shape                                          | What it is testing                                                                      |
+| -------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------- |
+| **A · `INDIVIDUAL`**       | One order → one dedicated trip                 | The honest worst case. The §7.1 baseline                                                |
+| **B · `AGGREGATED_ROUTE`** | Several nearby orders → one route              | Whether pooling actually reduces cost per order, and at what order density it starts to |
+| **C · `RETAILER_BULK`**    | Farmer → retailer, typically one large drop    | Whether volume alone makes the economics work                                           |
+| **D · `PICKUP`**           | Buyer collects from the farm or a pickup point | The floor: near-zero logistics cost to Langgol, and the fallback when nothing else pays |
 
 For each model the system records cost per order, cost per kg, orders per trip, utilisation and average distance per order — and crosses them with basket band, distance band, district and product. The ranking engine does **not** consume these results at MVP; it consumes the tariff. Feeding measured model economics back into ranking is a Phase 7 change, made once the numbers are real rather than assumed.
 
@@ -308,7 +311,7 @@ Server: owns? · not consumed? · not expired? · listing still PUBLISHED at sam
 **Invariants**
 
 - A quote is single-use (`consumedAt`, `consumedByOrderId`)
-- A quote belongs to one buyer; another user's quote id returns *not found*, not *forbidden* (no existence leak)
+- A quote belongs to one buyer; another user's quote id returns _not found_, not _forbidden_ (no existence leak)
 - Order money fields are **copied from the quote**, never recomputed at order time
 - Price drift between quote and checkout never silently repricess — the buyer is told and re-consents
 - Every quote records `pricingVersion` + `configVersion`, so any historical price is reproducible
@@ -334,7 +337,7 @@ Delivered     → reservation closed; quantityTotalBase reduced by delivered qua
 
 Reserving at order placement (not at cart) is deliberate: reserving on add-to-cart lets one idle browser lock a farmer's crop for hours.
 
-**Partial fills.** A buyer wanting 50 kg from a listing holding 30 kg may, where the product allows it, be offered a partial fill or a multi-farmer split *suggestion*. In the MVP that becomes **two separate orders** (§5 of `01_MVP_REQUIREMENTS.md`), not one split order.
+**Partial fills.** A buyer wanting 50 kg from a listing holding 30 kg may, where the product allows it, be offered a partial fill or a multi-farmer split _suggestion_. In the MVP that becomes **two separate orders** (§5 of `01_MVP_REQUIREMENTS.md`), not one split order.
 
 **Weight variance.** Fresh produce delivered rarely equals fresh produce ordered. `OrderItem.deliveredQuantityBase` and `adjustmentPoisha` capture the difference, within a configurable tolerance band (default ±5%). Beyond tolerance requires buyer confirmation or becomes a dispute. See [`05_ORDER_SYSTEM.md`](05_ORDER_SYSTEM.md) §7.
 
@@ -343,13 +346,15 @@ Reserving at order placement (not at cart) is deliberate: reserving on add-to-ca
 ## 10. Discovery: search and filters
 
 **Buyer surfaces**
-- Sort: *Best match* (default, §5), *Cheapest delivered*, *Nearest*, *Freshest*, *Highest rated*
+
+- Sort: _Best match_ (default, §5), _Cheapest delivered_, _Nearest_, _Freshest_, _Highest rated_
 - Filters: category/product · delivered price range · max distance · available date · grade · minimum farmer rating · fulfilment mode · organic/verified badges (Phase 6+)
 - Search: Bangla and English, tolerant of transliteration (`tomato` / `টমেটো` / `tometo`) via a normalised search index on catalogue names and synonyms
 
 **Why the curated catalogue matters again:** transliteration-tolerant search over free text in two scripts is a hard problem; over a 60-item curated catalogue with synonym lists it is a solved one.
 
 **Farmer surfaces** — demand-side discovery, deliberately minimal in the MVP:
+
 - "What is selling near you": product, recent delivered prices, unmet demand signals in the district
 - Enough to inform listing decisions; not a full RFQ system (Phase 7)
 
@@ -357,15 +362,15 @@ Reserving at order placement (not at cart) is deliberate: reserving on add-to-ca
 
 ## 11. Guardrails
 
-| Risk | Control |
-|---|---|
+| Risk                                   | Control                                                                                                                                                                 |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Absurd prices (typo: ৳3,000/kg tomato) | Compare against `PriceObservation` median for product+district. Outside a configurable band → soft warning to farmer + `moderationFlag` for admin. Never a silent block |
-| Phantom listings | Verified farmers only for publish; automatic pause after N consecutive rejections/timeouts |
-| Stale availability | Mandatory availability window; auto-`EXPIRED` sweep; farmers prompted to confirm listings older than N days |
-| Fake reviews | Reviews only from a `DELIVERED` order, one per order per subject, rate-limited, ops-reviewable |
-| Collusive self-dealing | Buyer and seller sharing a device/phone/address flagged for review |
-| Long-haul nonsense | Radius cap by role; quote-only above the top weight band |
-| Ranking manipulation | Weights are server-side config; no client input influences ranking; changes are audited |
+| Phantom listings                       | Verified farmers only for publish; automatic pause after N consecutive rejections/timeouts                                                                              |
+| Stale availability                     | Mandatory availability window; auto-`EXPIRED` sweep; farmers prompted to confirm listings older than N days                                                             |
+| Fake reviews                           | Reviews only from a `DELIVERED` order, one per order per subject, rate-limited, ops-reviewable                                                                          |
+| Collusive self-dealing                 | Buyer and seller sharing a device/phone/address flagged for review                                                                                                      |
+| Long-haul nonsense                     | Radius cap by role; quote-only above the top weight band                                                                                                                |
+| Ranking manipulation                   | Weights are server-side config; no client input influences ranking; changes are audited                                                                                 |
 
 ---
 

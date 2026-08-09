@@ -12,11 +12,11 @@ This repository currently contains **only the platform foundation**. The marketp
 payments, settlement and credit are deliberately **not** built yet — see
 [`docs/09_ROADMAP.md`](docs/09_ROADMAP.md).
 
-| Phase | State |
-|---|---|
+| Phase                      | State                                                                  |
+| -------------------------- | ---------------------------------------------------------------------- |
 | P0 Foundations & decisions | Running in parallel (geography validation, baseline collection, legal) |
-| **P1 Platform skeleton** | **In progress — this repository** |
-| P2 Farmer supply side | Not started — requires explicit approval |
+| **P1 Platform skeleton**   | **In progress — this repository**                                      |
+| P2 Farmer supply side      | Not started — requires explicit approval                               |
 
 ## Documentation
 
@@ -24,19 +24,19 @@ Architecture and product documentation is the source of truth and is kept in syn
 When implementation reveals a needed architectural change, the document is updated **first**, with
 the reason recorded, and only then is the change implemented.
 
-| Doc | Contents |
-|---|---|
-| [00_PRODUCT_VISION](docs/00_PRODUCT_VISION.md) | Mission, economic thesis, ecosystem, principles |
-| [01_MVP_REQUIREMENTS](docs/01_MVP_REQUIREMENTS.md) | Pilot scope, user stories, decisions register |
-| [02_DATABASE](docs/02_DATABASE.md) | Schema, constraints, indexes, seeds |
-| [03_ARCHITECTURE](docs/03_ARCHITECTURE.md) | Stack, layering, abstractions, ADRs |
-| [04_MARKETPLACE](docs/04_MARKETPLACE.md) | Delivered-cost engine, ranking, funding models |
-| [05_ORDER_SYSTEM](docs/05_ORDER_SYSTEM.md) | Order state machine, fault attribution |
-| [06_FINANCIAL_ARCHITECTURE](docs/06_FINANCIAL_ARCHITECTURE.md) | Money, ledger, settlement, tax |
-| [07_SECURITY](docs/07_SECURITY.md) | Threat model, authn/authz, audit |
-| [08_BANGLADESH_CONTEXT](docs/08_BANGLADESH_CONTEXT.md) | Geography, language, payments, regulation |
-| [09_ROADMAP](docs/09_ROADMAP.md) | Phases, gates, risks |
-| [10_ECONOMIC_MEASUREMENT](docs/10_ECONOMIC_MEASUREMENT.md) | Metrics, baselines, experiments, gates |
+| Doc                                                            | Contents                                        |
+| -------------------------------------------------------------- | ----------------------------------------------- |
+| [00_PRODUCT_VISION](docs/00_PRODUCT_VISION.md)                 | Mission, economic thesis, ecosystem, principles |
+| [01_MVP_REQUIREMENTS](docs/01_MVP_REQUIREMENTS.md)             | Pilot scope, user stories, decisions register   |
+| [02_DATABASE](docs/02_DATABASE.md)                             | Schema, constraints, indexes, seeds             |
+| [03_ARCHITECTURE](docs/03_ARCHITECTURE.md)                     | Stack, layering, abstractions, ADRs             |
+| [04_MARKETPLACE](docs/04_MARKETPLACE.md)                       | Delivered-cost engine, ranking, funding models  |
+| [05_ORDER_SYSTEM](docs/05_ORDER_SYSTEM.md)                     | Order state machine, fault attribution          |
+| [06_FINANCIAL_ARCHITECTURE](docs/06_FINANCIAL_ARCHITECTURE.md) | Money, ledger, settlement, tax                  |
+| [07_SECURITY](docs/07_SECURITY.md)                             | Threat model, authn/authz, audit                |
+| [08_BANGLADESH_CONTEXT](docs/08_BANGLADESH_CONTEXT.md)         | Geography, language, payments, regulation       |
+| [09_ROADMAP](docs/09_ROADMAP.md)                               | Phases, gates, risks                            |
+| [10_ECONOMIC_MEASUREMENT](docs/10_ECONOMIC_MEASUREMENT.md)     | Metrics, baselines, experiments, gates          |
 
 ## Repository layout
 

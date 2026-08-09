@@ -7,7 +7,7 @@
 
 ## 1. Why this is a core system
 
-Langgol's thesis is an economic claim: that connecting supply to nearby demand can raise farmer realisation *and* lower buyer delivered cost at the same time. A claim of that shape is only worth anything if it is falsifiable.
+Langgol's thesis is an economic claim: that connecting supply to nearby demand can raise farmer realisation _and_ lower buyer delivered cost at the same time. A claim of that shape is only worth anything if it is falsifiable.
 
 So measurement is not a reporting layer bolted on after launch. It is:
 
@@ -71,15 +71,15 @@ Every observation stores: product (+ variety where known) · unit (normalised to
 
 ### 4.2 Collection methods and their confidence
 
-| Collection method | Typical confidence | Notes |
-|---|---|---|
-| `IN_PERSON_SURVEY` (agent at market, recorded on site) | **HIGH** | The backbone of the pilot baseline |
-| `RECEIPT_PHOTO` (buyer/retailer receipt captured) | **HIGH** | Verifiable evidence attached |
-| `RETAILER_REPORTED` (partner retailer's own buying price) | MEDIUM | Corroborate against surveys |
-| `PHONE_SURVEY` | MEDIUM | Recall error, no site verification |
-| `PUBLISHED_BULLETIN` (publicly available market data, where legally usable) | MEDIUM | Wide coverage, coarse geography, lagging. **Legal usability confirmed before ingestion** |
-| `FARMER_REPORTED` ("what would the *bepari* pay you today?") | **LOW** | Self-reported, incentive-affected. Never used alone for a headline claim |
-| `PLATFORM_TRANSACTION` | — | Langgol's own prices. **Never used as a baseline for Langgol's own performance** — that is circular |
+| Collection method                                                           | Typical confidence | Notes                                                                                               |
+| --------------------------------------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------- |
+| `IN_PERSON_SURVEY` (agent at market, recorded on site)                      | **HIGH**           | The backbone of the pilot baseline                                                                  |
+| `RECEIPT_PHOTO` (buyer/retailer receipt captured)                           | **HIGH**           | Verifiable evidence attached                                                                        |
+| `RETAILER_REPORTED` (partner retailer's own buying price)                   | MEDIUM             | Corroborate against surveys                                                                         |
+| `PHONE_SURVEY`                                                              | MEDIUM             | Recall error, no site verification                                                                  |
+| `PUBLISHED_BULLETIN` (publicly available market data, where legally usable) | MEDIUM             | Wide coverage, coarse geography, lagging. **Legal usability confirmed before ingestion**            |
+| `FARMER_REPORTED` ("what would the _bepari_ pay you today?")                | **LOW**            | Self-reported, incentive-affected. Never used alone for a headline claim                            |
+| `PLATFORM_TRANSACTION`                                                      | —                  | Langgol's own prices. **Never used as a baseline for Langgol's own performance** — that is circular |
 
 ### 4.3 Verification status
 
@@ -91,16 +91,16 @@ A `DISPUTED` baseline does not silently pick a winner. It degrades the confidenc
 
 To attach a baseline to an order, in strict priority order:
 
-| Step | Rule | Confidence effect |
-|---|---|---|
-| Product | Exact product match required | Mandatory |
-| Variety | Exact variety preferred | Mismatch → one step down |
-| Grade | Same grade preferred | Mismatch → one step down |
-| Market level | `FARM_GATE` for farmer uplift; `RETAIL` for consumer buyers; **`WHOLESALE` for retailer buyers** | Mandatory |
-| Geography | Same upazila → same district → same division | Each widening → one step down |
-| Time | Within ±3 days → ±7 days → ±14 days | Each widening → one step down |
-| Season | Must fall in the same agricultural season band ([`08_BANGLADESH_CONTEXT.md`](08_BANGLADESH_CONTEXT.md) §9) | Cross-season match is **rejected**, not degraded |
-| Sample | Median of ≥3 observations preferred; 1–2 observations → LOW | — |
+| Step         | Rule                                                                                                       | Confidence effect                                |
+| ------------ | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Product      | Exact product match required                                                                               | Mandatory                                        |
+| Variety      | Exact variety preferred                                                                                    | Mismatch → one step down                         |
+| Grade        | Same grade preferred                                                                                       | Mismatch → one step down                         |
+| Market level | `FARM_GATE` for farmer uplift; `RETAIL` for consumer buyers; **`WHOLESALE` for retailer buyers**           | Mandatory                                        |
+| Geography    | Same upazila → same district → same division                                                               | Each widening → one step down                    |
+| Time         | Within ±3 days → ±7 days → ±14 days                                                                        | Each widening → one step down                    |
+| Season       | Must fall in the same agricultural season band ([`08_BANGLADESH_CONTEXT.md`](08_BANGLADESH_CONTEXT.md) §9) | Cross-season match is **rejected**, not degraded |
+| Sample       | Median of ≥3 observations preferred; 1–2 observations → LOW                                                | —                                                |
 
 If no match survives, `OrderEconomics.baselineStatus = UNAVAILABLE` and **no uplift or saving is computed for that order**. It still counts in the denominator of coverage reporting, so a low baseline-coverage rate is visible rather than silently flattering.
 
@@ -219,24 +219,24 @@ Alternatives supported and recorded on the record: `EQUAL_SHARE` (per order), `D
 
 Every trip is tagged with a `deliveryModel`, and all of the above is reported per model:
 
-| Model | Definition |
-|---|---|
-| `INDIVIDUAL` | One order → one dedicated delivery |
-| `AGGREGATED_ROUTE` | Multiple nearby orders → one route |
-| `RETAILER_BULK` | Farmer → retailer, typically one large drop |
-| `PICKUP` | Buyer collects from the farm or a designated pickup point (trip cost ≈ 0 to Langgol) |
+| Model              | Definition                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| `INDIVIDUAL`       | One order → one dedicated delivery                                                   |
+| `AGGREGATED_ROUTE` | Multiple nearby orders → one route                                                   |
+| `RETAILER_BULK`    | Farmer → retailer, typically one large drop                                          |
+| `PICKUP`           | Buyer collects from the farm or a designated pickup point (trip cost ≈ 0 to Langgol) |
 
 ---
 
 ## 7. Ecosystem economics — and its honest limits
 
-| Metric | Method | Confidence |
-|---|---|---|
-| Average supply distance | Measured: farm → buyer | **HIGH** |
-| Average delivery distance per order | Measured from trips | **HIGH** |
-| Quantity aggregated | Measured: Σ delivered weight per trip | **HIGH** |
-| **Estimated transportation avoided** | Counterfactual chain distance (farm → *arat* → wholesale market → retailer → buyer) **from a field survey of the actual local chain**, minus platform tonne-km | **LOW–MEDIUM**, modelled |
-| **Estimated spoilage avoided** | (baseline chain hours − platform hours) × measured spoilage rate per hour per product × weight | **LOW**, modelled |
+| Metric                               | Method                                                                                                                                                         | Confidence               |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| Average supply distance              | Measured: farm → buyer                                                                                                                                         | **HIGH**                 |
+| Average delivery distance per order  | Measured from trips                                                                                                                                            | **HIGH**                 |
+| Quantity aggregated                  | Measured: Σ delivered weight per trip                                                                                                                          | **HIGH**                 |
+| **Estimated transportation avoided** | Counterfactual chain distance (farm → _arat_ → wholesale market → retailer → buyer) **from a field survey of the actual local chain**, minus platform tonne-km | **LOW–MEDIUM**, modelled |
+| **Estimated spoilage avoided**       | (baseline chain hours − platform hours) × measured spoilage rate per hour per product × weight                                                                 | **LOW**, modelled        |
 
 **Rules for the two modelled metrics:**
 
@@ -253,7 +253,7 @@ This is the area where agri-platforms most often overclaim. The design deliberat
 
 ### 8.1 Strata vs randomisation — stated plainly
 
-Most MVP comparisons are **observational strata**: basket sizes occur naturally, and delivery models are chosen by ops for operational reasons. Comparing them tells us about *association*, not causation, because the orders differ in more ways than the variable of interest.
+Most MVP comparisons are **observational strata**: basket sizes occur naturally, and delivery models are chosen by ops for operational reasons. Comparing them tells us about _association_, not causation, because the orders differ in more ways than the variable of interest.
 
 Where randomisation is ethical and operationally possible — for example, choosing between `INDIVIDUAL` and `AGGREGATED_ROUTE` among orders eligible for both — the system supports randomised assignment with a recorded seed. Where it is not, the record says `assignmentMethod = OBSERVATIONAL` and every report derived from it is labelled accordingly.
 
@@ -280,11 +280,11 @@ median(contributionMargin) ≥ 0
 median(deliveredPricePerKg) ≤ referencePricePerKg
 ```
 
-reported with sample size and an uncertainty interval. **No threshold is assumed anywhere in code or configuration.** The ~475 kg inversion point in [`04_MARKETPLACE.md`](04_MARKETPLACE.md) §7.3 is an illustration of the *mechanism*, not a target and not a default.
+reported with sample size and an uncertainty interval. **No threshold is assumed anywhere in code or configuration.** The ~475 kg inversion point in [`04_MARKETPLACE.md`](04_MARKETPLACE.md) §7.3 is an illustration of the _mechanism_, not a target and not a default.
 
 ### 8.3 Delivery-model experiment (approved §12)
 
-The four models in §6.4, measured separately on identical metrics, crossed with basket band and district. The question it answers: *does aggregation actually reduce cost per order in practice, and at what order density does it start to?*
+The four models in §6.4, measured separately on identical metrics, crossed with basket band and district. The question it answers: _does aggregation actually reduce cost per order in practice, and at what order density does it start to?_
 
 ### 8.4 Experiment record
 
@@ -297,20 +297,22 @@ The four models in §6.4, measured separately on identical metrics, crossed with
 Negative contribution margin is permitted during the pilot **only** as a deliberate, budgeted learning and acquisition expense (approved §14).
 
 ### 9.1 The budget
+
 `PilotBudget` defines, per period and per category (`DELIVERY_SUBSIDY`, `ACQUISITION`, `OPERATIONAL_LEARNING`): a cap in poisha, an owner, and an approval reference. Spend is **derived from the ledger** (`5020` plus measured `platformDeliveryGap`), never self-reported.
 
 ### 9.2 Controls
 
-| Threshold | Action |
-|---|---|
-| 50% of period cap | Notice in the daily ops report |
-| 75% | Alert to product and finance owners |
-| 90% | Subsidy-enabling delivery funding models require per-order approval |
-| 100% | **Subsidised funding models are disabled by configuration.** Cost-recovering, pickup, seller-funded and retailer-funded remain available. Raising the cap is an explicit, audited decision |
+| Threshold         | Action                                                                                                                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 50% of period cap | Notice in the daily ops report                                                                                                                                                             |
+| 75%               | Alert to product and finance owners                                                                                                                                                        |
+| 90%               | Subsidy-enabling delivery funding models require per-order approval                                                                                                                        |
+| 100%              | **Subsidised funding models are disabled by configuration.** Cost-recovering, pickup, seller-funded and retailer-funded remain available. Raising the cap is an explicit, audited decision |
 
 The hard stop is enforced in the pricing path, not in a policy document — a quote requesting a subsidised funding model with an exhausted budget is refused.
 
 ### 9.3 Subsidy reasons (controlled vocabulary)
+
 `MARKET_SEEDING` · `BASKET_SIZE_EXPERIMENT` · `DELIVERY_MODEL_EXPERIMENT` · `NEW_BUYER_ACQUISITION` · `NEW_FARMER_ACTIVATION` · `SERVICE_RECOVERY` · `OPS_ERROR` · `ROUTE_DENSITY_BUILD`.
 
 Free-text is not accepted. A vocabulary is what makes "why are we losing money?" answerable in one query.
@@ -322,50 +324,55 @@ Free-text is not accepted. A vocabulary is what makes "why are we losing money?"
 Evaluated on the pilot period with ≥100 completed orders, and **reported per segment** as well as in aggregate — an aggregate pass hiding a failing consumer segment is a fail.
 
 ### 10.1 Farmer
-| Gate | Threshold |
-|---|---|
+
+| Gate                                               | Threshold                                                                   |
+| -------------------------------------------------- | --------------------------------------------------------------------------- |
 | Farmer realisation vs baseline (net of commission) | Median uplift > 0, on ≥2 independent baseline sources at ≥MEDIUM confidence |
-| Fulfilment rate (completed ÷ accepted) | ≥ 90% |
-| Repeat seller rate (≥2 completed sales) | ≥ 40% of activated farmers |
-| Farmer retention (active in the final 30 days) | ≥ 50% of activated farmers |
+| Fulfilment rate (completed ÷ accepted)             | ≥ 90%                                                                       |
+| Repeat seller rate (≥2 completed sales)            | ≥ 40% of activated farmers                                                  |
+| Farmer retention (active in the final 30 days)     | ≥ 50% of activated farmers                                                  |
 
 ### 10.2 Consumer
-| Gate | Threshold |
-|---|---|
-| Delivered price vs reference retail | Median ≤ reference **in at least one identified viable segment** |
-| Repeat order rate (30-day) | ≥ 25% |
-| Cancellation rate (buyer-attributable) | ≤ 10% |
-| Satisfaction | Median rating ≥ 4.0 with ≥40% response rate |
+
+| Gate                                   | Threshold                                                        |
+| -------------------------------------- | ---------------------------------------------------------------- |
+| Delivered price vs reference retail    | Median ≤ reference **in at least one identified viable segment** |
+| Repeat order rate (30-day)             | ≥ 25%                                                            |
+| Cancellation rate (buyer-attributable) | ≤ 10%                                                            |
+| Satisfaction                           | Median rating ≥ 4.0 with ≥40% response rate                      |
 
 ### 10.3 Retailer
-| Gate | Threshold |
-|---|---|
-| Repeat order rate | ≥ 60% |
-| Average basket size | Stable or growing across the period |
-| Supplier retention (retailer reordering from the same farmer) | ≥ 30% |
+
+| Gate                                                          | Threshold                           |
+| ------------------------------------------------------------- | ----------------------------------- |
+| Repeat order rate                                             | ≥ 60%                               |
+| Average basket size                                           | Stable or growing across the period |
+| Supplier retention (retailer reordering from the same farmer) | ≥ 30%                               |
 
 ### 10.4 Logistics
-| Gate | Threshold |
-|---|---|
-| Cost per order | Declining trend across the period |
-| Cost per kg | Declining trend, and ≤ delivery revenue per kg in ≥1 delivery model |
-| Utilisation | ≥ 50% on `AGGREGATED_ROUTE` trips |
-| Average distance per order | Declining or stable as volume grows |
+
+| Gate                       | Threshold                                                           |
+| -------------------------- | ------------------------------------------------------------------- |
+| Cost per order             | Declining trend across the period                                   |
+| Cost per kg                | Declining trend, and ≤ delivery revenue per kg in ≥1 delivery model |
+| Utilisation                | ≥ 50% on `AGGREGATED_ROUTE` trips                                   |
+| Average distance per order | Declining or stable as volume grows                                 |
 
 ### 10.5 Platform
-| Gate | Threshold |
-|---|---|
+
+| Gate                | Threshold                                                                                                        |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | Contribution margin | Positive in ≥1 identified segment, **or** a written model showing positive at 3× density with stated assumptions |
-| Loss budget | Not exceeded; every negative-margin order explained |
-| CAC | Measured per channel with a payback period computed against measured repeat behaviour |
-| GMV / take rate | Measured and reported (context, not gates) |
+| Loss budget         | Not exceeded; every negative-margin order explained                                                              |
+| CAC                 | Measured per channel with a payback period computed against measured repeat behaviour                            |
+| GMV / take rate     | Measured and reported (context, not gates)                                                                       |
 
 ### 10.6 The thesis gate
 
 > **Can Langgol simultaneously improve farmer realisation and provide a competitive delivered price for a meaningful subset of transactions?**
 
-- **Yes** → the deliverable is a written characterisation of *which* transactions work: basket band, delivery model, distance band, product, buyer segment, season — with the supporting numbers. That characterisation becomes the expansion strategy.
-- **No** → the deliverable is a written diagnosis of *what must change*: density, basket size, delivery cost structure, crop mix, commission, or the thesis itself. Proceeding to Phase 7 is not permitted on hope.
+- **Yes** → the deliverable is a written characterisation of _which_ transactions work: basket band, delivery model, distance band, product, buyer segment, season — with the supporting numbers. That characterisation becomes the expansion strategy.
+- **No** → the deliverable is a written diagnosis of _what must change_: density, basket size, delivery cost structure, crop mix, commission, or the thesis itself. Proceeding to Phase 7 is not permitted on hope.
 
 "Meaningful subset" is defined before the pilot ends, not after the data arrives: **≥25% of completed orders**, in a segment that is reachable and repeatable at scale.
 
@@ -373,15 +380,15 @@ Evaluated on the pilot period with ≥100 completed orders, and **reported per s
 
 ## 11. Reporting surfaces
 
-| Surface | Audience | Cadence |
-|---|---|---|
-| Order economics detail | Ops, product | Per order, on demand |
-| Daily ops report | Ops | Daily — negative-margin orders, missing subsidy reasons, budget burn, unexplained variances, baseline coverage |
-| Trip economics | Logistics ops | Per trip |
-| Segment matrix (basket × delivery model × distance × district) | Product, leadership | Weekly |
-| Baseline coverage & confidence | Product | Weekly — the share of orders with a usable baseline, by confidence tier |
-| Gate scorecard | Leadership | Weekly, against §10 |
-| Pilot conclusion report | Leadership, partners | End of pilot |
+| Surface                                                        | Audience             | Cadence                                                                                                        |
+| -------------------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Order economics detail                                         | Ops, product         | Per order, on demand                                                                                           |
+| Daily ops report                                               | Ops                  | Daily — negative-margin orders, missing subsidy reasons, budget burn, unexplained variances, baseline coverage |
+| Trip economics                                                 | Logistics ops        | Per trip                                                                                                       |
+| Segment matrix (basket × delivery model × distance × district) | Product, leadership  | Weekly                                                                                                         |
+| Baseline coverage & confidence                                 | Product              | Weekly — the share of orders with a usable baseline, by confidence tier                                        |
+| Gate scorecard                                                 | Leadership           | Weekly, against §10                                                                                            |
+| Pilot conclusion report                                        | Leadership, partners | End of pilot                                                                                                   |
 
 **Every surface displaying a derived economic figure also displays its methodology version, sample size and confidence.** A number without those three is not shown.
 

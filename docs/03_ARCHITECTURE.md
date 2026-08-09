@@ -18,40 +18,54 @@
 
 ## 2. Technology decisions
 
-| Layer | Choice | Rationale | Rejected alternative |
-|---|---|---|---|
-| Framework | **Next.js (App Router) + TypeScript strict** | Server Components cut JS shipped to low-end Android; one codebase for buyer, farmer, admin; mature ecosystem | SPA + separate API — doubles surface area and payload for no MVP benefit |
-| UI | **React + Tailwind CSS + Radix primitives** | Accessible primitives, no heavyweight component library, full control of visual language ([`00_PRODUCT_VISION.md`](00_PRODUCT_VISION.md) §9) | Full MUI/AntD — visual identity would be generic, bundle heavy |
-| Database | **PostgreSQL on Supabase + PostGIS** | Relational integrity is non-negotiable for money; PostGIS for radius search; managed ops | MongoDB — no transactional guarantees we can rely on for a ledger |
-| ORM | **Prisma** | Type safety, migrations, good DX; raw SQL escape hatch for geo and ledger | Drizzle is a fine alternative; Prisma chosen for team familiarity and migration tooling |
-| Auth | **Auth.js (NextAuth v5) with a custom phone-OTP provider, DB sessions** | Bangladeshi users authenticate by phone, not email. OTP must route through a local SMS aggregator, which means we own the OTP flow anyway | Supabase Auth — couples us to their user table and their SMS vendors; using Prisma alongside Supabase RLS creates two authorization models (see §6.3) |
-| Validation | **Zod** at every trust boundary | One schema for parse + type inference | — |
-| Background work | **Postgres-backed job/outbox table + a worker process**; a scheduler triggers sweeps | Zero extra infrastructure at MVP scale; transactional with the state change | Redis/BullMQ — added only when volume demands it |
-| Cache | **None at MVP**, except Next.js data cache | Premature. Add Redis when a measured bottleneck exists | — |
-| Object storage | **Supabase Storage** behind a `FileStorage` interface | Private buckets + signed URLs; swappable for S3 | Direct S3 — more setup, no MVP gain |
-| Observability | Structured JSON logs, request ids, error tracking (Sentry-class), Postgres metrics | — | — |
-| Testing | Vitest (unit), Playwright (E2E), Testcontainers-or-ephemeral-Postgres (integration) | — | — |
-| Monorepo | **pnpm workspaces + Turborepo** | Enforces the domain/infra boundary at package level | Single package — boundary erodes within weeks |
+| Layer           | Choice                                                                               | Rationale                                                                                                                                    | Rejected alternative                                                                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework       | **Next.js (App Router) + TypeScript strict**                                         | Server Components cut JS shipped to low-end Android; one codebase for buyer, farmer, admin; mature ecosystem                                 | SPA + separate API — doubles surface area and payload for no MVP benefit                                                                              |
+| UI              | **React + Tailwind CSS + Radix primitives**                                          | Accessible primitives, no heavyweight component library, full control of visual language ([`00_PRODUCT_VISION.md`](00_PRODUCT_VISION.md) §9) | Full MUI/AntD — visual identity would be generic, bundle heavy                                                                                        |
+| Database        | **PostgreSQL on Supabase + PostGIS**                                                 | Relational integrity is non-negotiable for money; PostGIS for radius search; managed ops                                                     | MongoDB — no transactional guarantees we can rely on for a ledger                                                                                     |
+| ORM             | **Prisma**                                                                           | Type safety, migrations, good DX; raw SQL escape hatch for geo and ledger                                                                    | Drizzle is a fine alternative; Prisma chosen for team familiarity and migration tooling                                                               |
+| Auth            | **Auth.js (NextAuth v5) with a custom phone-OTP provider, DB sessions**              | Bangladeshi users authenticate by phone, not email. OTP must route through a local SMS aggregator, which means we own the OTP flow anyway    | Supabase Auth — couples us to their user table and their SMS vendors; using Prisma alongside Supabase RLS creates two authorization models (see §6.3) |
+| Validation      | **Zod** at every trust boundary                                                      | One schema for parse + type inference                                                                                                        | —                                                                                                                                                     |
+| Background work | **Postgres-backed job/outbox table + a worker process**; a scheduler triggers sweeps | Zero extra infrastructure at MVP scale; transactional with the state change                                                                  | Redis/BullMQ — added only when volume demands it                                                                                                      |
+| Cache           | **None at MVP**, except Next.js data cache                                           | Premature. Add Redis when a measured bottleneck exists                                                                                       | —                                                                                                                                                     |
+| Object storage  | **Supabase Storage** behind a `FileStorage` interface                                | Private buckets + signed URLs; swappable for S3                                                                                              | Direct S3 — more setup, no MVP gain                                                                                                                   |
+| Observability   | Structured JSON logs, request ids, error tracking (Sentry-class), Postgres metrics   | —                                                                                                                                            | —                                                                                                                                                     |
+| Testing         | Vitest (unit), Playwright (E2E), Testcontainers-or-ephemeral-Postgres (integration)  | —                                                                                                                                            | —                                                                                                                                                     |
+| Monorepo        | **pnpm workspaces + Turborepo**                                                      | Enforces the domain/infra boundary at package level                                                                                          | Single package — boundary erodes within weeks                                                                                                         |
 
 ### 2.1 Provider abstractions (the ones that matter)
 
 ```ts
 interface PaymentProvider {
   readonly id: string
-  createCharge(i: CreateChargeInput): Promise<ChargeResult>       // idempotencyKey required
+  createCharge(i: CreateChargeInput): Promise<ChargeResult> // idempotencyKey required
   capture(chargeRef: string, key: string): Promise<ChargeResult>
   refund(i: RefundInput): Promise<RefundResult>
   verifyWebhook(raw: Buffer, headers: Headers): WebhookVerification
 }
 
-interface PayoutProvider {                                        // farmer settlement
+interface PayoutProvider {
+  // farmer settlement
   disburse(i: DisburseInput): Promise<DisburseResult>
   getStatus(ref: string): Promise<DisburseStatus>
 }
 
-interface SmsProvider  { send(to: E164, template: TemplateId, vars: Record<string,string>, lang: Language): Promise<SmsResult> }
-interface FileStorage  { putSigned(bucket, key, opts): Promise<SignedUpload>; getSigned(bucket, key, ttl): Promise<string> }
-interface GeoProvider  { distance(a: LatLng, b: LatLng, mode: 'HAVERSINE'|'ROAD'): Promise<DistanceResult>; geocode(q): Promise<LatLng|null> }
+interface SmsProvider {
+  send(
+    to: E164,
+    template: TemplateId,
+    vars: Record<string, string>,
+    lang: Language,
+  ): Promise<SmsResult>
+}
+interface FileStorage {
+  putSigned(bucket, key, opts): Promise<SignedUpload>
+  getSigned(bucket, key, ttl): Promise<string>
+}
+interface GeoProvider {
+  distance(a: LatLng, b: LatLng, mode: 'HAVERSINE' | 'ROAD'): Promise<DistanceResult>
+  geocode(q): Promise<LatLng | null>
+}
 ```
 
 MVP implementations: `MockPaymentProvider` (dev/test), `CashOnDeliveryProvider`, one real gateway/MFS provider, `LocalSmsProvider`, `SupabaseFileStorage`, `HaversineGeoProvider` (road distance behind a feature flag).
@@ -108,7 +122,7 @@ The brief suggests separate web and admin apps. For the MVP that is a cost witho
 
 **Recommendation:** one Next.js app with an `(admin)` route group gated by `ADMIN`/`OPS_AGENT` role in middleware **and** re-checked in every server action. Split into `apps/admin` at Phase 6–7, when admin gains heavy analytics and a different release cadence. The package boundaries above make that split mechanical.
 
-*Flagging this as a deviation from the brief's suggested structure, per §21 of the brief which invites a better architecture.*
+_Flagging this as a deviation from the brief's suggested structure, per §21 of the brief which invites a better architecture._
 
 ---
 
@@ -138,11 +152,11 @@ PostgreSQL           constraints & triggers = final backstop
 ```ts
 // apps/web/app/actions/orders.ts
 export async function placeOrderAction(input: unknown) {
-  const session = await requireUser()                                  // 401 if absent
-  const dto     = PlaceOrderSchema.parse(input)                        // quoteId, idempotencyKey, paymentMethod
+  const session = await requireUser() // 401 if absent
+  const dto = PlaceOrderSchema.parse(input) // quoteId, idempotencyKey, paymentMethod
   await rateLimit(`order.create:${session.userId}`, { limit: 5, windowSec: 60 })
   return toActionResult(
-    await placeOrder({ actor: session, ...dto })                       // application use case
+    await placeOrder({ actor: session, ...dto }), // application use case
   )
 }
 ```
@@ -150,29 +164,31 @@ export async function placeOrderAction(input: unknown) {
 ```ts
 // packages/application/usecases/placeOrder.ts  (abbreviated)
 export async function placeOrder(cmd: PlaceOrderCommand): Promise<Result<OrderView, DomainError>> {
-  return withIdempotency({ scope: 'order.create', key: cmd.idempotencyKey, userId: cmd.actor.userId }, () =>
-    db.transaction(async (tx) => {
-      const quote = await tx.quotes.findOwnedById(cmd.quoteId, cmd.actor.userId)
-      if (!quote)              return err(NotFound('quote'))
-      if (quote.consumedAt)    return err(Conflict('quote_already_used'))
-      if (quote.expiresAt < now()) return err(Expired('quote_expired'))
+  return withIdempotency(
+    { scope: 'order.create', key: cmd.idempotencyKey, userId: cmd.actor.userId },
+    () =>
+      db.transaction(async (tx) => {
+        const quote = await tx.quotes.findOwnedById(cmd.quoteId, cmd.actor.userId)
+        if (!quote) return err(NotFound('quote'))
+        if (quote.consumedAt) return err(Conflict('quote_already_used'))
+        if (quote.expiresAt < now()) return err(Expired('quote_expired'))
 
-      const listings = await tx.listings.findManyForUpdate(quote.lineListingIds)
-      const check    = revalidateQuote(quote, listings, now())          // ← DOMAIN, pure
-      if (!check.ok) return err(check.error)                            // price/availability drifted
+        const listings = await tx.listings.findManyForUpdate(quote.lineListingIds)
+        const check = revalidateQuote(quote, listings, now()) // ← DOMAIN, pure
+        if (!check.ok) return err(check.error) // price/availability drifted
 
-      for (const line of quote.lines) {
-        const reserved = await tx.listings.reserve(line.listingId, line.quantityBase)  // atomic UPDATE
-        if (!reserved) return err(InsufficientInventory(line.listingId))
-      }
+        for (const line of quote.lines) {
+          const reserved = await tx.listings.reserve(line.listingId, line.quantityBase) // atomic UPDATE
+          if (!reserved) return err(InsufficientInventory(line.listingId))
+        }
 
-      const order   = await tx.orders.create(buildOrderFromQuote(quote, cmd))          // ← DOMAIN
-      await tx.orderEvents.append(order.id, transition(null, 'PENDING', cmd.actor))    // ← DOMAIN
-      await tx.ledger.post(journalForOrderPlaced(order))                               // ← DOMAIN
-      await tx.quotes.markConsumed(quote.id, order.id)
-      await tx.outbox.add([OrderPlaced(order), NotifySeller(order)])
-      return ok(toOrderView(order))
-    })
+        const order = await tx.orders.create(buildOrderFromQuote(quote, cmd)) // ← DOMAIN
+        await tx.orderEvents.append(order.id, transition(null, 'PENDING', cmd.actor)) // ← DOMAIN
+        await tx.ledger.post(journalForOrderPlaced(order)) // ← DOMAIN
+        await tx.quotes.markConsumed(quote.id, order.id)
+        await tx.outbox.add([OrderPlaced(order), NotifySeller(order)])
+        return ok(toOrderView(order))
+      }),
   )
 }
 ```
@@ -207,11 +223,28 @@ Declarative transition table; the only way status changes. Specified in [`05_ORD
 
 ```ts
 const TRANSITIONS: Transition[] = [
-  { from: 'PENDING',   to: 'CONFIRMED', actors: ['FARMER','ADMIN'], guard: withinAcceptanceWindow, effects: ['COMMIT_RESERVATION','NOTIFY_BUYER'] },
-  { from: 'PENDING',   to: 'CANCELLED', actors: ['BUYER','FARMER','SYSTEM','ADMIN'], guard: always, effects: ['RELEASE_RESERVATION','REFUND_IF_PREPAID'] },
+  {
+    from: 'PENDING',
+    to: 'CONFIRMED',
+    actors: ['FARMER', 'ADMIN'],
+    guard: withinAcceptanceWindow,
+    effects: ['COMMIT_RESERVATION', 'NOTIFY_BUYER'],
+  },
+  {
+    from: 'PENDING',
+    to: 'CANCELLED',
+    actors: ['BUYER', 'FARMER', 'SYSTEM', 'ADMIN'],
+    guard: always,
+    effects: ['RELEASE_RESERVATION', 'REFUND_IF_PREPAID'],
+  },
   // ...
 ]
-export function transition(order: OrderState, to: OrderStatus, actor: Actor, ctx: Ctx): Result<TransitionOutcome, DomainError>
+export function transition(
+  order: OrderState,
+  to: OrderStatus,
+  actor: Actor,
+  ctx: Ctx,
+): Result<TransitionOutcome, DomainError>
 ```
 
 An `OrderStatus` string assigned anywhere outside this module is a review-blocking defect.
@@ -255,9 +288,11 @@ Failures, cancellations and disputes carry an explicit `FaultParty` (`BUYER` · 
 Full treatment in [`07_SECURITY.md`](07_SECURITY.md); the architectural shape:
 
 ### 6.1 Authentication
+
 Phone + OTP as the primary factor. OTP is hashed at rest, 5-minute TTL, max 5 attempts, rate-limited per phone / per IP / per device. Sessions are database-backed (revocable, unlike stateless JWTs) with an httpOnly, Secure, SameSite=Lax cookie. Admin accounts additionally require a second factor before any money-moving action.
 
 ### 6.2 Authorization
+
 Three layers, all mandatory:
 
 1. **Route gate** (middleware) — coarse: is this session allowed in this route group?
@@ -267,9 +302,11 @@ Three layers, all mandatory:
 Layer 3 is what actually kills IDOR. Layers 1 and 2 are defence in depth.
 
 ### 6.3 Note on Supabase RLS
+
 We use Supabase as **managed Postgres**, and access it through Prisma with a privileged application role. Row Level Security therefore does not enforce our application's rules, because Prisma connects as one role for every user.
 
 Two coherent options exist; mixing them is the failure mode:
+
 - **(A) App-layer authorization** — Prisma + policy layer, RLS enabled with a deny-all default so no accidental direct-client access can read data.
 - **(B) RLS-first** — the browser talks to Supabase directly with the user's JWT and Postgres policies do enforcement.
 
@@ -283,20 +320,20 @@ Two coherent options exist; mixing them is the failure mode:
 - Secrets live in the platform secret store; never in the repo, never in `NEXT_PUBLIC_*`. A CI check fails the build if a `NEXT_PUBLIC_` variable name matches secret-like patterns.
 - **Business parameters are not environment variables.** They live in `PlatformConfig` (versioned, audited, admin-editable), and every quote and order stores the `configVersion` used, so any historical price is reproducible years later. At minimum:
 
-| Key | MVP value | Notes |
-|---|---|---|
-| `commission.bps` | **300** (3%, seller-side) | Decision D2. Never a literal in business logic |
-| `commission.incidence` | `SELLER` | Buyer-side marketplace fee stays at zero unless economics force it |
-| `delivery.tariff` | slab table | [`04_MARKETPLACE.md`](04_MARKETPLACE.md) §3 |
-| `delivery.fundingModels.enabled` | list | Subsidising models auto-disable at budget exhaustion |
-| `delivery.circuityFactor` | 1.30, per district | Calibrated against measured trips |
-| `settlement.rail.default` | per farmer, config default | `AGENT_CASH` \| `MFS` \| `BANK` \| `REGULATED_PROVIDER` |
-| `settlement.holdHours` | by risk tier | T+0/T+1 target; open decision Q2 |
-| `cancellation.feeSchedule` | by state | Destination defaults to farmer compensation (D7) |
-| `payments.prepaidEnabled` | **false** | Hard-gated until the custody review completes (D4) |
-| `discovery.radiusKm` | by role | Consumer vs retailer caps |
-| `order.acceptanceWindowMinutes`, `quote.ttlMinutes` | 120 / 15 | Quiet-hours aware |
-| `ranking.weights` | §5.2 of `04` | Changing them is an audited product decision |
+| Key                                                 | MVP value                  | Notes                                                              |
+| --------------------------------------------------- | -------------------------- | ------------------------------------------------------------------ |
+| `commission.bps`                                    | **300** (3%, seller-side)  | Decision D2. Never a literal in business logic                     |
+| `commission.incidence`                              | `SELLER`                   | Buyer-side marketplace fee stays at zero unless economics force it |
+| `delivery.tariff`                                   | slab table                 | [`04_MARKETPLACE.md`](04_MARKETPLACE.md) §3                        |
+| `delivery.fundingModels.enabled`                    | list                       | Subsidising models auto-disable at budget exhaustion               |
+| `delivery.circuityFactor`                           | 1.30, per district         | Calibrated against measured trips                                  |
+| `settlement.rail.default`                           | per farmer, config default | `AGENT_CASH` \| `MFS` \| `BANK` \| `REGULATED_PROVIDER`            |
+| `settlement.holdHours`                              | by risk tier               | T+0/T+1 target; open decision Q2                                   |
+| `cancellation.feeSchedule`                          | by state                   | Destination defaults to farmer compensation (D7)                   |
+| `payments.prepaidEnabled`                           | **false**                  | Hard-gated until the custody review completes (D4)                 |
+| `discovery.radiusKm`                                | by role                    | Consumer vs retailer caps                                          |
+| `order.acceptanceWindowMinutes`, `quote.ttlMinutes` | 120 / 15                   | Quiet-hours aware                                                  |
+| `ranking.weights`                                   | §5.2 of `04`               | Changing them is an audited product decision                       |
 
 ---
 
@@ -304,18 +341,18 @@ Two coherent options exist; mixing them is the failure mode:
 
 A single worker plus scheduled invocations, all Postgres-driven:
 
-| Job | Cadence | Purpose |
-|---|---|---|
-| `outbox:dispatch` | every 15 s | Deliver domain events → notifications/analytics with retry and backoff |
-| `orders:expire-acceptance` | every minute | `PENDING` past `acceptanceDeadline` → `CANCELLED(SELLER_TIMEOUT)` |
-| `reservations:release` | every minute | Expired `HELD` reservations → release inventory |
-| `listings:expire` | hourly | `available_to` passed → `EXPIRED` |
-| `trips:costing-queue` | hourly | Nag ops for uncosted `COMPLETED` trips — blocks economics |
-| `economics:compute` | every 5 min | Delivered orders with a costed trip → immutable `OrderEconomics` |
-| `economics:rollup` | daily | Segment matrix: day × district × product × basket band × delivery model × buyer segment |
-| `budget:monitor` | hourly | Derive subsidy spend from the ledger; fire 50/75/90/100% controls |
-| `settlement:build` | every 15 min | Build settlements for orders past their risk-tier hold (T+0/T+1 target) |
-| `pricebaseline:remind` | daily | Prompt ops agents for field price observations; report baseline coverage |
+| Job                        | Cadence      | Purpose                                                                                 |
+| -------------------------- | ------------ | --------------------------------------------------------------------------------------- |
+| `outbox:dispatch`          | every 15 s   | Deliver domain events → notifications/analytics with retry and backoff                  |
+| `orders:expire-acceptance` | every minute | `PENDING` past `acceptanceDeadline` → `CANCELLED(SELLER_TIMEOUT)`                       |
+| `reservations:release`     | every minute | Expired `HELD` reservations → release inventory                                         |
+| `listings:expire`          | hourly       | `available_to` passed → `EXPIRED`                                                       |
+| `trips:costing-queue`      | hourly       | Nag ops for uncosted `COMPLETED` trips — blocks economics                               |
+| `economics:compute`        | every 5 min  | Delivered orders with a costed trip → immutable `OrderEconomics`                        |
+| `economics:rollup`         | daily        | Segment matrix: day × district × product × basket band × delivery model × buyer segment |
+| `budget:monitor`           | hourly       | Derive subsidy spend from the ledger; fire 50/75/90/100% controls                       |
+| `settlement:build`         | every 15 min | Build settlements for orders past their risk-tier hold (T+0/T+1 target)                 |
+| `pricebaseline:remind`     | daily        | Prompt ops agents for field price observations; report baseline coverage                |
 
 All jobs are idempotent and safe to run twice. Job endpoints are authenticated with a shared secret and are not reachable publicly.
 
@@ -326,10 +363,16 @@ All jobs are idempotent and safe to run twice. Job endpoints are authenticated w
 IVR and USSD are **not** in the MVP (decision D8). The layers that would need to change are built so they can be added without redesign:
 
 ```ts
-type Channel = 'SMS' | 'IN_APP' | 'EMAIL' | 'PUSH' | 'IVR' | 'USSD'   // last two reserved
+type Channel = 'SMS' | 'IN_APP' | 'EMAIL' | 'PUSH' | 'IVR' | 'USSD' // last two reserved
 
 interface NotificationDispatcher {
-  send(to: Recipient, template: TemplateId, vars: Vars, lang: Language, channel: Channel): Promise<Result>
+  send(
+    to: Recipient,
+    template: TemplateId,
+    vars: Vars,
+    lang: Language,
+    channel: Channel,
+  ): Promise<Result>
 }
 ```
 
@@ -337,7 +380,7 @@ Three design rules make the later addition mechanical:
 
 1. **Templates are channel-agnostic and content-first.** A template declares its variables and its meaning; each channel renders it. An SMS body, an IVR script and a USSD menu string are three renderings of one message, not three separate messages.
 2. **Farmer actions are modelled as intents, not as UI events.** `AcceptOrder`, `RejectOrder`, `MarkReady` are intents carrying an actor, a target and a reason. The web UI is one way to raise an intent; a keypress in an IVR call or a USSD menu selection would be another. No business rule lives in a React component.
-3. **Every intent is expressible in a handful of tokens.** If a farmer action cannot be reduced to "one order, one choice, optional reason", it cannot work over a phone keypad — and that is a useful constraint on the farmer app's design *today*, not just later.
+3. **Every intent is expressible in a handful of tokens.** If a farmer action cannot be reduced to "one order, one choice, optional reason", it cannot work over a phone keypad — and that is a useful constraint on the farmer app's design _today_, not just later.
 
 The notification channel enum already reserves `IVR` and `USSD` ([`02_DATABASE.md`](02_DATABASE.md) §10). No implementation exists, and none should be written until the reach data justifies it.
 
@@ -356,6 +399,7 @@ Non-negotiables for buyer and farmer surfaces:
 - Budgets enforced in CI: ≤150 KB gzip JS on discovery/listing/checkout, LCP <2.5 s on emulated Fast-3G/mid-tier Android
 
 ### 9.1 Localisation
+
 `next-intl` with `bn` as the default locale for farmer surfaces. All user-facing strings come from catalogues — no hardcoded text, enforced by lint. Numerals: Bangla digits for `bn` with a user preference, since many users read Western digits for money. Dates render in `Asia/Dhaka` with Bangla month names.
 
 ---
@@ -364,16 +408,16 @@ Non-negotiables for buyer and farmer surfaces:
 
 The most valuable test is not "does the page render". It is:
 
-> *Can a farmer list produce, can a buyer purchase it, does Langgol compute the correct transaction, and does the system safely complete the order?*
+> _Can a farmer list produce, can a buyer purchase it, does Langgol compute the correct transaction, and does the system safely complete the order?_
 
-| Level | Coverage target | What |
-|---|---|---|
-| **Domain unit** | ~100% of `packages/domain` | Money arithmetic & rounding; unit conversion; delivered-cost engine incl. the worked example and its ranking inversion; delivery funding splits; every legal and illegal FSM transition; ledger balance invariants; policy predicates; **economics formulas, baseline matching and degradation rules, trip-cost allocation** |
-| **Application integration** | All use cases | Against a real ephemeral Postgres: order placement, concurrent-order oversell attempt, idempotent replay, quote expiry/tamper, cancellation refunds, settlement build |
-| **API/authorization** | Every mutation | Each endpoint hit as: anonymous, wrong role, correct role wrong owner, correct owner. Wrong-owner must return 404/403 and must not leak existence |
-| **E2E (Playwright)** | 4 critical journeys | Farmer signup→verify→list; buyer discover→checkout→track; farmer accept→fulfil→deliver; admin dispute→refund→settlement |
-| **Contract** | Each provider adapter | Recorded fixtures + webhook signature verification, replay and out-of-order delivery |
-| **Performance** | Discovery, listing, checkout | Lighthouse CI budgets in the pipeline |
+| Level                       | Coverage target              | What                                                                                                                                                                                                                                                                                                                         |
+| --------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Domain unit**             | ~100% of `packages/domain`   | Money arithmetic & rounding; unit conversion; delivered-cost engine incl. the worked example and its ranking inversion; delivery funding splits; every legal and illegal FSM transition; ledger balance invariants; policy predicates; **economics formulas, baseline matching and degradation rules, trip-cost allocation** |
+| **Application integration** | All use cases                | Against a real ephemeral Postgres: order placement, concurrent-order oversell attempt, idempotent replay, quote expiry/tamper, cancellation refunds, settlement build                                                                                                                                                        |
+| **API/authorization**       | Every mutation               | Each endpoint hit as: anonymous, wrong role, correct role wrong owner, correct owner. Wrong-owner must return 404/403 and must not leak existence                                                                                                                                                                            |
+| **E2E (Playwright)**        | 4 critical journeys          | Farmer signup→verify→list; buyer discover→checkout→track; farmer accept→fulfil→deliver; admin dispute→refund→settlement                                                                                                                                                                                                      |
+| **Contract**                | Each provider adapter        | Recorded fixtures + webhook signature verification, replay and out-of-order delivery                                                                                                                                                                                                                                         |
+| **Performance**             | Discovery, listing, checkout | Lighthouse CI budgets in the pipeline                                                                                                                                                                                                                                                                                        |
 
 **Merge blockers:** any test touching money, authorization, or the order FSM. Concurrency tests (two buyers, one last crate of tomatoes) are mandatory, not optional.
 
@@ -381,12 +425,12 @@ The most valuable test is not "does the page render". It is:
 
 ## 11. Environments and deployment
 
-| Environment | Data | Payments | Purpose |
-|---|---|---|---|
-| Local | Seeded synthetic | Mock only | Development |
-| Preview (per PR) | Ephemeral seeded | Mock only | Review |
-| Staging | Anonymised | Provider sandbox | QA, UAT with field team |
-| Production | Live | Live | Pilot |
+| Environment      | Data             | Payments         | Purpose                 |
+| ---------------- | ---------------- | ---------------- | ----------------------- |
+| Local            | Seeded synthetic | Mock only        | Development             |
+| Preview (per PR) | Ephemeral seeded | Mock only        | Review                  |
+| Staging          | Anonymised       | Provider sandbox | QA, UAT with field team |
+| Production       | Live             | Live             | Pilot                   |
 
 Migrations run as an explicit gated step, never implicitly on boot. Expand→migrate→contract for any breaking change. Nightly encrypted backups plus PITR; **a restore is rehearsed before launch, not after the first incident.**
 
@@ -405,24 +449,24 @@ An unbalanced-ledger alert should never fire. If it does, something is very wron
 
 ## 13. Architecture decision record (summary)
 
-| # | Decision | Status | Consequence |
-|---|---|---|---|
-| ADR-01 | Single Next.js app for MVP; package-level boundaries preserved | Proposed | Split to `apps/admin` is mechanical at Phase 6 |
-| ADR-02 | Framework-free domain package | Proposed | Slight indirection cost; large testability and longevity gain |
-| ADR-03 | `BigInt` poisha everywhere; branded type | Proposed | Serialisation discipline required at boundaries |
-| ADR-04 | Double-entry ledger from day one | Proposed | More work now; credit, refunds and audit become tractable later |
-| ADR-05 | Auth.js phone-OTP, DB sessions, not Supabase Auth | Proposed | We own the OTP flow and the SMS vendor relationship |
-| ADR-06 | App-layer authorization; RLS deny-all as backstop | Proposed | One authorization model, not two |
-| ADR-07 | PostGIS with generated geography column | Proposed | Raw SQL for radius queries; indexable from day one |
-| ADR-08 | Postgres-backed outbox/jobs, no Redis at MVP | Proposed | Revisit at measured scale |
-| ADR-09 | Curated product catalogue, not free-text | Proposed | Comparable listings and usable price baselines |
-| ADR-10 | Server-side quotes as the sole pricing authority | Proposed | Kills client-side price manipulation structurally |
-| ADR-11 | COD as a first-class payment method | Proposed | Ledger models cash-in-transit and agent float honestly |
-| ADR-12 | **Economic measurement is a domain module with a write path**, not a query layer | Approved | Immutable `OrderEconomics` per order; methodology versioned; costs more upfront, makes every claim defensible |
-| ADR-13 | **The trip, not the order, is the unit of delivery cost** | Approved | `DeliveryTrip` + allocation methods; aggregation economics become measurable instead of assumed |
-| ADR-14 | **Delivery funding is a first-class enum with six models**; cost-recovering is the default | Approved | Subsidy is always explicit, attributable and budget-controlled |
-| ADR-15 | **Fault attribution is an explicit domain field** on cancellations, failures and disputes | Approved | Determines who bears cost; makes cancellation-fee destination a rule, not a judgement call |
-| ADR-16 | **Commission at 300 bps in config**, seller-side, zero buyer-side fee | Approved | Rate changes are audited configuration, never a deploy |
-| ADR-17 | **Prepaid payments hard-gated by config** until the custody/escrow review completes | Approved | The interface exists; the capability does not |
+| #      | Decision                                                                                    | Status   | Consequence                                                                                                      |
+| ------ | ------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| ADR-01 | Single Next.js app for MVP; package-level boundaries preserved                              | Proposed | Split to `apps/admin` is mechanical at Phase 6                                                                   |
+| ADR-02 | Framework-free domain package                                                               | Proposed | Slight indirection cost; large testability and longevity gain                                                    |
+| ADR-03 | `BigInt` poisha everywhere; branded type                                                    | Proposed | Serialisation discipline required at boundaries                                                                  |
+| ADR-04 | Double-entry ledger from day one                                                            | Proposed | More work now; credit, refunds and audit become tractable later                                                  |
+| ADR-05 | Auth.js phone-OTP, DB sessions, not Supabase Auth                                           | Proposed | We own the OTP flow and the SMS vendor relationship                                                              |
+| ADR-06 | App-layer authorization; RLS deny-all as backstop                                           | Proposed | One authorization model, not two                                                                                 |
+| ADR-07 | PostGIS with generated geography column                                                     | Proposed | Raw SQL for radius queries; indexable from day one                                                               |
+| ADR-08 | Postgres-backed outbox/jobs, no Redis at MVP                                                | Proposed | Revisit at measured scale                                                                                        |
+| ADR-09 | Curated product catalogue, not free-text                                                    | Proposed | Comparable listings and usable price baselines                                                                   |
+| ADR-10 | Server-side quotes as the sole pricing authority                                            | Proposed | Kills client-side price manipulation structurally                                                                |
+| ADR-11 | COD as a first-class payment method                                                         | Proposed | Ledger models cash-in-transit and agent float honestly                                                           |
+| ADR-12 | **Economic measurement is a domain module with a write path**, not a query layer            | Approved | Immutable `OrderEconomics` per order; methodology versioned; costs more upfront, makes every claim defensible    |
+| ADR-13 | **The trip, not the order, is the unit of delivery cost**                                   | Approved | `DeliveryTrip` + allocation methods; aggregation economics become measurable instead of assumed                  |
+| ADR-14 | **Delivery funding is a first-class enum with six models**; cost-recovering is the default  | Approved | Subsidy is always explicit, attributable and budget-controlled                                                   |
+| ADR-15 | **Fault attribution is an explicit domain field** on cancellations, failures and disputes   | Approved | Determines who bears cost; makes cancellation-fee destination a rule, not a judgement call                       |
+| ADR-16 | **Commission at 300 bps in config**, seller-side, zero buyer-side fee                       | Approved | Rate changes are audited configuration, never a deploy                                                           |
+| ADR-17 | **Prepaid payments hard-gated by config** until the custody/escrow review completes         | Approved | The interface exists; the capability does not                                                                    |
 | ADR-18 | **Settlement targets T+0/T+1 post-delivery** with risk-tiered holds and a configurable rail | Approved | Trades some clawback exposure for the thing farmers judge us on; agent cash is a bootstrap, not the architecture |
-| ADR-19 | **Notifications and farmer actions are channel-agnostic intents** | Approved | IVR/USSD becomes an adapter later rather than a redesign; constrains the farmer UI usefully today |
+| ADR-19 | **Notifications and farmer actions are channel-agnostic intents**                           | Approved | IVR/USSD becomes an adapter later rather than a redesign; constrains the farmer UI usefully today                |

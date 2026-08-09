@@ -23,16 +23,16 @@ If Langgol later takes title to goods (buying at harvest and reselling), that is
 
 ## 2. Money representation
 
-| Rule | Detail |
-|---|---|
-| Unit | Integer **poisha**. ৳100.50 = `10050` |
-| Type | `BigInt`, branded as `Poisha` in TypeScript |
-| Never | `float`, `double`, `number` for money — anywhere, including analytics queries |
-| Input | Parsed from strings (`"100.50"`), never from a JS `number` literal |
-| Transport | Serialised as a **string** in JSON. `BigInt` is not JSON-representable and `Number()` loses precision above 2^53 |
-| Storage | `BIGINT` columns, suffix `Poisha` |
-| Display | Formatted per locale: `৳1,234.50` (en) / `৳১,২৩৪.৫০` (bn) |
-| Rounding | Half-up, once per line ([`02_DATABASE.md`](02_DATABASE.md) §1.1) |
+| Rule       | Detail                                                                                                                                                 |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Unit       | Integer **poisha**. ৳100.50 = `10050`                                                                                                                  |
+| Type       | `BigInt`, branded as `Poisha` in TypeScript                                                                                                            |
+| Never      | `float`, `double`, `number` for money — anywhere, including analytics queries                                                                          |
+| Input      | Parsed from strings (`"100.50"`), never from a JS `number` literal                                                                                     |
+| Transport  | Serialised as a **string** in JSON. `BigInt` is not JSON-representable and `Number()` loses precision above 2^53                                       |
+| Storage    | `BIGINT` columns, suffix `Poisha`                                                                                                                      |
+| Display    | Formatted per locale: `৳1,234.50` (en) / `৳১,২৩৪.৫০` (bn)                                                                                              |
+| Rounding   | Half-up, once per line ([`02_DATABASE.md`](02_DATABASE.md) §1.1)                                                                                       |
 | Allocation | `Money.allocate()` distributes a total across weights with no lost poisha; **the remainder always goes to the platform**, never to the farmer or buyer |
 
 A lint rule forbids arithmetic operators on `*Poisha` identifiers outside `packages/domain/money`, and forbids `Number(x)` where `x` is money-typed. This has caught more bugs in more codebases than any amount of care.
@@ -43,27 +43,27 @@ A lint rule forbids arithmetic operators on `*Poisha` identifiers outside `packa
 
 Per-farmer and per-agent accounts are created lazily with `ownerType`/`ownerId`.
 
-| Code | Name | Type | Owner |
-|---|---|---|---|
-| `1000` | Cash — bank | ASSET | PLATFORM |
-| `1010` | Cash — MFS merchant wallet | ASSET | PLATFORM |
-| `1020` | Cash in transit — COD float | ASSET | PLATFORM per **agent** |
-| `1030` | Receivable from payment provider | ASSET | PLATFORM per provider |
-| `2000` | Payable to farmers | LIABILITY | per **farmer** |
-| `2010` | Buyer prepayments held | LIABILITY | per **buyer** |
-| `2020` | Refunds payable | LIABILITY | PLATFORM |
-| `2030` | VAT payable | LIABILITY | PLATFORM |
-| `2040` | Withholding tax payable | LIABILITY | PLATFORM |
-| `4000` | Commission revenue | REVENUE | PLATFORM |
-| `4010` | Delivery fee revenue | REVENUE | PLATFORM |
-| `4020` | Handling fee revenue | REVENUE | PLATFORM |
-| `4030` | Cancellation ops-cost recovery | REVENUE | PLATFORM |
-| `5000` | Logistics cost | EXPENSE | PLATFORM |
-| `5010` | Payment processing cost | EXPENSE | PLATFORM |
-| `5020` | Promotional discount / delivery subsidy | EXPENSE | PLATFORM |
-| `5030` | Spoilage and loss | EXPENSE | PLATFORM |
-| `5040` | Packaging and handling materials | EXPENSE | PLATFORM |
-| `5050` | Field-agent variable cost | EXPENSE | PLATFORM |
+| Code   | Name                                    | Type      | Owner                  |
+| ------ | --------------------------------------- | --------- | ---------------------- |
+| `1000` | Cash — bank                             | ASSET     | PLATFORM               |
+| `1010` | Cash — MFS merchant wallet              | ASSET     | PLATFORM               |
+| `1020` | Cash in transit — COD float             | ASSET     | PLATFORM per **agent** |
+| `1030` | Receivable from payment provider        | ASSET     | PLATFORM per provider  |
+| `2000` | Payable to farmers                      | LIABILITY | per **farmer**         |
+| `2010` | Buyer prepayments held                  | LIABILITY | per **buyer**          |
+| `2020` | Refunds payable                         | LIABILITY | PLATFORM               |
+| `2030` | VAT payable                             | LIABILITY | PLATFORM               |
+| `2040` | Withholding tax payable                 | LIABILITY | PLATFORM               |
+| `4000` | Commission revenue                      | REVENUE   | PLATFORM               |
+| `4010` | Delivery fee revenue                    | REVENUE   | PLATFORM               |
+| `4020` | Handling fee revenue                    | REVENUE   | PLATFORM               |
+| `4030` | Cancellation ops-cost recovery          | REVENUE   | PLATFORM               |
+| `5000` | Logistics cost                          | EXPENSE   | PLATFORM               |
+| `5010` | Payment processing cost                 | EXPENSE   | PLATFORM               |
+| `5020` | Promotional discount / delivery subsidy | EXPENSE   | PLATFORM               |
+| `5030` | Spoilage and loss                       | EXPENSE   | PLATFORM               |
+| `5040` | Packaging and handling materials        | EXPENSE   | PLATFORM               |
+| `5050` | Field-agent variable cost               | EXPENSE   | PLATFORM               |
 
 **No balance is ever stored.** A farmer's payable is `SUM(credits) − SUM(debits)` over account `2000/<farmerId>`. Cached balances are materialised views with a scheduled integrity check, never the source of truth.
 
@@ -105,74 +105,74 @@ Worked on the §7.1 example of [`04_MARKETPLACE.md`](04_MARKETPLACE.md): produce
 
 **Goods delivered, cash collected by agent** — `key: ORDER:<id>:GOODS_DELIVERED`
 
-| Account | DR | CR |
-|---|---|---|
-| `1020` Cash in transit — Agent Karim | ৳256.00 | |
-| `2000` Payable to farmer Rahim | | ৳145.50 |
-| `4000` Commission revenue | | ৳4.50 |
-| `4010` Delivery fee revenue | | ৳96.00 |
-| `4020` Handling fee revenue | | ৳10.00 |
+| Account                              | DR      | CR      |
+| ------------------------------------ | ------- | ------- |
+| `1020` Cash in transit — Agent Karim | ৳256.00 |         |
+| `2000` Payable to farmer Rahim       |         | ৳145.50 |
+| `4000` Commission revenue            |         | ৳4.50   |
+| `4010` Delivery fee revenue          |         | ৳96.00  |
+| `4020` Handling fee revenue          |         | ৳10.00  |
 
 **Agent remits to bank** — `key: REMITTANCE:<id>`
 
-| Account | DR | CR |
-|---|---|---|
-| `1000` Cash — bank | ৳256.00 | |
-| `1020` Cash in transit — Agent Karim | | ৳256.00 |
+| Account                              | DR      | CR      |
+| ------------------------------------ | ------- | ------- |
+| `1000` Cash — bank                   | ৳256.00 |         |
+| `1020` Cash in transit — Agent Karim |         | ৳256.00 |
 
 **Actual delivery cost paid (৳180)** — `key: DELIVERY:<id>:COST`
 
-| Account | DR | CR |
-|---|---|---|
-| `5000` Logistics cost | ৳180.00 | |
-| `1000` Cash — bank | | ৳180.00 |
+| Account               | DR      | CR      |
+| --------------------- | ------- | ------- |
+| `5000` Logistics cost | ৳180.00 |         |
+| `1000` Cash — bank    |         | ৳180.00 |
 
 Delivery revenue ৳96 against a ৳180 cost is an ৳84 loss on this leg, and the reporting layer surfaces it as such. That is the number the pilot exists to move.
 
 **Settlement to farmer** — `key: SETTLEMENT:<id>:PAY`
 
-| Account | DR | CR |
-|---|---|---|
-| `2000` Payable to farmer Rahim | ৳145.50 | |
-| `1000` Cash — bank | | ৳145.50 |
+| Account                        | DR      | CR      |
+| ------------------------------ | ------- | ------- |
+| `2000` Payable to farmer Rahim | ৳145.50 |         |
+| `1000` Cash — bank             |         | ৳145.50 |
 
-### 5.2 Prepaid (MFS / gateway) — *built to the interface, disabled at launch (D4)*
+### 5.2 Prepaid (MFS / gateway) — _built to the interface, disabled at launch (D4)_
 
 Provider fee 1.5% = ৳3.84. These entries are specified and tested now so that enabling prepaid later is a configuration change with a known ledger shape, not a new financial design under time pressure.
 
 **Payment captured** — `key: PAYMENT:<providerRef>`
 
-| Account | DR | CR |
-|---|---|---|
-| `1030` Receivable from provider | ৳252.16 | |
-| `5010` Payment processing cost | ৳3.84 | |
-| `2010` Buyer prepayments held | | ৳256.00 |
+| Account                         | DR      | CR      |
+| ------------------------------- | ------- | ------- |
+| `1030` Receivable from provider | ৳252.16 |         |
+| `5010` Payment processing cost  | ৳3.84   |         |
+| `2010` Buyer prepayments held   |         | ৳256.00 |
 
 The buyer's money is a **liability**, not revenue, until delivery. This is the accounting expression of escrow.
 
 **Goods delivered** — `key: ORDER:<id>:GOODS_DELIVERED`
 
-| Account | DR | CR |
-|---|---|---|
-| `2010` Buyer prepayments held | ৳256.00 | |
-| `2000` Payable to farmer Rahim | | ৳145.50 |
-| `4000` Commission revenue | | ৳4.50 |
-| `4010` Delivery fee revenue | | ৳96.00 |
-| `4020` Handling fee revenue | | ৳10.00 |
+| Account                        | DR      | CR      |
+| ------------------------------ | ------- | ------- |
+| `2010` Buyer prepayments held  | ৳256.00 |         |
+| `2000` Payable to farmer Rahim |         | ৳145.50 |
+| `4000` Commission revenue      |         | ৳4.50   |
+| `4010` Delivery fee revenue    |         | ৳96.00  |
+| `4020` Handling fee revenue    |         | ৳10.00  |
 
 **Provider settles to bank** — `key: PROVIDER_SETTLEMENT:<batchRef>`
 
-| Account | DR | CR |
-|---|---|---|
-| `1000` Cash — bank | ৳252.16 | |
-| `1030` Receivable from provider | | ৳252.16 |
+| Account                         | DR      | CR      |
+| ------------------------------- | ------- | ------- |
+| `1000` Cash — bank              | ৳252.16 |         |
+| `1030` Receivable from provider |         | ৳252.16 |
 
 ### 5.3 Full refund before delivery (prepaid)
 
-| Account | DR | CR |
-|---|---|---|
-| `2010` Buyer prepayments held | ৳256.00 | |
-| `2020` Refunds payable | | ৳256.00 |
+| Account                       | DR      | CR      |
+| ----------------------------- | ------- | ------- |
+| `2010` Buyer prepayments held | ৳256.00 |         |
+| `2020` Refunds payable        |         | ৳256.00 |
 
 then on payout: DR `2020` ৳256.00 / CR `1000` ৳256.00.
 
@@ -182,22 +182,22 @@ The ৳3.84 provider fee is generally **not** returned by the provider. It stays
 
 Which journal applies is decided by the dispute's **`faultParty`** ([`05_ORDER_SYSTEM.md`](05_ORDER_SYSTEM.md) §5.1) — an explicit, required field, not an implicit consequence of which button an admin pressed.
 
-*`faultParty = SELLER` — quality issue, the seller bears it* (commission reversed pro-rata, 3% of ৳50 = ৳1.50):
+_`faultParty = SELLER` — quality issue, the seller bears it_ (commission reversed pro-rata, 3% of ৳50 = ৳1.50):
 
-| Account | DR | CR |
-|---|---|---|
-| `2000` Payable to farmer Rahim | ৳48.50 | |
-| `4000` Commission revenue | ৳1.50 | |
-| `2020` Refunds payable | | ৳50.00 |
+| Account                        | DR     | CR     |
+| ------------------------------ | ------ | ------ |
+| `2000` Payable to farmer Rahim | ৳48.50 |        |
+| `4000` Commission revenue      | ৳1.50  |        |
+| `2020` Refunds payable         |        | ৳50.00 |
 
-*`faultParty = LOGISTICS` or `PLATFORM` — damage in our transit, we bear it:*
+_`faultParty = LOGISTICS` or `PLATFORM` — damage in our transit, we bear it:_
 
-| Account | DR | CR |
-|---|---|---|
-| `5030` Spoilage and loss | ৳50.00 | |
-| `2020` Refunds payable | | ৳50.00 |
+| Account                  | DR     | CR     |
+| ------------------------ | ------ | ------ |
+| `5030` Spoilage and loss | ৳50.00 |        |
+| `2020` Refunds payable   |        | ৳50.00 |
 
-*`faultParty = FORCE_MAJEURE` or `UNDETERMINED` — the platform absorbs it.* The farmer is not charged for a flood, and is not charged for our inability to establish what happened.
+_`faultParty = FORCE_MAJEURE` or `UNDETERMINED` — the platform absorbs it._ The farmer is not charged for a flood, and is not charged for our inability to establish what happened.
 
 ### 5.5 Weight adjustment at delivery (4.8 kg delivered instead of 5 kg)
 
@@ -215,11 +215,11 @@ Tariff ৳96.00 in every case below. Only the delivery portion of the `GOODS_DEL
 
 **`PROMOTIONAL_SUBSIDY`** — buyer charged ৳50.00, subsidy ৳46.00, `subsidyReason = MARKET_SEEDING`:
 
-| Account | DR | CR |
-|---|---|---|
-| `1020` Cash in transit (buyer pays ৳50 of delivery) | ৳50.00 | |
-| `5020` Promotional discount / delivery subsidy | ৳46.00 | |
-| `4010` Delivery fee revenue | | ৳96.00 |
+| Account                                             | DR     | CR     |
+| --------------------------------------------------- | ------ | ------ |
+| `1020` Cash in transit (buyer pays ৳50 of delivery) | ৳50.00 |        |
+| `5020` Promotional discount / delivery subsidy      | ৳46.00 |        |
+| `4010` Delivery fee revenue                         |        | ৳96.00 |
 
 Revenue is recognised at the full tariff and the discount is an explicit expense. This is what makes "how much are we paying for this order?" answerable in one query rather than inferable from a gap.
 
@@ -227,10 +227,10 @@ Revenue is recognised at the full tariff and the discount is an explicit expense
 
 **`SELLER_FUNDED`** — the farmer absorbs ৳96.00; buyer pays product only:
 
-| Account | DR | CR |
-|---|---|---|
-| `2000` Payable to farmer Rahim | ৳96.00 | |
-| `4010` Delivery fee revenue | | ৳96.00 |
+| Account                        | DR     | CR     |
+| ------------------------------ | ------ | ------ |
+| `2000` Payable to farmer Rahim | ৳96.00 |        |
+| `4010` Delivery fee revenue    |        | ৳96.00 |
 
 The farmer's payable is reduced, `sellerNet` reflects it, and `OrderEconomics.deliveryDeductionPoisha` carries it into the uplift calculation — so a farmer who funds delivery does **not** show a spurious realisation gain.
 
@@ -244,11 +244,11 @@ The farmer's payable is reduced, `sellerNet` reflects it, and `OrderEconomics.de
 
 Fee ৳40.00, of which a documented ৳10.00 operational component (a dispatched trip already under way):
 
-| Account | DR | CR |
-|---|---|---|
-| `1020` / `2010` Cash or prepayment retained | ৳40.00 | |
-| `2000` Payable to farmer Rahim | | ৳30.00 |
-| `4030` Cancellation ops-cost recovery | | ৳10.00 |
+| Account                                     | DR     | CR     |
+| ------------------------------------------- | ------ | ------ |
+| `1020` / `2010` Cash or prepayment retained | ৳40.00 |        |
+| `2000` Payable to farmer Rahim              |        | ৳30.00 |
+| `4030` Cancellation ops-cost recovery       |        | ৳10.00 |
 
 The farmer's share is a **credit to their payable** and settles like any other earning. Langgol's share is capped at documented operational cost and reported separately from commission, so it can never quietly become a revenue line. Under `FORCE_MAJEURE`, `PLATFORM`, `LOGISTICS` or `UNDETERMINED` fault, no fee is charged and no entry is made.
 
@@ -293,6 +293,7 @@ Financial operations that run twice are the single most expensive class of bug i
 Layer 2 is what actually protects the books. Layer 1 is what makes the API pleasant.
 
 **Additional guarantees**
+
 - `Payment(provider, providerRef)` is unique — a webhook delivered five times posts once
 - Webhook handlers verify signatures, are idempotent, and tolerate out-of-order delivery by reading provider state rather than assuming sequence
 - Settlement batches are unique per `(batchRef, farmerProfileId)` — a rerun cannot double-pay
@@ -327,13 +328,13 @@ An order becomes settleable when **all** hold:
 
 Paying at T+0/T+1 means most farmers are paid **before** the 72-hour dispute window closes. That exposure is accepted deliberately — delaying 100 farmers to guard against 2 disputes is a bad trade — and managed with tiers:
 
-| Tier | Hold after delivery | Who |
-|---|---|---|
-| `TRUSTED` | T+0 | Established fulfilment record, no recent disputes |
-| `STANDARD` | T+1 | Normal |
-| `NEW` | Longer, until a record exists | First orders, or after a payout-account change |
+| Tier       | Hold after delivery           | Who                                               |
+| ---------- | ----------------------------- | ------------------------------------------------- |
+| `TRUSTED`  | T+0                           | Established fulfilment record, no recent disputes |
+| `STANDARD` | T+1                           | Normal                                            |
+| `NEW`      | Longer, until a record exists | First orders, or after a payout-account change    |
 
-*Exact hold hours are open decision Q2.* Disputes upheld after payout become clawbacks (§5.6), capped and escalated to a human rather than pursued automatically.
+_Exact hold hours are open decision Q2._ Disputes upheld after payout become clawbacks (§5.6), capped and escalated to a human rather than pursued automatically.
 
 ### 8.4 Controls
 
@@ -345,16 +346,16 @@ Settlement approval and settlement payment are **separate permissions** ([`07_SE
 
 **Automated, daily:**
 
-| Control | Assertion | On failure |
-|---|---|---|
-| Ledger balance | Every transaction: `Σ debits = Σ credits` | Page immediately |
-| Accounting identity | `Σ assets = Σ liabilities + equity + revenue − expenses` | Page |
-| Order↔ledger | Every `DELIVERED`/`COMPLETED` order has exactly one `GOODS_DELIVERED` transaction with matching totals | Alert |
-| Payable↔settlement | `Σ payable to farmers` = `Σ unsettled sellerNet` | Alert |
-| Agent float | Per-agent `1020` balance = cash physically held; aged > 48 h escalates | Ops task |
-| Provider reconciliation | Provider settlement report vs `1030` receivable, line by line | Ops task |
-| Refund integrity | No refund exceeds the amount paid on that order | Block + alert |
-| Orphan money | No ledger entry without a resolvable business reference | Alert |
+| Control                 | Assertion                                                                                              | On failure       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------ | ---------------- |
+| Ledger balance          | Every transaction: `Σ debits = Σ credits`                                                              | Page immediately |
+| Accounting identity     | `Σ assets = Σ liabilities + equity + revenue − expenses`                                               | Page             |
+| Order↔ledger            | Every `DELIVERED`/`COMPLETED` order has exactly one `GOODS_DELIVERED` transaction with matching totals | Alert            |
+| Payable↔settlement      | `Σ payable to farmers` = `Σ unsettled sellerNet`                                                       | Alert            |
+| Agent float             | Per-agent `1020` balance = cash physically held; aged > 48 h escalates                                 | Ops task         |
+| Provider reconciliation | Provider settlement report vs `1030` receivable, line by line                                          | Ops task         |
+| Refund integrity        | No refund exceeds the amount paid on that order                                                        | Block + alert    |
+| Orphan money            | No ledger entry without a resolvable business reference                                                | Alert            |
 
 **Manual:** monthly close, with a checklist, before any external financial reporting.
 
@@ -381,11 +382,11 @@ If Langgol collects a buyer's money and holds it before passing it to the farmer
 
 **Architectural response — three supported models, chosen by configuration:**
 
-| Model | How money flows | Custody exposure |
-|---|---|---|
-| **A · COD-first (recommended for launch)** | Cash collected at delivery by the agent; Langgol remits the farmer's share | Low — but agent float is still third-party money and is ledgered as such |
-| **B · Licensed-PSP escrow** | Buyer pays a licensed gateway/MFS; funds are released to the farmer on delivery confirmation, with the licensed partner holding the funds | Held by the licensed partner, not by Langgol |
-| **C · Direct settlement** | Buyer pays the farmer's account directly; Langgol invoices commission separately | Minimal, but reconciliation and non-payment risk rise sharply |
+| Model                                      | How money flows                                                                                                                           | Custody exposure                                                         |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| **A · COD-first (recommended for launch)** | Cash collected at delivery by the agent; Langgol remits the farmer's share                                                                | Low — but agent float is still third-party money and is ledgered as such |
+| **B · Licensed-PSP escrow**                | Buyer pays a licensed gateway/MFS; funds are released to the farmer on delivery confirmation, with the licensed partner holding the funds | Held by the licensed partner, not by Langgol                             |
+| **C · Direct settlement**                  | Buyer pays the farmer's account directly; Langgol invoices commission separately                                                          | Minimal, but reconciliation and non-payment risk rise sharply            |
 
 The ledger supports all three. The choice is a legal and commercial decision, not a technical one, and it must be made **before** prepaid payments are enabled. Until then, launching COD-first (Model A) is both the lowest-regulatory-friction path and the one that matches actual Bangladeshi buyer behaviour.
 
@@ -402,6 +403,7 @@ Credit is not a new money system. On this foundation it is:
 - Underwriting inputs already accumulating: completed orders, fulfilment rate, cancellation rate, realised revenue, seasonality, dispute history
 
 **Hard constraints carried forward from day one:**
+
 - Langgol Credit is **not** a cryptocurrency, **not** a general wallet, **not** cash-out-able
 - Langgol does not lend its own money without the applicable licence; the capital comes from a regulated partner and Langgol is a technology and distribution layer, or a licensed entity is acquired/partnered
 - No credit product ships without written legal analysis under Bangladeshi law ([`08_BANGLADESH_CONTEXT.md`](08_BANGLADESH_CONTEXT.md) §7.4)

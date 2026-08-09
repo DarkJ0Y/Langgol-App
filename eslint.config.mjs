@@ -1,0 +1,91 @@
+import js from '@eslint/js'
+import tseslint from 'typescript-eslint'
+import { langgolPlugin } from './packages/config/eslint/rules/index.js'
+
+export default tseslint.config(
+  {
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/.next/**',
+      '**/.turbo/**',
+      '**/coverage/**',
+      '**/generated/**',
+      'packages/db/prisma/migrations/**',
+    ],
+  },
+
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+
+  {
+    plugins: { langgol: langgolPlugin },
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: 'module',
+    },
+    rules: {
+      /* ---- Langgol non-negotiables ---- */
+      'langgol/no-money-arithmetic': 'error',
+      'langgol/no-business-rate-literal': 'error',
+      'langgol/no-unsafe-money-cast': 'error',
+
+      /* ---- Never let money become a float by accident ---- */
+      'no-loss-of-precision': 'error',
+
+      /* ---- Keep secrets and PII out of logs (docs/07_SECURITY.md §11) ---- */
+      'no-console': ['error', { allow: ['warn', 'error'] }],
+
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
+      ],
+      '@typescript-eslint/no-explicit-any': 'error',
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
+      'prefer-const': 'error',
+      'no-var': 'error',
+    },
+  },
+
+  /*
+   * The money module is the ONE place allowed to do money arithmetic — that is its entire job.
+   * The exemption is deliberately narrow: a single directory, not "the domain package".
+   */
+  {
+    files: ['packages/domain/src/money/**/*.ts'],
+    rules: { 'langgol/no-money-arithmetic': 'off' },
+  },
+
+  /*
+   * Configuration defaults, seeds, tests and fixtures are where concrete business values are
+   * *supposed* to live. Everywhere else, a rate literal is a defect.
+   */
+  {
+    files: [
+      'packages/domain/src/config/defaults.ts',
+      'packages/db/prisma/seed/**/*.ts',
+      '**/*.test.ts',
+      '**/*.spec.ts',
+      '**/__fixtures__/**',
+    ],
+    rules: { 'langgol/no-business-rate-literal': 'off' },
+  },
+
+  /* Local ESLint plugin sources are plain JS with JSDoc types. */
+  {
+    files: ['packages/config/eslint/**/*.js', 'eslint.config.mjs', '**/*.config.js'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
+    },
+  },
+
+  /* Scripts and seeds legitimately report progress to a human operator. */
+  {
+    files: ['packages/db/prisma/seed/**/*.ts', 'scripts/**/*.ts'],
+    rules: { 'no-console': 'off' },
+  },
+)

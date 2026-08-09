@@ -35,19 +35,19 @@ The brief's twelve-phase plan is preserved in substance; it is resequenced so th
 
 Runs partly in parallel with P1. No code depends on it finishing, but launch does.
 
-| Workstream | Deliverable |
-|---|---|
-| Product decisions | The seven remaining questions in [`01_MVP_REQUIREMENTS.md`](01_MVP_REQUIREMENTS.md) §9.2, answered |
-| **Geography validation** | `GeographyCandidateAssessment` completed for **Rajshahi** and at least one comparator, against all 11 criteria in [`01_MVP_REQUIREMENTS.md`](01_MVP_REQUIREMENTS.md) §2.1. Every cell sourced, dated, confidence-rated; unknowns recorded as unknown. Written recommendation and sign-off |
-| Farmer pipeline | 30–80 candidate farmers identified in the selected district |
-| Legal | Written opinion on §7.1, §7.2, §7.4, §7.5 of [`08_BANGLADESH_CONTEXT.md`](08_BANGLADESH_CONTEXT.md); entity, trade licence, TIN/BIN in progress |
-| **Payout rail** | MFS/bank/provider onboarding **started** — long lead times, and T+0/T+1 settlement depends on it |
-| Payments | Prepaid provider selection deferred until the custody review; COD operating procedure written |
-| Baseline data | `PriceObservation` collection **started** at `IN_PERSON_SURVEY` confidence — 30 days of baseline before the first order is a launch blocker |
-| **Pilot loss budget** | Cap per category and period approved and recorded as `PilotBudget` (open decision Q1) |
-| **Measurement methodology** | `METHODOLOGY_VERSION` v1 written down: formulas, baseline matching rules, allocation method, counterfactual chain survey design |
-| Design | Design system: tokens, typography (Bangla + Latin), components, farmer-app patterns tested with 3–5 real farmers |
-| Catalogue | 5–8 pilot SKUs with Bangla names, base units, perishability, shelf life, grade descriptors |
+| Workstream                  | Deliverable                                                                                                                                                                                                                                                                               |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Product decisions           | The seven remaining questions in [`01_MVP_REQUIREMENTS.md`](01_MVP_REQUIREMENTS.md) §9.2, answered                                                                                                                                                                                        |
+| **Geography validation**    | `GeographyCandidateAssessment` completed for **Rajshahi** and at least one comparator, against all 11 criteria in [`01_MVP_REQUIREMENTS.md`](01_MVP_REQUIREMENTS.md) §2.1. Every cell sourced, dated, confidence-rated; unknowns recorded as unknown. Written recommendation and sign-off |
+| Farmer pipeline             | 30–80 candidate farmers identified in the selected district                                                                                                                                                                                                                               |
+| Legal                       | Written opinion on §7.1, §7.2, §7.4, §7.5 of [`08_BANGLADESH_CONTEXT.md`](08_BANGLADESH_CONTEXT.md); entity, trade licence, TIN/BIN in progress                                                                                                                                           |
+| **Payout rail**             | MFS/bank/provider onboarding **started** — long lead times, and T+0/T+1 settlement depends on it                                                                                                                                                                                          |
+| Payments                    | Prepaid provider selection deferred until the custody review; COD operating procedure written                                                                                                                                                                                             |
+| Baseline data               | `PriceObservation` collection **started** at `IN_PERSON_SURVEY` confidence — 30 days of baseline before the first order is a launch blocker                                                                                                                                               |
+| **Pilot loss budget**       | Cap per category and period approved and recorded as `PilotBudget` (open decision Q1)                                                                                                                                                                                                     |
+| **Measurement methodology** | `METHODOLOGY_VERSION` v1 written down: formulas, baseline matching rules, allocation method, counterfactual chain survey design                                                                                                                                                           |
+| Design                      | Design system: tokens, typography (Bangla + Latin), components, farmer-app patterns tested with 3–5 real farmers                                                                                                                                                                          |
+| Catalogue                   | 5–8 pilot SKUs with Bangla names, base units, perishability, shelf life, grade descriptors                                                                                                                                                                                                |
 
 **Exit gate:** decisions recorded, geography assessed and selected, legal opinion received, baseline collection running, loss budget approved, methodology v1 signed off, design system approved.
 
@@ -119,16 +119,16 @@ This phase is a week longer than originally scoped, because measurement moved fr
 
 Onboard farmers, consumers and retailers; run real transactions; record **actual** cost on every trip; collect baseline prices continuously; weekly calibration of the circuity factor, tariff, spoilage rates and ranking weights; weekly farmer and buyer interviews; fix what breaks.
 
-Engineering during this phase is deliberately small: bug fixes, ops tooling, calibration. **Resist building features.** The pilot's product is *evidence*.
+Engineering during this phase is deliberately small: bug fixes, ops tooling, calibration. **Resist building features.** The pilot's product is _evidence_.
 
 ### 8.1 The experiments that run during the pilot
 
-| Experiment | Design | What it answers |
-|---|---|---|
-| **Basket size** | Observational strata across 8 bands, 0–5 kg to 500+ kg, crossed with delivery model and distance | At what basket size do Langgol's delivered economics become competitive? **The threshold is measured, never assumed** |
-| **Delivery model** | `INDIVIDUAL` · `AGGREGATED_ROUTE` · `RETAILER_BULK` · `PICKUP`, costed separately; randomised between individual and aggregated where both are operationally eligible | Does aggregation actually cut cost per order, and at what order density does it start to? |
-| **Buyer segment** | Consumer vs retailer, on identical metrics with segment-appropriate baselines | Which segment carries the delivery economics? |
-| **Funding model** | Cost-recovering vs subsidised vs pickup, within the loss budget | What does demand actually respond to, and at what cost per incremental order? |
+| Experiment         | Design                                                                                                                                                                | What it answers                                                                                                       |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **Basket size**    | Observational strata across 8 bands, 0–5 kg to 500+ kg, crossed with delivery model and distance                                                                      | At what basket size do Langgol's delivered economics become competitive? **The threshold is measured, never assumed** |
+| **Delivery model** | `INDIVIDUAL` · `AGGREGATED_ROUTE` · `RETAILER_BULK` · `PICKUP`, costed separately; randomised between individual and aggregated where both are operationally eligible | Does aggregation actually cut cost per order, and at what order density does it start to?                             |
+| **Buyer segment**  | Consumer vs retailer, on identical metrics with segment-appropriate baselines                                                                                         | Which segment carries the delivery economics?                                                                         |
+| **Funding model**  | Cost-recovering vs subsidised vs pickup, within the loss budget                                                                                                       | What does demand actually respond to, and at what cost per incremental order?                                         |
 
 Guardrail metrics — completion rate, dispute rate, farmer uplift — halt any experiment that improves margin by degrading the thing we exist to improve.
 
@@ -136,24 +136,24 @@ Guardrail metrics — completion rate, dispute rate, farmer uplift — halt any 
 
 Full gate set in [`10_ECONOMIC_MEASUREMENT.md`](10_ECONOMIC_MEASUREMENT.md) §10, evaluated on ≥100 completed orders, **reported per segment as well as in aggregate**. Headlines:
 
-| Group | Gate |
-|---|---|
-| Farmer | Median uplift > 0 net of commission on ≥2 independent baselines · fulfilment ≥90% · repeat seller ≥40% · retention ≥50% |
-| Consumer | Delivered price ≤ reference retail in ≥1 viable segment · 30-day repeat ≥25% · buyer-attributable cancellations ≤10% · median rating ≥4.0 |
-| Retailer | Repeat ≥60% · basket size stable or growing · supplier retention ≥30% |
-| Logistics | Cost per order and per kg declining · utilisation ≥50% on aggregated routes |
-| Platform | Positive contribution margin in ≥1 segment, or a written model at 3× density · loss budget respected · every negative-margin order explained |
-| **Thesis** | Farmer realisation **and** competitive delivered price simultaneously, on **≥25% of completed orders** in a repeatable, reachable segment |
+| Group      | Gate                                                                                                                                         |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Farmer     | Median uplift > 0 net of commission on ≥2 independent baselines · fulfilment ≥90% · repeat seller ≥40% · retention ≥50%                      |
+| Consumer   | Delivered price ≤ reference retail in ≥1 viable segment · 30-day repeat ≥25% · buyer-attributable cancellations ≤10% · median rating ≥4.0    |
+| Retailer   | Repeat ≥60% · basket size stable or growing · supplier retention ≥30%                                                                        |
+| Logistics  | Cost per order and per kg declining · utilisation ≥50% on aggregated routes                                                                  |
+| Platform   | Positive contribution margin in ≥1 segment, or a written model at 3× density · loss budget respected · every negative-margin order explained |
+| **Thesis** | Farmer realisation **and** competitive delivered price simultaneously, on **≥25% of completed orders** in a repeatable, reachable segment    |
 
-**If the thesis gate passes:** the deliverable is a written characterisation of *which* transactions work — basket band, delivery model, distance, product, segment, season — with the numbers. That becomes the expansion strategy.
+**If the thesis gate passes:** the deliverable is a written characterisation of _which_ transactions work — basket band, delivery model, distance, product, segment, season — with the numbers. That becomes the expansion strategy.
 
-**If it fails:** the deliverable is a written diagnosis of *what must change* — density, basket size, delivery cost structure, crop mix, commission, or the thesis. Do not proceed to Phase 7. Re-run with one variable changed. Adding features to a marketplace that does not create value makes a bigger marketplace that does not create value.
+**If it fails:** the deliverable is a written diagnosis of _what must change_ — density, basket size, delivery cost structure, crop mix, commission, or the thesis. Do not proceed to Phase 7. Re-run with one variable changed. Adding features to a marketplace that does not create value makes a bigger marketplace that does not create value.
 
 ---
 
 ## 9. Phase 7 — Logistics productisation
 
-*Entry gate: Phase 6 passed, ≥200 deliveries of real cost data.*
+_Entry gate: Phase 6 passed, ≥200 deliveries of real cost data._
 
 Logistics provider role and onboarding; vehicle and capacity registration; job offer/accept; driver-facing delivery flow; route grouping and pooled dispatch; delivery pricing calibrated to measured cost; live tracking; pickup points and route days; cold-chain flags for high-perishability produce.
 
@@ -181,7 +181,7 @@ Retailer, restaurant and institutional buyer profiles; bulk order flows; RFQ and
 
 ## 12. Phase 10 — Langgol Supply
 
-*Entry gate: dealer-licensing analysis complete ([`08_BANGLADESH_CONTEXT.md`](08_BANGLADESH_CONTEXT.md) §7.10).*
+_Entry gate: dealer-licensing analysis complete ([`08_BANGLADESH_CONTEXT.md`](08_BANGLADESH_CONTEXT.md) §7.10)._
 
 Input supplier role with licence verification; catalogue with `requiresLicence` handling; regulated-product gating by category and by seller licence; equipment rental and labour marketplace; storage/warehouse booking.
 
@@ -199,7 +199,8 @@ Farm plots; crop cycles with planting and harvest records; expense and income tr
 
 ## 14. Phase 12 — Langgol Credit
 
-*Entry gates, all mandatory:*
+_Entry gates, all mandatory:_
+
 1. Written legal opinion on structure and licensing ([`08_BANGLADESH_CONTEXT.md`](08_BANGLADESH_CONTEXT.md) §7.4)
 2. A regulated financial partner under contract, **or** the appropriate licence held
 3. ≥12 months of transaction history for the target cohort
@@ -227,28 +228,28 @@ Government and NGO partnerships; research collaboration; insurance partnerships;
 
 ## 17. Risk register
 
-| # | Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|---|
-| R1 | **Delivery cost exceeds the margin available** — the classic agri-marketplace killer | High | Fatal | Measure actual cost from day one; retailers first; pickup points; route days; honest go/no-go gate |
-| R2 | Farmers list but do not respond to orders | High | Severe | Quiet-hours-aware windows; SMS-first; agent support; reliability scoring; onboard farmers who want this, not everyone |
-| R3 | Insufficient density → no liquidity | Medium | Severe | One district, few SKUs, deliberate concentration |
-| R4 | Buyers try once and do not return | Medium | Severe | Quality consistency; reliable delivery; repeat rate as a gate metric, not a vanity metric |
-| R5 | Quality disputes at scale | Medium | High | Grade descriptors; photos; tolerance bands; fast fair resolution; fault attribution |
-| R6 | Regulatory blocker on payments or fund custody | Medium | High | COD-first launch; licensed partner for prepaid; legal opinion in Phase 0 |
-| R7 | Payment provider onboarding delay | High | Medium | Start in Phase 0; COD covers launch |
-| R8 | SMS deliverability or cost | Medium | Medium | Multi-aggregator abstraction; per-operator monitoring; budget circuit breaker |
-| R9 | Fraud (fake farmers, collusion, payout redirection) | Medium | High | Verification; payout-change protections; settlement holds; audit |
-| R10 | Field-agent capacity limits growth | High | Medium | Agent tooling as a first-class product; measure agent throughput per farmer onboarded |
-| R11 | Monsoon disruption | Certain, seasonal | Medium | Serviceability flags per corridor; seasonal expectations in the plan; do not mistake a flood for a product failure |
-| R12 | Price volatility making baselines noisy | High | Medium | Continuous baseline collection; seasonally matched comparisons; state uncertainty |
-| R13 | Team builds features instead of measuring | **High** | **Severe** | Phase 6 is explicitly a non-building phase; gates are quantitative |
-| R14 | Pressure to launch credit early | Medium | Fatal (legal) | Hard entry gates in §14; stop-work condition |
-| R15 | **Ops does not cost trips**, so economics are never computed | High | Severe | Uncosted-trip queue in the daily report; costing blocks measurement rather than being replaced by an estimate; ops accountability from day one |
-| R16 | **Baseline coverage is too thin** to support any claim | Medium | Severe | 30 days of pre-launch collection; coverage reported weekly as a first-class metric; unmatched orders excluded from claims rather than estimated |
-| R17 | Loss budget consumed early, subsidies disabled, volume collapses | Medium | Medium | Budget guard is a control, not a surprise; thresholds escalate at 50/75/90%; pickup and retailer volume remain unsubsidised paths |
-| R18 | T+0/T+1 settlement creates clawback exposure | Medium | Medium | Risk tiers; hard holds; COD reconciliation gate; clawback ceiling with human escalation |
-| R19 | Payout rail onboarding (MFS/bank) slips past launch | Medium | High | Started in P0; agent cash is the accepted bootstrap; per-farmer rail so a partial rollout still works |
-| R20 | Rajshahi assessment is completed to justify a decision already made | Medium | High | Assessment requires a comparator district, sourced cells, recorded unknowns, and sign-off before the pilot begins |
+| #   | Risk                                                                                 | Likelihood        | Impact        | Mitigation                                                                                                                                      |
+| --- | ------------------------------------------------------------------------------------ | ----------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | **Delivery cost exceeds the margin available** — the classic agri-marketplace killer | High              | Fatal         | Measure actual cost from day one; retailers first; pickup points; route days; honest go/no-go gate                                              |
+| R2  | Farmers list but do not respond to orders                                            | High              | Severe        | Quiet-hours-aware windows; SMS-first; agent support; reliability scoring; onboard farmers who want this, not everyone                           |
+| R3  | Insufficient density → no liquidity                                                  | Medium            | Severe        | One district, few SKUs, deliberate concentration                                                                                                |
+| R4  | Buyers try once and do not return                                                    | Medium            | Severe        | Quality consistency; reliable delivery; repeat rate as a gate metric, not a vanity metric                                                       |
+| R5  | Quality disputes at scale                                                            | Medium            | High          | Grade descriptors; photos; tolerance bands; fast fair resolution; fault attribution                                                             |
+| R6  | Regulatory blocker on payments or fund custody                                       | Medium            | High          | COD-first launch; licensed partner for prepaid; legal opinion in Phase 0                                                                        |
+| R7  | Payment provider onboarding delay                                                    | High              | Medium        | Start in Phase 0; COD covers launch                                                                                                             |
+| R8  | SMS deliverability or cost                                                           | Medium            | Medium        | Multi-aggregator abstraction; per-operator monitoring; budget circuit breaker                                                                   |
+| R9  | Fraud (fake farmers, collusion, payout redirection)                                  | Medium            | High          | Verification; payout-change protections; settlement holds; audit                                                                                |
+| R10 | Field-agent capacity limits growth                                                   | High              | Medium        | Agent tooling as a first-class product; measure agent throughput per farmer onboarded                                                           |
+| R11 | Monsoon disruption                                                                   | Certain, seasonal | Medium        | Serviceability flags per corridor; seasonal expectations in the plan; do not mistake a flood for a product failure                              |
+| R12 | Price volatility making baselines noisy                                              | High              | Medium        | Continuous baseline collection; seasonally matched comparisons; state uncertainty                                                               |
+| R13 | Team builds features instead of measuring                                            | **High**          | **Severe**    | Phase 6 is explicitly a non-building phase; gates are quantitative                                                                              |
+| R14 | Pressure to launch credit early                                                      | Medium            | Fatal (legal) | Hard entry gates in §14; stop-work condition                                                                                                    |
+| R15 | **Ops does not cost trips**, so economics are never computed                         | High              | Severe        | Uncosted-trip queue in the daily report; costing blocks measurement rather than being replaced by an estimate; ops accountability from day one  |
+| R16 | **Baseline coverage is too thin** to support any claim                               | Medium            | Severe        | 30 days of pre-launch collection; coverage reported weekly as a first-class metric; unmatched orders excluded from claims rather than estimated |
+| R17 | Loss budget consumed early, subsidies disabled, volume collapses                     | Medium            | Medium        | Budget guard is a control, not a surprise; thresholds escalate at 50/75/90%; pickup and retailer volume remain unsubsidised paths               |
+| R18 | T+0/T+1 settlement creates clawback exposure                                         | Medium            | Medium        | Risk tiers; hard holds; COD reconciliation gate; clawback ceiling with human escalation                                                         |
+| R19 | Payout rail onboarding (MFS/bank) slips past launch                                  | Medium            | High          | Started in P0; agent cash is the accepted bootstrap; per-farmer rail so a partial rollout still works                                           |
+| R20 | Rajshahi assessment is completed to justify a decision already made                  | Medium            | High          | Assessment requires a comparator district, sourced cells, recorded unknowns, and sign-off before the pilot begins                               |
 
 R13 is the one that most often goes unmanaged, and it is the one most within our control. R15 is its operational twin: a pilot whose central instrument quietly stops being fed produces confident conclusions from partial data, which is worse than no conclusions.
 
@@ -262,4 +263,4 @@ Not "the site is live". Done is:
 
 Everything in [`00_PRODUCT_VISION.md`](00_PRODUCT_VISION.md) §4 grows from that, or does not deserve to.
 
-**The Langgol test for any feature, at any phase:** *does this make agriculture work better for the farmer, the buyer, or both — and can we show it?* If the answer is no, or unmeasurable, it does not belong in the MVP.
+**The Langgol test for any feature, at any phase:** _does this make agriculture work better for the farmer, the buyer, or both — and can we show it?_ If the answer is no, or unmeasurable, it does not belong in the MVP.

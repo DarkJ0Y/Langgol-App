@@ -12,13 +12,13 @@
 - **Numerals:** Bangla digits `০১২৩৪৫৬৭৮৯` for `bn`, with a user preference — many users read prices more comfortably in Western digits even when the interface is Bangla. Money formatting must support both; the ledger is unaffected.
 - Currency symbol `৳` precedes the amount.
 - **Literacy is a spectrum.** Design for a user who reads slowly: icons paired with words, no jargon, no English loanwords where a common Bangla word exists, numbers over prose, voice/SMS confirmation of anything financial.
-- Avoid formal *sadhu bhasha*; use plain spoken register.
+- Avoid formal _sadhu bhasha_; use plain spoken register.
 
 ---
 
 ## 2. Geography and addressing
 
-**Hierarchy:** Division (8) → District/*zila* (64) → Upazila (~495) → Union (~4,500) → Ward/Village. City areas use City Corporation → Ward → Mahalla instead.
+**Hierarchy:** Division (8) → District/_zila_ (64) → Upazila (~495) → Union (~4,500) → Ward/Village. City areas use City Corporation → Ward → Mahalla instead.
 
 Architectural consequences:
 
@@ -61,18 +61,18 @@ Engineering consequences, all enforced in CI ([`03_ARCHITECTURE.md`](03_ARCHITEC
 
 ## 5. Units and measures
 
-| Unit | Approx. metric | Notes |
-|---|---|---|
-| **Seer** | ≈ 0.933 kg | Still used conversationally |
-| **Mon / maund** | ≈ 37.32 kg (40 seer) | The default unit for wholesale produce trade |
-| **Kg / quintal / tonne** | metric | Legal and official standard |
-| **Decimal / shotangsho** | 1/100 acre ≈ 40.5 m² | Standard land unit |
-| **Katha** | varies regionally | ~1.65 decimal in many areas |
-| **Bigha** | **varies regionally**, commonly ~33 decimal | Never assume a single conversion — store land in decimals and let the UI convert with a region-aware, clearly-labelled factor |
+| Unit                     | Approx. metric                              | Notes                                                                                                                         |
+| ------------------------ | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Seer**                 | ≈ 0.933 kg                                  | Still used conversationally                                                                                                   |
+| **Mon / maund**          | ≈ 37.32 kg (40 seer)                        | The default unit for wholesale produce trade                                                                                  |
+| **Kg / quintal / tonne** | metric                                      | Legal and official standard                                                                                                   |
+| **Decimal / shotangsho** | 1/100 acre ≈ 40.5 m²                        | Standard land unit                                                                                                            |
+| **Katha**                | varies regionally                           | ~1.65 decimal in many areas                                                                                                   |
+| **Bigha**                | **varies regionally**, commonly ~33 decimal | Never assume a single conversion — store land in decimals and let the UI convert with a region-aware, clearly-labelled factor |
 
 Design consequences:
 
-- **Store everything in metric base units**; offer local units as *input and display conveniences* with an explicit, visible conversion ([`02_DATABASE.md`](02_DATABASE.md) §6)
+- **Store everything in metric base units**; offer local units as _input and display conveniences_ with an explicit, visible conversion ([`02_DATABASE.md`](02_DATABASE.md) §6)
 - Weights-and-measures law requires metric for trade, so invoices, statements and the authoritative order record are metric. Showing "1 mon (37.32 kg)" is a UI affordance layered on a metric record
 - Bigha ambiguity is a genuine data-quality trap: a farmer entering "2 bigha" means different areas in different districts. Prompt for decimals, or capture the district-specific factor and store what was used
 
@@ -93,15 +93,15 @@ Each hop adds transport, handling, commission and loss. Farmer share of the fina
 
 **What the existing chain does well, and what Langgol must therefore replicate or replace:**
 
-| Function | Why farmers use it | Langgol's answer at MVP |
-|---|---|---|
-| Immediate cash at the farm gate | No waiting, no paperwork | Settlement speed matters more than settlement elegance. T+0/T+1 beats a better price paid in a week |
-| Takes the whole lot, including poor grades | No sorting burden, no leftovers | Grading and partial-lot risk sit with the farmer on Langgol — a real friction to design for |
-| Pre-harvest advances (*dadon*) | Working capital when nothing else exists | Nothing at MVP. This is the gap Langgol Credit eventually fills, and the honest reason some farmers will stay with the *bepari* |
-| Transport arranged | Farmer doesn't move the goods | Pickup and ops-coordinated delivery |
-| Trust through long relationships | Enforcement without contracts | Ratings, verification, dispute resolution, and — crucially — **paying on time, every time** |
+| Function                                   | Why farmers use it                       | Langgol's answer at MVP                                                                                                         |
+| ------------------------------------------ | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Immediate cash at the farm gate            | No waiting, no paperwork                 | Settlement speed matters more than settlement elegance. T+0/T+1 beats a better price paid in a week                             |
+| Takes the whole lot, including poor grades | No sorting burden, no leftovers          | Grading and partial-lot risk sit with the farmer on Langgol — a real friction to design for                                     |
+| Pre-harvest advances (_dadon_)             | Working capital when nothing else exists | Nothing at MVP. This is the gap Langgol Credit eventually fills, and the honest reason some farmers will stay with the _bepari_ |
+| Transport arranged                         | Farmer doesn't move the goods            | Pickup and ops-coordinated delivery                                                                                             |
+| Trust through long relationships           | Enforcement without contracts            | Ratings, verification, dispute resolution, and — crucially — **paying on time, every time**                                     |
 
-**Strategic reading:** Langgol's realistic early wedge is not "replace the *bepari*". It is **transparency plus a better price for the portion of the harvest a farmer can afford to sell on a slightly slower cycle** — and reliability so consistent that the share grows. Attacking the *dadon* relationship without a credit product is attacking the one service we cannot yet provide. This is the operational meaning of §7 of [`00_PRODUCT_VISION.md`](00_PRODUCT_VISION.md).
+**Strategic reading:** Langgol's realistic early wedge is not "replace the _bepari_". It is **transparency plus a better price for the portion of the harvest a farmer can afford to sell on a slightly slower cycle** — and reliability so consistent that the share grows. Attacking the _dadon_ relationship without a credit product is attacking the one service we cannot yet provide. This is the operational meaning of §7 of [`00_PRODUCT_VISION.md`](00_PRODUCT_VISION.md).
 
 ---
 
@@ -110,56 +110,67 @@ Each hop adds transport, handling, commission and loss. Farmer share of the fina
 Columns: what it governs · why it matters to Langgol · what we build now.
 
 ### 7.1 Payments and settlement
+
 **Area:** Payment systems legislation and Bangladesh Bank Payment Systems Department circulars, including the licensing regime for payment system operators and payment service providers.
 **Why it matters:** collecting buyers' money and passing it to sellers is payment aggregation. Doing that for third parties typically requires a licence or the use of a licensed partner.
 **Build now:** the three custody models in [`06_FINANCIAL_ARCHITECTURE.md`](06_FINANCIAL_ARCHITECTURE.md) §11, selectable by configuration; launch COD-first; never hold prepaid funds outside a licensed partner's rails without written legal clearance.
 
 ### 7.2 Digital commerce rules
+
 **Area:** the Ministry of Commerce digital-commerce operation guidelines and subsequent amendments.
 **Why it matters:** these have imposed obligations on marketplaces around **escrow of advance payments until delivery**, maximum delivery timelines, refund timelines, mandatory seller disclosure, and complaint handling. They are directly binding on a marketplace of this shape.
 **Build now:** delivery-confirmation-gated fund release (already the ledger design), configurable delivery and refund SLA timers, seller identity displayed on listings, an in-product complaint path with recorded timestamps, and exportable evidence of compliance.
 
 ### 7.3 Consumer protection
+
 **Area:** consumer rights protection law and the national consumer rights directorate.
 **Why it matters:** misdescription, short weight, and false claims carry penalties. Weight accuracy in fresh produce is a live risk for us.
 **Build now:** truthful quantity/quality descriptors, delivered-vs-ordered weight recorded on every order, a dispute system with evidence, and the §11 honesty constraint of [`00_PRODUCT_VISION.md`](00_PRODUCT_VISION.md) enforced in the data model.
 
 ### 7.4 Lending and financial services
+
 **Area:** banking, non-bank financial institution, and microcredit regulatory law.
 **Why it matters:** lending money or providing credit to farmers without the applicable licence is prohibited. This is the single hardest constraint on Langgol Credit, and no amount of product framing changes it.
 **Build now:** nothing that constitutes credit. The ledger primitives in [`06_FINANCIAL_ARCHITECTURE.md`](06_FINANCIAL_ARCHITECTURE.md) §12, and underwriting data accumulation. **Phase 12** begins with a written legal opinion and a regulated partner, or it does not begin.
 
 ### 7.5 Tax and VAT
+
 **Area:** VAT and supplementary duty law, income tax law, National Board of Revenue rules on e-commerce and marketplaces.
 **Why it matters:** VAT arises on Langgol's commission/service fee under the agency model; unprocessed agricultural produce is generally treated favourably but **the platform's service is not automatically so**. Withholding obligations may apply to payments made to sellers. BIN/VAT registration and record retention are required.
 **Build now:** accounts `2030` and `2040`, per-settlement deduction fields, BIN/TIN capture on business profiles, immutable invoices and settlement statements, exportable tax reports. Rates are configuration, set by an adviser.
 
 ### 7.6 Data protection and cyber law
+
 **Area:** the cyber security statute currently in force (this area has been amended repeatedly — its current form must be confirmed), and Bangladesh's personal data protection framework, which has been in draft for several years.
 **Why it matters:** we hold NID images, phone numbers, precise locations and financial history for a vulnerable population. A future data-protection regime is likely to impose consent, minimisation, breach notification and possibly **data localisation**.
 **Build now:** the classification and controls in [`07_SECURITY.md`](07_SECURITY.md) §9; Bangla consent text; data export and deletion; and a **hosting decision that keeps in-country or regional data residency achievable** rather than assuming it will never be required.
 
 ### 7.7 Agricultural marketing
+
 **Area:** agricultural marketing legislation administered by the Department of Agricultural Marketing, which provides for licensing and regulation of agricultural market intermediaries.
 **Why it matters:** Langgol is, functionally, an agricultural market intermediary. Licensing, price reporting or record-keeping obligations may apply.
 **Build now:** clean, exportable transaction records by product, area and period; the `PriceObservation` dataset (which is also a cooperation asset with DAM); and a business-entity setup discussion with counsel **before** the pilot, not after.
 
 ### 7.8 Food safety and quality
+
 **Area:** food safety law and the national food safety authority; BSTI standards.
 **Why it matters:** handling, storage and any quality or "organic" claim carry obligations. Cold chain, once introduced, raises the bar further.
 **Build now:** grade descriptors that are descriptive rather than certified; **no organic/pesticide-free claim without a verifiable basis** — a badge we cannot substantiate is both a legal and a trust liability; traceability from listing to order, which we get for free from the schema.
 
 ### 7.9 Weights and measures
+
 **Area:** standards of weights and measures law; BSTI.
 **Why it matters:** trade must use metric units; measuring instruments used for trade are subject to verification.
 **Build now:** metric authoritative records (§5); local units as display only; weighing at delivery recorded; scale accuracy an ops procedure with a documented calibration routine.
 
 ### 7.10 Agricultural inputs (Phase 10 — Langgol Supply)
+
 **Area:** seed, fertilizer and pesticide legislation and the associated dealer licensing administered through agricultural authorities.
 **Why it matters:** selling fertilizer, seed or crop-protection products requires dealer licences and product registration. This is not a matter of adding a product category to the catalogue.
 **Build now:** nothing. Design the catalogue so a product can carry `requiresLicence`, `licenceType` and seller-licence verification when the time comes.
 
 ### 7.11 Corporate and operating
+
 Company registration, trade licence, TIN, VAT/BIN registration, and any e-commerce-specific business identity registration. Employment and contractor status for field agents and couriers. Insurance for goods in transit. All are launch prerequisites for the operating entity, not for the codebase — but the codebase must be able to print what an auditor asks for.
 
 ---
@@ -171,25 +182,25 @@ Company registration, trade licence, TIN, VAT/BIN registration, and any e-commer
 - **Payment gateways** (SSLCommerz, aamarPay, ShurjoPay and others) aggregate cards, MFS and internet banking behind one integration — usually the fastest route to prepaid support without direct MFS merchant onboarding
 - **Farmer payouts** are the harder half, and the approved target is **T+0/T+1 after successful delivery** (decision D5). Rail options, all behind one `PayoutProvider` interface:
 
-| Rail | Speed | Cost | Constraints |
-|---|---|---|---|
-| **MFS disbursement** | Minutes | Per-transaction fee | Per-transaction and monthly **receiving limits** — a productive farmer can hit them mid-season; the adapter must detect and route around this |
-| **Bank transfer** | Hours to a day | Cheap at volume | Many smallholders have no account; name-mismatch failures are common |
-| **Regulated payment provider** | Varies | Contracted | Requires partner onboarding; the likely destination rail |
-| **Agent cash** | Immediate | High ops cost | What farmers trust on day one. A **bootstrap, not the architecture** — it creates float risk and does not scale |
+| Rail                           | Speed          | Cost                | Constraints                                                                                                                                   |
+| ------------------------------ | -------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **MFS disbursement**           | Minutes        | Per-transaction fee | Per-transaction and monthly **receiving limits** — a productive farmer can hit them mid-season; the adapter must detect and route around this |
+| **Bank transfer**              | Hours to a day | Cheap at volume     | Many smallholders have no account; name-mismatch failures are common                                                                          |
+| **Regulated payment provider** | Varies         | Contracted          | Requires partner onboarding; the likely destination rail                                                                                      |
+| **Agent cash**                 | Immediate      | High ops cost       | What farmers trust on day one. A **bootstrap, not the architecture** — it creates float risk and does not scale                               |
 
 - **Launch posture:** COD collection; payout rail per farmer, agent cash accepted where it is what the farmer wants, with MFS onboarding pursued from P0 because lead times are long. Prepaid collection stays disabled until §7.1–7.2 are cleared (decision D4).
-- **Design consequence:** the payout adapter must handle partial batch failure, receiving-limit rejection, and name mismatch as *expected* outcomes with a retry and an ops queue — not as exceptions. A farmer whose payout silently failed is a farmer who tells the village that Langgol does not pay.
+- **Design consequence:** the payout adapter must handle partial batch failure, receiving-limit rejection, and name mismatch as _expected_ outcomes with a retry and an ops queue — not as exceptions. A farmer whose payout silently failed is a farmer who tells the village that Langgol does not pay.
 
 ---
 
 ## 9. Seasonality and the agricultural calendar
 
-| Season | Months | Relevance |
-|---|---|---|
-| **Rabi** | Nov–Mar | Winter vegetables — peak volume, lowest prices, highest surplus and highest waste. The best window to prove farmer uplift |
-| **Kharif-1 (pre-monsoon)** | Mar–Jun | Transition; heat stress; short shelf life |
-| **Kharif-2 (monsoon)** | Jul–Oct | Low vegetable supply, high prices, **worst logistics** — flooding, impassable roads, ferry delays |
+| Season                     | Months  | Relevance                                                                                                                 |
+| -------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Rabi**                   | Nov–Mar | Winter vegetables — peak volume, lowest prices, highest surplus and highest waste. The best window to prove farmer uplift |
+| **Kharif-1 (pre-monsoon)** | Mar–Jun | Transition; heat stress; short shelf life                                                                                 |
+| **Kharif-2 (monsoon)**     | Jul–Oct | Low vegetable supply, high prices, **worst logistics** — flooding, impassable roads, ferry delays                         |
 
 **Seasonal matching is mandatory in measurement.** A baseline observation from a different season is not a degraded match, it is a rejected one ([`10_ECONOMIC_MEASUREMENT.md`](10_ECONOMIC_MEASUREMENT.md) §4.4) — comparing a Rabi glut price to a monsoon scarcity price produces an uplift figure that means nothing.
 
@@ -212,7 +223,7 @@ Consequences: pilot timing materially affects results (launching in monsoon test
 
 ## 11. Rajshahi as the default pilot candidate
 
-Rajshahi is the **default candidate**, not a locked decision ([`01_MVP_REQUIREMENTS.md`](01_MVP_REQUIREMENTS.md) §2.1). What follows is qualitative context for why it is a sensible place to *start looking* — none of it substitutes for the assessment, and no figure below is asserted.
+Rajshahi is the **default candidate**, not a locked decision ([`01_MVP_REQUIREMENTS.md`](01_MVP_REQUIREMENTS.md) §2.1). What follows is qualitative context for why it is a sensible place to _start looking_ — none of it substitutes for the assessment, and no figure below is asserted.
 
 **Qualitative reasons to look here first**
 
