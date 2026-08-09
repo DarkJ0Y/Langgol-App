@@ -85,7 +85,9 @@ async function seedPlatformConfig(): Promise<{ created: number; existing: number
           entry.value === undefined || entry.value === null
             ? Prisma.JsonNull
             : (entry.value as Prisma.InputJsonValue),
-        effectiveFrom: new Date('2026-08-10T00:00:00Z'),
+        // Effective immediately. A hard-coded date is a trap: seeded ahead of UTC "now" the
+        // row loads as not-yet-effective and the app boots with NO configuration at all.
+        effectiveFrom: new Date(),
         note: entry.note,
       },
     })
