@@ -17,7 +17,19 @@ import { z } from 'zod'
 /** Basis points: 300 = 3%. Rates are never fractions. */
 const bps = z.number().int().min(0).max(10000)
 
+/**
+ * Basis points for a multiplier that may legitimately exceed 1.0 — a round-trip factor is
+ * 20000 bps (200%), a retailer-funded delivery may be priced above tariff.
+ */
+const unboundedBps = z.number().int().min(0)
+
 const poisha = z.number().int().min(0)
+
+/**
+ * A poisha amount that may be negative. Used only for thresholds a business may deliberately
+ * set below zero, such as the contribution-margin floor during a subsidised pilot.
+ */
+const signedPoisha = z.number().int()
 
 export const configSchemas = {
   // --- Commission (decision D2) -------------------------------------------
@@ -57,6 +69,135 @@ export const configSchemas = {
       }),
     ),
     aboveTopBand: z.literal('OPS_QUOTE_ONLY'),
+  }),
+
+  /**
+   * Volumetric weight divisor. Pumpkins are light and huge; a vehicle runs out of space long
+   * before it runs out of payload, so `chargeableWeight = max(actual, volumetric)`.
+   * docs/04_MARKETPLACE.md §3.
+   */
+  'delivery.volumetricDivisorCm3PerKg': z.number().int().positive(),
+
+  /**
+   * Handling: a per-order flat component plus a per-kg component that varies by perishability
+   * class, because a crate of tomatoes needs more packing care than a sack of potatoes.
+   * docs/P2_DELIVERED_COST.md §3.
+   */
+  'delivery.handling': z.object({
+    provisional: z.boolean(),
+    perOrderPoisha: poisha,
+    perKgPoishaByClass: z.object({
+      HIGHLY_PERISHABLE: poisha,
+      PERISHABLE: poisha,
+      SEMI_DURABLE: poisha,
+      DURABLE: poisha,
+    }),
+  }),
+
+  /**
+   * The INTERNAL cost model — cost 2 of the three costs in docs/04_MARKETPLACE.md §2. Never
+   * shown to a buyer; used for ranking feasibility and margin forecasting only.
+   *
+   * `tripCost = vehicleBase + perKm × distanceKm × roundTripFactor + loadingFee + stopFee × stops`
+   */
+  'delivery.internalCost': z.object({
+    provisional: z.boolean(),
+    /** 13000 bps = 1.30 — the return leg is usually partly loaded. docs/04 §4. */
+    roundTripFactorBps: unboundedBps,
+    vehicles: z.record(
+      z.string(),
+      z.object({
+        capacityKg: z.number().positive(),
+        baseFeePoisha: poisha,
+        perKmPoisha: poisha,
+        loadingFeePoisha: poisha,
+        stopFeePoisha: poisha,
+      }),
+    ),
+  }),
+
+  /**
+   * Expected spoilage as a fraction of product cost, by perishability class and transit time.
+   * A flat per-hour rate is deliberately crude — docs/04 §12 defers real cold-chain modelling.
+   */
+  'delivery.spoilage': z.object({
+    provisional: z.boolean(),
+    perHourBpsByClass: z.object({
+      HIGHLY_PERISHABLE: bps,
+      PERISHABLE: bps,
+      SEMI_DURABLE: bps,
+      DURABLE: bps,
+    }),
+    coldChainReductionBps: bps,
+    maxBps: bps,
+  }),
+
+  /** Per-order fulfilment cost that is neither transport nor payment. docs/04 §4. */
+  'fulfilment.cost': z.object({
+    provisional: z.boolean(),
+    packagingPerOrderPoisha: poisha,
+    agentTimePerOrderPoisha: poisha,
+  }),
+
+  /**
+   * What each payment method costs Langgol.
+   * `COD: codHandlingRate × buyerTotal` · `MFS: mfsRate × buyerTotal + fixedFee`. docs/04 §4.
+   */
+  'payments.cost': z.object({
+    provisional: z.boolean(),
+    byMethod: z.record(z.string(), z.object({ rateBps: bps, fixedPoisha: poisha })),
+  }),
+
+  // --- Ranking (decision D1, docs/04 §5) ----------------------------------
+  /**
+   * Scoring weights in basis points, required to sum to exactly 10000. Expressing them as
+   * integers rather than 0.45/0.18/… keeps the whole score computation exact, so a ranking is
+   * reproducible from its stored `pricingVersion` years later.
+   */
+  'ranking.weightsBps': z
+    .object({
+      price: bps,
+      reliability: bps,
+      freshness: bps,
+      speed: bps,
+      quantityFit: bps,
+      rating: bps,
+    })
+    .refine(
+      (weights) => Object.values(weights).reduce((total, weight) => total + weight, 0) === 10000,
+      { message: 'Ranking weights must sum to exactly 10000 bps' },
+    ),
+
+  /** Laplace smoothing for completion history: `(completed + k·prior) / (accepted + k)`. */
+  'ranking.reliabilityPrior': z.object({
+    smoothingK: z.number().int().positive(),
+    priorBps: bps,
+  }),
+
+  /** Bayesian smoothing for star ratings, normalised to [0,1]. */
+  'ranking.ratingPrior': z.object({
+    smoothingK: z.number().int().positive(),
+    priorStarsMilli: z.number().int().positive(),
+    maxStars: z.number().int().positive(),
+  }),
+
+  /** Score awarded when a listing can only partially fill the request. docs/04 §5.2. */
+  'ranking.quantityFitBps': z.object({ full: bps, partial: bps }),
+
+  /**
+   * Contribution-margin feasibility floor. Candidates modelled below this are excluded from
+   * default results. This is one of exactly two permitted uses of margin in ranking — it is
+   * NEVER a scoring factor. docs/04 §5.3.
+   */
+  'ranking.marginFloorPoisha': signedPoisha,
+
+  /** Scores within this band are a tie, broken by contribution margin. 100 bps = 1%. docs/04 §5.3. */
+  'ranking.tiebreakBps': bps,
+
+  /** Cold-start exposure boost for new verified farmers, decaying over their first orders. */
+  'ranking.newFarmerBoost': z.object({
+    boostBps: bps,
+    decayOverOrders: z.number().int().positive(),
   }),
 
   // --- Discovery ----------------------------------------------------------

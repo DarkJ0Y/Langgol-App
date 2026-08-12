@@ -29,6 +29,33 @@ export type {
   QuantityFormatOptions,
 } from './quantity/index.js'
 
+export { Geo } from './geo/index.js'
+export type { DistanceEstimate, DistanceSource, GeoPoint } from './geo/index.js'
+
+export { Pricing, PricingError } from './pricing/index.js'
+export type {
+  Breakdown,
+  BreakdownInput,
+  DeliveryFundingModel,
+  FulfilmentMode,
+  FundingSplit,
+  PerishabilityClass,
+  PricingErrorCode,
+  SerializedBreakdown,
+  SubsidyReason,
+} from './pricing/index.js'
+
+export { Marketplace } from './marketplace/index.js'
+export type {
+  FactorScores,
+  Ppm,
+  RankedCandidate,
+  RankingCandidate,
+  RankingResult,
+  Reason,
+  ReasonCode,
+} from './marketplace/index.js'
+
 export { toBanglaDigits, toAsciiDigits } from './intl/numerals.js'
 export { divideRounded, absBigInt, pow10 } from './math/integer.js'
 export type { RoundingMode } from './math/integer.js'

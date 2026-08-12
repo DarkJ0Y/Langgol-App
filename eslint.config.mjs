@@ -87,6 +87,17 @@ export default tseslint.config(
     rules: { 'langgol/no-business-rate-literal': 'off' },
   },
 
+  /*
+   * The IUGG mean Earth radius (6,371,008.8 m) is a physical constant, exactly like the WCAG
+   * coefficients above. It trips the rule only because "radius" is also the name of a real
+   * business parameter (discovery.radiusKm), which genuinely does live in PlatformConfig.
+   * Scoped to the one file that does spherical geometry.
+   */
+  {
+    files: ['packages/domain/src/geo/distance.ts'],
+    rules: { 'langgol/no-business-rate-literal': 'off' },
+  },
+
   /* Local ESLint plugin sources are plain JS with JSDoc types. */
   {
     files: ['packages/config/eslint/**/*.js', 'eslint.config.mjs', '**/*.config.js'],

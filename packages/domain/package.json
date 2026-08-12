@@ -13,7 +13,10 @@
     "./config": "./src/config/index.ts",
     "./identity": "./src/identity/index.ts",
     "./policy": "./src/policy/index.ts",
-    "./notifications": "./src/notifications/index.ts"
+    "./notifications": "./src/notifications/index.ts",
+    "./geo": "./src/geo/index.ts",
+    "./pricing": "./src/pricing/index.ts",
+    "./marketplace": "./src/marketplace/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json"
