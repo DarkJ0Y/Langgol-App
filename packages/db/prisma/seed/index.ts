@@ -13,6 +13,8 @@ import { Prisma, PrismaClient, type AdminAreaType } from '../../generated/client
 import { DIVISIONS, type AreaSeed } from './admin-areas.js'
 import { PLATFORM_CONFIG_V1 } from './platform-config.js'
 import { seedDevelopmentFixtures } from './development-fixtures.js'
+import { CATALOGUE } from './catalogue.js'
+import { seedDevelopmentMarketplace } from './development-marketplace.js'
 
 const prisma = new PrismaClient()
 
@@ -97,6 +99,57 @@ async function seedPlatformConfig(): Promise<{ created: number; existing: number
   return { created, existing }
 }
 
+/**
+ * The curated catalogue is reference data, like the administrative tree: it belongs in every
+ * environment, including production. Farmers select from it rather than typing free text.
+ */
+async function seedCatalogue(): Promise<{ created: number; existing: number }> {
+  let created = 0
+  let existing = 0
+
+  for (const category of CATALOGUE) {
+    const savedCategory = await prisma.productCategory.upsert({
+      where: { slug: category.slug },
+      update: { nameEn: category.nameEn, nameBn: category.nameBn, sortOrder: category.sortOrder },
+      create: {
+        slug: category.slug,
+        nameEn: category.nameEn,
+        nameBn: category.nameBn,
+        sortOrder: category.sortOrder,
+      },
+      select: { id: true },
+    })
+
+    for (const product of category.products) {
+      const found = await prisma.product.findUnique({
+        where: { slug: product.slug },
+        select: { id: true },
+      })
+      if (found) {
+        existing += 1
+        continue
+      }
+
+      await prisma.product.create({
+        data: {
+          categoryId: savedCategory.id,
+          slug: product.slug,
+          nameEn: product.nameEn,
+          nameBn: product.nameBn,
+          searchTerms: [...product.searchTerms],
+          baseUnit: product.baseUnit,
+          defaultSaleUnit: product.defaultSaleUnit,
+          perishability: product.perishability,
+          defaultShelfLifeHours: product.defaultShelfLifeHours,
+        },
+      })
+      created += 1
+    }
+  }
+
+  return { created, existing }
+}
+
 async function main(): Promise<void> {
   console.log('Seeding Langgol reference data…')
 
@@ -106,6 +159,11 @@ async function main(): Promise<void> {
   const config = await seedPlatformConfig()
   console.log(`  platform config:  ${config.created} created, ${config.existing} already present`)
 
+  const catalogue = await seedCatalogue()
+  console.log(
+    `  catalogue:        ${catalogue.created} created, ${catalogue.existing} already present`,
+  )
+
   const appEnv = process.env['APP_ENV'] ?? 'development'
   const fixtures = await seedDevelopmentFixtures(prisma, appEnv)
   if (fixtures.skipped) {
@@ -113,6 +171,15 @@ async function main(): Promise<void> {
   } else {
     console.log(
       `  dev fixtures:     ${fixtures.created} created, ${fixtures.existing} already present`,
+    )
+  }
+
+  const marketplace = await seedDevelopmentMarketplace(prisma, appEnv)
+  if (marketplace.skipped) {
+    console.log('  dev marketplace:  skipped (APP_ENV=production)')
+  } else {
+    console.log(
+      `  dev marketplace:  ${marketplace.created} created, ${marketplace.existing} already present`,
     )
   }
 

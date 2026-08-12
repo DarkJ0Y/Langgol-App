@@ -9,3 +9,12 @@ export {
   sessionRepository,
   auditPort,
 } from './repositories/auth.js'
+export {
+  configPort,
+  listingRepository,
+  addressRepository,
+  quoteRepository,
+  orderNumberGenerator,
+  orderPlacement,
+  subsidyBudgetPort,
+} from './repositories/marketplace.js'
