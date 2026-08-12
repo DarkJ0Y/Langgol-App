@@ -9,13 +9,20 @@
 
 import 'server-only'
 import {
+  addressRepository,
   auditPort,
+  configPort,
   cryptoRandom,
   createOtpDelivery,
   getConfig,
+  listingRepository,
+  orderNumberGenerator,
+  orderPlacement,
   otpChallengeRepository,
+  quoteRepository,
   scryptHasher,
   sessionRepository,
+  subsidyBudgetPort,
   systemClock,
   userRepository,
 } from '@langgol/infrastructure'
@@ -47,6 +54,34 @@ export async function developmentDeps() {
     environment: configuration.APP_ENV as AppEnvironment,
     authMode: configuration.AUTH_MODE as AuthMode,
   }
+}
+
+/**
+ * Dependencies for the quote and checkout use cases.
+ *
+ * `orderPlacement` is the only adapter that moves inventory, and it does so in one transaction.
+ * Nothing here gives a caller a way to reserve stock without also creating the order.
+ */
+export function marketplaceDeps(): Promise<{
+  clock: typeof systemClock
+  config: typeof configPort
+  listings: typeof listingRepository
+  addresses: typeof addressRepository
+  quotes: typeof quoteRepository
+  subsidyBudget: typeof subsidyBudgetPort
+  orders: typeof orderPlacement
+  orderNumbers: typeof orderNumberGenerator
+}> {
+  return Promise.resolve({
+    clock: systemClock,
+    config: configPort,
+    listings: listingRepository,
+    addresses: addressRepository,
+    quotes: quoteRepository,
+    subsidyBudget: subsidyBudgetPort,
+    orders: orderPlacement,
+    orderNumbers: orderNumberGenerator,
+  })
 }
 
 export function authMode(): AuthMode {
