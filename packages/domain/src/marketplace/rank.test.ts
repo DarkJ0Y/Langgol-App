@@ -11,7 +11,7 @@
 
 import { describe, expect, it } from 'vitest'
 import * as Money from '../money/money.js'
-import { fixtureConfig } from '../pricing/__fixtures__/config.js'
+import { fixtureConfig } from '../testing/config-fixture.js'
 import { rankCandidates, toBuyerFacingRanking } from './rank.js'
 import type { RankingCandidate } from './rank.js'
 

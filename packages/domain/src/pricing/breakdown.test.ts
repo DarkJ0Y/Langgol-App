@@ -11,7 +11,7 @@ import { ConfigError } from '../config/snapshot.js'
 import * as Money from '../money/money.js'
 import { computeBreakdown, computeLineTotal, PRICING_VERSION } from './breakdown.js'
 import type { BreakdownInput, QuoteLineInput } from './breakdown.js'
-import { fixtureConfig } from './__fixtures__/config.js'
+import { fixtureConfig } from '../testing/config-fixture.js'
 
 const KG = 1000000n
 

@@ -1,2 +1,4 @@
 export * from './ports/index.js'
+export * from './ports/marketplace.js'
 export * from './usecases/auth/index.js'
+export * from './usecases/marketplace/index.js'

@@ -70,6 +70,10 @@ export default tseslint.config(
     files: [
       'packages/domain/src/config/defaults.ts',
       'packages/db/prisma/seed/**/*.ts',
+      // Shared test fixtures mirror the seed on purpose, so every suite prices against the same
+      // numbers the pilot runs on. Exported as @langgol/domain/testing, never imported by a
+      // production code path.
+      'packages/domain/src/testing/**/*.ts',
       '**/*.test.ts',
       '**/*.spec.ts',
       '**/__fixtures__/**',

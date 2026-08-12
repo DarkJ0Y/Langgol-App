@@ -1,19 +1,15 @@
 /**
  * Test configuration fixture.
  *
- * Mirrors `packages/db/prisma/seed/platform-config.ts` so the domain tests exercise the same
+ * Mirrors `packages/db/prisma/seed/platform-config.ts` so every suite prices against the same
  * numbers the pilot will actually run on — without the domain package taking a dependency on the
  * database package, which would break the "domain imports no I/O" rule.
  *
- * This file is exempt from `langgol/no-business-rate-literal` because fixtures are one of the
+ * This module is exempt from `langgol/no-business-rate-literal`: like the seed, it is one of the
  * few places concrete business values are supposed to appear.
  */
 
-import {
-  createConfigSnapshot,
-  type ConfigEntry,
-  type ConfigSnapshot,
-} from '../../config/snapshot.js'
+import { createConfigSnapshot, type ConfigEntry, type ConfigSnapshot } from '../config/snapshot.js'
 
 export const FIXTURE_ENTRIES: readonly ConfigEntry[] = [
   { key: 'commission.bps', version: 1, value: 300 },

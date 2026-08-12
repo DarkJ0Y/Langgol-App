@@ -16,7 +16,8 @@
     "./notifications": "./src/notifications/index.ts",
     "./geo": "./src/geo/index.ts",
     "./pricing": "./src/pricing/index.ts",
-    "./marketplace": "./src/marketplace/index.ts"
+    "./marketplace": "./src/marketplace/index.ts",
+    "./testing": "./src/testing/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json"
