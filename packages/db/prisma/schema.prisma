@@ -1,9 +1,12 @@
-// Langgol database schema — Phase 1 foundation.
+// Langgol database schema — Phase 1 foundation + Phase 2 marketplace core.
 //
-// This file contains ONLY the tables the platform foundation needs: identity and access,
-// geography and addresses, versioned platform configuration, audit, notifications and
-// idempotency. Listings, orders, the ledger, settlement and economic measurement arrive with
-// their own phases (docs/09_ROADMAP.md) and are specified in docs/02_DATABASE.md.
+// Phase 1 provides identity and access, geography and addresses, versioned platform
+// configuration, audit, notifications and idempotency.
+//
+// Phase 2 adds the marketplace loop specified in docs/02_DATABASE.md §5–8: profiles, the curated
+// catalogue, listings with reservable inventory, the server-authoritative OrderQuote, and orders.
+// The ledger, settlement, delivery trips and economic measurement remain future phases
+// (docs/09_ROADMAP.md).
 //
 // Objects Prisma cannot express — CHECK constraints, append-only rules, PostGIS geography
 // columns and their triggers, GIST indexes — live in hand-authored migrations alongside the
@@ -42,25 +45,29 @@ enum Language {
 }
 
 model User {
-  id                String     @id @default(uuid()) @db.Uuid
+  id                   String     @id @default(uuid()) @db.Uuid
   /// E.164, always +8801XXXXXXXXX. The primary identifier: Bangladeshi users authenticate by phone.
-  phone             String     @unique
-  phoneVerifiedAt   DateTime?  @map("phone_verified_at")
-  email             String?    @unique
-  fullName          String     @map("full_name")
-  preferredLanguage Language   @default(BN) @map("preferred_language")
-  status            UserStatus @default(ACTIVE)
-  lastLoginAt       DateTime?  @map("last_login_at")
+  phone                String     @unique
+  phoneVerifiedAt      DateTime?  @map("phone_verified_at")
+  email                String?    @unique
+  fullName             String     @map("full_name")
+  preferredLanguage    Language   @default(BN) @map("preferred_language")
+  status               UserStatus @default(ACTIVE)
+  lastLoginAt          DateTime?  @map("last_login_at")
   /// Development sign-in can authenticate ONLY these rows, and a CHECK constraint confines the
   /// flag to a reserved phone block. See the development_auth_fixtures migration.
-  isDevelopmentFixture Boolean @default(false) @map("is_development_fixture")
-  createdAt         DateTime   @default(now()) @map("created_at")
-  updatedAt         DateTime   @updatedAt @map("updated_at")
-  deletedAt         DateTime?  @map("deleted_at")
+  isDevelopmentFixture Boolean    @default(false) @map("is_development_fixture")
+  createdAt            DateTime   @default(now()) @map("created_at")
+  updatedAt            DateTime   @updatedAt @map("updated_at")
+  deletedAt            DateTime?  @map("deleted_at")
 
   roles     UserRoleAssignment[]
   sessions  Session[]
   addresses Address[]
+
+  farmerProfile   FarmerProfile?
+  consumerProfile ConsumerProfile?
+  retailerProfile RetailerProfile?
 
   @@index([status])
   @@map("users")
@@ -152,23 +159,25 @@ enum LocationPrecision {
 /// reliable postcode; "village, union, upazila, near the school" is a complete address in
 /// practice. The map pin is an enhancement. docs/08_BANGLADESH_CONTEXT.md §2
 model AdminArea {
-  id          String        @id @default(uuid()) @db.Uuid
+  id          String                                 @id @default(uuid()) @db.Uuid
   type        AdminAreaType
-  parentId    String?       @map("parent_id") @db.Uuid
-  nameEn      String        @map("name_en")
-  nameBn      String        @map("name_bn")
+  parentId    String?                                @map("parent_id") @db.Uuid
+  nameEn      String                                 @map("name_en")
+  nameBn      String                                 @map("name_bn")
   /// Official statistical code where one is available.
-  code        String?       @unique
-  centroidLat Decimal?      @map("centroid_lat") @db.Decimal(9, 6)
-  centroidLng Decimal?      @map("centroid_lng") @db.Decimal(9, 6)
+  code        String?                                @unique
+  centroidLat Decimal?                               @map("centroid_lat") @db.Decimal(9, 6)
+  centroidLng Decimal?                               @map("centroid_lng") @db.Decimal(9, 6)
   /// Maintained by trigger from centroid_lat/lng. See the PostGIS migration.
   geo         Unsupported("geography(Point, 4326)")?
-  isActive    Boolean       @default(true) @map("is_active")
-  createdAt   DateTime      @default(now()) @map("created_at")
+  isActive    Boolean                                @default(true) @map("is_active")
+  createdAt   DateTime                               @default(now()) @map("created_at")
 
-  parent   AdminArea?  @relation("AreaTree", fields: [parentId], references: [id])
-  children AdminArea[] @relation("AreaTree")
+  parent    AdminArea?  @relation("AreaTree", fields: [parentId], references: [id])
+  children  AdminArea[] @relation("AreaTree")
   addresses Address[]
+  farms     Farm[]
+  listings  Listing[]
 
   @@index([type, parentId])
   @@index([parentId, nameEn])
@@ -176,27 +185,27 @@ model AdminArea {
 }
 
 model Address {
-  id             String            @id @default(uuid()) @db.Uuid
-  userId         String            @map("user_id") @db.Uuid
+  id             String                                 @id @default(uuid()) @db.Uuid
+  userId         String                                 @map("user_id") @db.Uuid
   label          String?
-  recipientName  String            @map("recipient_name")
-  recipientPhone String            @map("recipient_phone")
+  recipientName  String                                 @map("recipient_name")
+  recipientPhone String                                 @map("recipient_phone")
   /// Union where known, otherwise upazila. Never null — the hierarchy is the address.
-  adminAreaId    String            @map("admin_area_id") @db.Uuid
-  villageOrArea  String?           @map("village_or_area")
-  addressLine    String            @map("address_line")
+  adminAreaId    String                                 @map("admin_area_id") @db.Uuid
+  villageOrArea  String?                                @map("village_or_area")
+  addressLine    String                                 @map("address_line")
   landmark       String?
-  latitude       Decimal?          @db.Decimal(9, 6)
-  longitude      Decimal?          @db.Decimal(9, 6)
+  latitude       Decimal?                               @db.Decimal(9, 6)
+  longitude      Decimal?                               @db.Decimal(9, 6)
   /// Records what we actually know, so distance-based pricing can widen its error bars
   /// honestly instead of implying metre accuracy from a union centroid.
-  precision      LocationPrecision @default(AREA_CENTROID)
+  precision      LocationPrecision                      @default(AREA_CENTROID)
   /// Maintained by trigger from latitude/longitude. See the PostGIS migration.
   geo            Unsupported("geography(Point, 4326)")?
-  isDefault      Boolean           @default(false) @map("is_default")
-  createdAt      DateTime          @default(now()) @map("created_at")
-  updatedAt      DateTime          @updatedAt @map("updated_at")
-  deletedAt      DateTime?         @map("deleted_at")
+  isDefault      Boolean                                @default(false) @map("is_default")
+  createdAt      DateTime                               @default(now()) @map("created_at")
+  updatedAt      DateTime                               @updatedAt @map("updated_at")
+  deletedAt      DateTime?                              @map("deleted_at")
 
   user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   area AdminArea @relation(fields: [adminAreaId], references: [id])
@@ -329,4 +338,580 @@ model IdempotencyRecord {
   @@unique([scope, key])
   @@index([expiresAt])
   @@map("idempotency_records")
+}
+
+// =================================================================== PHASE 2 — MARKETPLACE
+//
+// docs/02_DATABASE.md §5–8. Money is BIGINT poisha with a `Poisha` suffix, quantity is BIGINT
+// base units (milligrams for mass — §6.1). Constraints Prisma cannot express (CHECKs, the
+// single-use quote guarantee, the atomic reservation rule) live in the accompanying migration
+// and are part of the security model, not a convenience.
+
+// ---------------------------------------------------------------------------- profiles
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum SettlementRail {
+  AGENT_CASH
+  MFS
+  BANK
+  REGULATED_PROVIDER
+}
+
+model FarmerProfile {
+  id                 String             @id @default(uuid()) @db.Uuid
+  userId             String             @unique @map("user_id") @db.Uuid
+  displayName        String             @map("display_name")
+  bio                String?
+  verificationStatus VerificationStatus @default(UNVERIFIED) @map("verification_status")
+  verifiedAt         DateTime?          @map("verified_at")
+  /// Hash only — duplicate detection, never the number itself. docs/07_SECURITY.md §7
+  nidHash            String?            @unique @map("nid_hash")
+  settlementRail     SettlementRail     @default(AGENT_CASH) @map("settlement_rail")
+  payoutAccountRef   String?            @map("payout_account_ref")
+  payoutAccountName  String?            @map("payout_account_name")
+  payoutVerifiedAt   DateTime?          @map("payout_verified_at")
+  payoutChangedAt    DateTime?          @map("payout_changed_at")
+
+  /// NEW | STANDARD | TRUSTED — governs the hold between delivery and payout (D5, open Q2).
+  riskTier                    String @default("NEW") @map("risk_tier")
+  settlementHoldHoursOverride Int?   @map("settlement_hold_hours_override")
+
+  /// Derived reputation. Recomputed from orders; never authoritative for money.
+  ratingSumStarsMilli     Int @default(0) @map("rating_sum_stars_milli")
+  ratingCount             Int @default(0) @map("rating_count")
+  ordersAccepted          Int @default(0) @map("orders_accepted")
+  ordersCompleted         Int @default(0) @map("orders_completed")
+  ordersCancelledBySeller Int @default(0) @map("orders_cancelled_by_seller")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  farms    Farm[]
+  listings Listing[]
+
+  @@index([verificationStatus])
+  @@map("farmer_profiles")
+}
+
+model ConsumerProfile {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @unique @map("user_id") @db.Uuid
+  defaultAddressId String?  @map("default_address_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("consumer_profiles")
+}
+
+model RetailerProfile {
+  id                 String             @id @default(uuid()) @db.Uuid
+  userId             String             @unique @map("user_id") @db.Uuid
+  businessName       String             @map("business_name")
+  /// GROCERY | RESTAURANT | HOTEL | INSTITUTION
+  businessType       String?            @map("business_type")
+  tradeLicenceNumber String?            @map("trade_licence_number")
+  /// VAT registration, for the tax hooks in docs/06 §10.
+  binNumber          String?            @map("bin_number")
+  verificationStatus VerificationStatus @default(UNVERIFIED) @map("verification_status")
+  createdAt          DateTime           @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("retailer_profiles")
+}
+
+// ------------------------------------------------------------- farms & curated catalogue
+
+enum BaseUnit {
+  MILLIGRAM
+  MILLILITRE
+  PIECE
+}
+
+enum SaleUnit {
+  MILLIGRAM
+  GRAM
+  KG
+  SEER
+  MON
+  TONNE
+  MILLILITRE
+  LITRE
+  PIECE
+  HALI
+  DOZEN
+}
+
+enum PerishabilityClass {
+  HIGHLY_PERISHABLE
+  PERISHABLE
+  SEMI_DURABLE
+  DURABLE
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  PAUSED
+  SOLD_OUT
+  EXPIRED
+  REMOVED
+}
+
+enum QualityGrade {
+  A
+  B
+  C
+  UNGRADED
+}
+
+model Farm {
+  id               String                                 @id @default(uuid()) @db.Uuid
+  farmerProfileId  String                                 @map("farmer_profile_id") @db.Uuid
+  name             String
+  adminAreaId      String                                 @map("admin_area_id") @db.Uuid
+  villageOrArea    String?                                @map("village_or_area")
+  addressLine      String?                                @map("address_line")
+  latitude         Decimal?                               @db.Decimal(9, 6)
+  longitude        Decimal?                               @db.Decimal(9, 6)
+  precision        LocationPrecision                      @default(AREA_CENTROID)
+  /// Maintained by trigger from latitude/longitude. See the p2_marketplace_core migration.
+  geo              Unsupported("geography(Point, 4326)")?
+  /// Bangladeshi "decimal" = 1/100 acre ≈ 40.46 m².
+  landAreaDecimals Int?                                   @map("land_area_decimals")
+  createdAt        DateTime                               @default(now()) @map("created_at")
+  updatedAt        DateTime                               @updatedAt @map("updated_at")
+  deletedAt        DateTime?                              @map("deleted_at")
+
+  farmer   FarmerProfile @relation(fields: [farmerProfileId], references: [id])
+  area     AdminArea     @relation(fields: [adminAreaId], references: [id])
+  listings Listing[]
+
+  @@index([farmerProfileId])
+  @@index([adminAreaId])
+  @@map("farms")
+}
+
+model ProductCategory {
+  id        String    @id @default(uuid()) @db.Uuid
+  slug      String    @unique
+  nameEn    String    @map("name_en")
+  nameBn    String    @map("name_bn")
+  sortOrder Int       @default(0) @map("sort_order")
+  isActive  Boolean   @default(true) @map("is_active")
+  products  Product[]
+
+  @@map("product_categories")
+}
+
+/// Curated catalogue. Farmers pick from it; they do not invent free-text products.
+///
+/// Free text destroys search, makes listings incomparable, and breaks the delivered-cost engine,
+/// which needs perishability and shelf life to model spoilage. docs/02_DATABASE.md §6.1
+model Product {
+  id                    String             @id @default(uuid()) @db.Uuid
+  categoryId            String             @map("category_id") @db.Uuid
+  slug                  String             @unique
+  nameEn                String             @map("name_en")
+  nameBn                String             @map("name_bn")
+  /// Transliteration-tolerant search terms: "tomato", "টমেটো", "tometo". docs/04 §10.
+  searchTerms           String[]           @map("search_terms")
+  baseUnit              BaseUnit           @map("base_unit")
+  defaultSaleUnit       SaleUnit           @map("default_sale_unit")
+  perishability         PerishabilityClass
+  defaultShelfLifeHours Int                @map("default_shelf_life_hours")
+  imageKey              String?            @map("image_key")
+  isActive              Boolean            @default(true) @map("is_active")
+
+  category  ProductCategory  @relation(fields: [categoryId], references: [id])
+  varieties ProductVariety[]
+  listings  Listing[]
+
+  @@index([categoryId, isActive])
+  @@map("products")
+}
+
+model ProductVariety {
+  id        String  @id @default(uuid()) @db.Uuid
+  productId String  @map("product_id") @db.Uuid
+  nameEn    String  @map("name_en")
+  nameBn    String  @map("name_bn")
+  isActive  Boolean @default(true) @map("is_active")
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([productId, nameEn])
+  @@map("product_varieties")
+}
+
+model Listing {
+  id              String       @id @default(uuid()) @db.Uuid
+  farmId          String       @map("farm_id") @db.Uuid
+  farmerProfileId String       @map("farmer_profile_id") @db.Uuid
+  productId       String       @map("product_id") @db.Uuid
+  varietyId       String?      @map("variety_id") @db.Uuid
+  grade           QualityGrade @default(UNGRADED)
+  title           String?
+  description     String?
+
+  saleUnit              String  @map("sale_unit")
+  /// Base units in one sale unit: KG = 1_000_000 (mg), MON = 37_324_000. Exact, always.
+  saleUnitInBaseUnits   BigInt  @map("sale_unit_in_base_units")
+  /// Price per sale unit, integer poisha. Never a float.
+  unitPricePoisha       BigInt  @map("unit_price_poisha")
+  quantityTotalBase     BigInt  @map("quantity_total_base")
+  quantityAvailableBase BigInt  @map("quantity_available_base")
+  quantityReservedBase  BigInt  @default(0) @map("quantity_reserved_base")
+  minOrderBase          BigInt  @default(0) @map("min_order_base")
+  /// Whether a buyer wanting more than is held may take a partial fill. docs/04 §9.
+  allowsPartialFill     Boolean @default(false) @map("allows_partial_fill")
+
+  harvestedAt       DateTime? @map("harvested_at")
+  expectedHarvestAt DateTime? @map("expected_harvest_at")
+  availableFrom     DateTime  @map("available_from")
+  availableTo       DateTime  @map("available_to")
+  shelfLifeHours    Int?      @map("shelf_life_hours")
+
+  /// Effective location — defaults from the farm, may be overridden for a collection point.
+  latitude    Decimal?                               @db.Decimal(9, 6)
+  longitude   Decimal?                               @db.Decimal(9, 6)
+  adminAreaId String                                 @map("admin_area_id") @db.Uuid
+  precision   LocationPrecision                      @default(AREA_CENTROID)
+  /// Maintained by trigger from latitude/longitude; GIST-indexed for radius discovery.
+  geo         Unsupported("geography(Point, 4326)")?
+
+  offersPickup          Boolean @default(true) @map("offers_pickup")
+  offersSellerDelivery  Boolean @default(false) @map("offers_seller_delivery")
+  sellerDeliveryRadiusM Int?    @map("seller_delivery_radius_m")
+  /// SELLER_FUNDED delivery requires this explicit opt-in. Langgol never assigns a cost to a
+  /// farmer on their behalf. docs/04 §3.1 rule 3.
+  offersFundedDelivery  Boolean @default(false) @map("offers_funded_delivery")
+
+  status          String    @default("DRAFT")
+  /// PRICE_OUTLIER | IMAGE_REVIEW | REPORTED — a soft signal for ops, never a silent block.
+  moderationFlag  String?   @map("moderation_flag")
+  publishedAt     DateTime? @map("published_at")
+  /// May be an OPS_AGENT acting for the farmer.
+  createdByUserId String    @map("created_by_user_id") @db.Uuid
+  version         Int       @default(0)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  farm         Farm                 @relation(fields: [farmId], references: [id])
+  farmer       FarmerProfile        @relation(fields: [farmerProfileId], references: [id])
+  product      Product              @relation(fields: [productId], references: [id])
+  area         AdminArea            @relation(fields: [adminAreaId], references: [id])
+  reservations ListingReservation[]
+
+  @@index([status, availableTo])
+  @@index([productId, status])
+  @@index([farmerProfileId, status])
+  @@index([adminAreaId, status])
+  @@map("listings")
+}
+
+enum ReservationStatus {
+  HELD
+  COMMITTED
+  RELEASED
+  EXPIRED
+}
+
+/// Prevents overselling between "place order" and "farmer accepts".
+///
+/// Reserving at order placement rather than at add-to-cart is deliberate: reserving on
+/// add-to-cart lets one idle browser lock a farmer's crop for hours. docs/04 §9.
+model ListingReservation {
+  id           String            @id @default(uuid()) @db.Uuid
+  listingId    String            @map("listing_id") @db.Uuid
+  orderId      String?           @map("order_id") @db.Uuid
+  buyerUserId  String            @map("buyer_user_id") @db.Uuid
+  quantityBase BigInt            @map("quantity_base")
+  status       ReservationStatus @default(HELD)
+  expiresAt    DateTime          @map("expires_at")
+  releasedAt   DateTime?         @map("released_at")
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  listing Listing @relation(fields: [listingId], references: [id])
+  order   Order?  @relation(fields: [orderId], references: [id])
+
+  @@index([listingId, status])
+  @@index([status, expiresAt])
+  @@map("listing_reservations")
+}
+
+// ------------------------------------------------------------------------ quotes & orders
+
+enum FulfilmentMode {
+  BUYER_PICKUP
+  SELLER_DELIVERY
+  LANGGOL_DELIVERY
+}
+
+enum DeliveryFundingModel {
+  /// Buyer pays the full tariff — the default. Decision D3.
+  COST_RECOVERING
+  /// Platform absorbs part; requires a SubsidyReason and budget headroom.
+  PROMOTIONAL_SUBSIDY
+  /// Platform absorbs all; requires a SubsidyReason and budget headroom.
+  FREE_DELIVERY
+  /// Retailer pays directly, often above tariff for priority.
+  RETAILER_FUNDED
+  /// Farmer absorbs it as a selling incentive. Requires listing opt-in.
+  SELLER_FUNDED
+  /// Split by an explicit ratio recorded on the order.
+  SHARED
+}
+
+/// Server-authoritative price snapshot. The ONLY source of truth for what an order costs.
+///
+/// The client receives a quote **id**, never numbers. At checkout it submits the id; the server
+/// reloads the quote, verifies ownership, expiry and single use, re-reads the listing, and copies
+/// the money onto the order. There is no code path that reads a price from a request body.
+/// docs/04 §8; docs/07_SECURITY.md §5
+model OrderQuote {
+  id                    String         @id @default(uuid()) @db.Uuid
+  buyerUserId           String         @map("buyer_user_id") @db.Uuid
+  sellerFarmerProfileId String         @map("seller_farmer_profile_id") @db.Uuid
+  deliveryAddressId     String?        @map("delivery_address_id") @db.Uuid
+  fulfilmentMode        FulfilmentMode @map("fulfilment_mode")
+
+  /// [{ listingId, quantityBase, unitPricePoisha, lineTotalPoisha }]
+  lines             Json
+  subtotalPoisha    BigInt @map("subtotal_poisha")
+  deliveryFeePoisha BigInt @default(0) @map("delivery_fee_poisha")
+  handlingFeePoisha BigInt @default(0) @map("handling_fee_poisha")
+  platformFeePoisha BigInt @default(0) @map("platform_fee_poisha")
+  buyerTotalPoisha  BigInt @map("buyer_total_poisha")
+
+  sellerGrossPoisha BigInt @map("seller_gross_poisha")
+  commissionPoisha  BigInt @map("commission_poisha")
+  commissionBps     Int    @map("commission_bps")
+  sellerNetPoisha   BigInt @map("seller_net_poisha")
+
+  /// The funding decision, frozen at quote time so checkout cannot change who pays.
+  deliveryFundingModel           DeliveryFundingModel @default(COST_RECOVERING) @map("delivery_funding_model")
+  deliveryTariffPoisha           BigInt               @default(0) @map("delivery_tariff_poisha")
+  deliveryFundedBySellerPoisha   BigInt               @default(0) @map("delivery_funded_by_seller_poisha")
+  deliveryFundedByRetailerPoisha BigInt               @default(0) @map("delivery_funded_by_retailer_poisha")
+  promotionalSubsidyPoisha       BigInt               @default(0) @map("promotional_subsidy_poisha")
+  /// Controlled vocabulary (docs/10 §9.3). A CHECK constraint enforces its presence.
+  subsidyReason                  String?              @map("subsidy_reason")
+
+  /// Modelled margin, stored on every quote so negative-margin orders are countable.
+  contributionMarginPoisha BigInt @map("contribution_margin_poisha")
+  expectedCostPoisha       BigInt @map("expected_cost_poisha")
+
+  distanceMeters Int?    @map("distance_meters")
+  /// HAVERSINE | HAVERSINE_CIRCUITY | ROAD_API — so the estimate's error can be measured.
+  distanceSource String? @map("distance_source")
+
+  /// The full explainable cost model output, including the buyer-facing breakdown.
+  breakdown      Json
+  paymentMethod  String? @map("payment_method")
+  pricingVersion String  @map("pricing_version")
+  /// Key → version for every config entry this price was computed under.
+  configVersions Json    @map("config_versions")
+
+  expiresAt         DateTime  @map("expires_at")
+  consumedAt        DateTime? @map("consumed_at")
+  consumedByOrderId String?   @unique @map("consumed_by_order_id") @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  order Order?
+
+  @@index([buyerUserId, createdAt])
+  @@index([expiresAt])
+  @@map("order_quotes")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY_FOR_PICKUP
+  IN_TRANSIT
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  FAILED
+  REFUNDED
+  DISPUTED
+}
+
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+  MFS
+  CARD
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  UNPAID
+  AUTHORIZED
+  PAID
+  PARTIALLY_REFUNDED
+  REFUNDED
+  FAILED
+}
+
+enum CancelledBy {
+  BUYER
+  SELLER
+  SYSTEM
+  ADMIN
+}
+
+/// WHO the cost of a failure is attributable to. Explicit in the domain model, never inferred.
+enum FaultParty {
+  BUYER
+  SELLER
+  PLATFORM
+  LOGISTICS
+  FORCE_MAJEURE
+  UNDETERMINED
+}
+
+enum BuyerSegment {
+  CONSUMER
+  RETAILER
+}
+
+model Order {
+  id                    String         @id @default(uuid()) @db.Uuid
+  /// Human-readable, e.g. LG-260813-0A3F2.
+  orderNumber           String         @unique @map("order_number")
+  buyerUserId           String         @map("buyer_user_id") @db.Uuid
+  sellerFarmerProfileId String         @map("seller_farmer_profile_id") @db.Uuid
+  quoteId               String         @unique @map("quote_id") @db.Uuid
+  status                OrderStatus    @default(PENDING)
+  fulfilmentMode        FulfilmentMode @map("fulfilment_mode")
+  buyerSegment          BuyerSegment   @map("buyer_segment")
+  paymentMethod         PaymentMethod  @map("payment_method")
+  paymentStatus         PaymentStatus  @default(UNPAID) @map("payment_status")
+
+  /// Money — frozen at creation from the quote. Never recomputed from live listings.
+  subtotalPoisha    BigInt @map("subtotal_poisha")
+  deliveryFeePoisha BigInt @map("delivery_fee_poisha")
+  handlingFeePoisha BigInt @map("handling_fee_poisha")
+  platformFeePoisha BigInt @map("platform_fee_poisha")
+  buyerTotalPoisha  BigInt @map("buyer_total_poisha")
+  sellerGrossPoisha BigInt @map("seller_gross_poisha")
+  commissionPoisha  BigInt @map("commission_poisha")
+  /// The rate actually applied, frozen — a later rate change never rewrites history.
+  commissionBps     Int    @map("commission_bps")
+  sellerNetPoisha   BigInt @map("seller_net_poisha")
+  currency          String @default("BDT")
+
+  deliveryFundingModel           DeliveryFundingModel @default(COST_RECOVERING) @map("delivery_funding_model")
+  deliveryTariffPoisha           BigInt               @default(0) @map("delivery_tariff_poisha")
+  deliveryFundedBySellerPoisha   BigInt               @default(0) @map("delivery_funded_by_seller_poisha")
+  deliveryFundedByRetailerPoisha BigInt               @default(0) @map("delivery_funded_by_retailer_poisha")
+  promotionalSubsidyPoisha       BigInt               @default(0) @map("promotional_subsidy_poisha")
+  subsidyReason                  String?              @map("subsidy_reason")
+  subsidyApprovedById            String?              @map("subsidy_approved_by_id") @db.Uuid
+
+  contributionMarginPoisha BigInt @map("contribution_margin_poisha")
+
+  /// Mandatory on any non-happy terminal state — enforced by CHECK, not by a busy ops UI.
+  faultParty FaultParty? @map("fault_party")
+  faultNote  String?     @map("fault_note")
+
+  cancellationFeePoisha           BigInt @default(0) @map("cancellation_fee_poisha")
+  cancellationFeeToFarmerPoisha   BigInt @default(0) @map("cancellation_fee_to_farmer_poisha")
+  cancellationFeeToPlatformPoisha BigInt @default(0) @map("cancellation_fee_to_platform_poisha")
+
+  /// Delivery address snapshot — the address row may change later; the order must not.
+  deliveryRecipientName  String?  @map("delivery_recipient_name")
+  deliveryRecipientPhone String?  @map("delivery_recipient_phone")
+  deliveryAddressLine    String?  @map("delivery_address_line")
+  deliveryAreaId         String?  @map("delivery_area_id") @db.Uuid
+  deliveryLatitude       Decimal? @map("delivery_latitude") @db.Decimal(9, 6)
+  deliveryLongitude      Decimal? @map("delivery_longitude") @db.Decimal(9, 6)
+  distanceMeters         Int?     @map("distance_meters")
+
+  acceptanceDeadline DateTime     @map("acceptance_deadline")
+  placedAt           DateTime     @default(now()) @map("placed_at")
+  confirmedAt        DateTime?    @map("confirmed_at")
+  readyAt            DateTime?    @map("ready_at")
+  deliveredAt        DateTime?    @map("delivered_at")
+  completedAt        DateTime?    @map("completed_at")
+  cancelledAt        DateTime?    @map("cancelled_at")
+  cancelledBy        CancelledBy? @map("cancelled_by")
+  cancellationReason String?      @map("cancellation_reason")
+
+  idempotencyKey String   @unique @map("idempotency_key")
+  version        Int      @default(0)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  quote        OrderQuote           @relation(fields: [quoteId], references: [id])
+  items        OrderItem[]
+  events       OrderEvent[]
+  reservations ListingReservation[]
+
+  @@index([buyerUserId, status, placedAt])
+  @@index([sellerFarmerProfileId, status, placedAt])
+  @@index([status, acceptanceDeadline])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String @id @default(uuid()) @db.Uuid
+  orderId   String @map("order_id") @db.Uuid
+  listingId String @map("listing_id") @db.Uuid
+  productId String @map("product_id") @db.Uuid
+
+  /// Snapshots — the listing can change or be deleted; the order is history.
+  productNameEn       String       @map("product_name_en")
+  productNameBn       String       @map("product_name_bn")
+  varietyName         String?      @map("variety_name")
+  grade               QualityGrade
+  farmName            String       @map("farm_name")
+  saleUnit            String       @map("sale_unit")
+  saleUnitInBaseUnits BigInt       @map("sale_unit_in_base_units")
+  unitPricePoisha     BigInt       @map("unit_price_poisha")
+  quantityBase        BigInt       @map("quantity_base")
+  lineTotalPoisha     BigInt       @map("line_total_poisha")
+  harvestedAt         DateTime?    @map("harvested_at")
+
+  /// Filled at fulfilment when actual weight differs — very common with fresh produce.
+  deliveredQuantityBase BigInt? @map("delivered_quantity_base")
+  adjustmentPoisha      BigInt? @map("adjustment_poisha")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([listingId])
+  @@map("order_items")
+}
+
+/// Append-only. The order's status column is a projection of this log.
+model OrderEvent {
+  id          String       @id @default(uuid()) @db.Uuid
+  orderId     String       @map("order_id") @db.Uuid
+  sequence    Int
+  fromStatus  OrderStatus? @map("from_status")
+  toStatus    OrderStatus  @map("to_status")
+  actorUserId String?      @map("actor_user_id") @db.Uuid
+  actorRole   Role?        @map("actor_role")
+  reason      String?
+  metadata    Json?
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@unique([orderId, sequence])
+  @@index([orderId, createdAt])
+  @@map("order_events")
 }
