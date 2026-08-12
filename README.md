@@ -6,17 +6,31 @@ A digital operating system for the agricultural ecosystem of Bangladesh.
 
 ---
 
-## Status: Phase 1 — Platform foundation
+## Status: Phase 1 foundation + Phase 2 marketplace core
 
-This repository currently contains **only the platform foundation**. The marketplace, orders,
-payments, settlement and credit are deliberately **not** built yet — see
-[`docs/09_ROADMAP.md`](docs/09_ROADMAP.md).
+The platform foundation is in place, and the **marketplace loop** — a buyer requests a
+server-computed quote for produce at an address, and turns that quote into an order with inventory
+reserved — now runs end to end. Payments, delivery trips, reconciliation, the ledger and settlement
+are deliberately **not** built yet; see [`docs/09_ROADMAP.md`](docs/09_ROADMAP.md) and
+[`CHANGELOG.md`](CHANGELOG.md).
 
-| Phase                      | State                                                                  |
-| -------------------------- | ---------------------------------------------------------------------- |
-| P0 Foundations & decisions | Running in parallel (geography validation, baseline collection, legal) |
-| **P1 Platform skeleton**   | **In progress — this repository**                                      |
-| P2 Farmer supply side      | Not started — requires explicit approval                               |
+| Phase                        | State                                                                  |
+| ---------------------------- | ---------------------------------------------------------------------- |
+| P0 Foundations & decisions   | Running in parallel (geography validation, baseline collection, legal) |
+| **P1 Platform skeleton**     | **Complete**                                                           |
+| **P2 Marketplace core**      | **Quote → checkout → order working; payments and settlement pending**  |
+| P2 Delivery & reconciliation | Not started                                                            |
+
+### The marketplace loop, in one command
+
+```bash
+docker compose up -d && pnpm db:migrate && pnpm db:seed
+pnpm e2e:marketplace          # listing → quote → checkout → order, with the invariants checked
+```
+
+It prints what the buyer sees, what the farmer sees, and what only Langgol sees — including the
+contribution margin, which on a small solo delivery is negative and is reported as such rather than
+hidden. That number is the pilot's central finding.
 
 ## Documentation
 

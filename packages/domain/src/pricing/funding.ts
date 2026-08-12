@@ -65,14 +65,21 @@ export interface FundingContext {
    * have nothing to enforce, so subsidy is refused rather than assumed affordable).
    */
   readonly subsidyBudgetAvailable: boolean
+  /*
+   * These are written `?: T | undefined` rather than `?: T` because the workspace enables
+   * `exactOptionalPropertyTypes`. A caller assembling a context from optional inputs would
+   * otherwise be unable to pass an explicit `undefined`, and would have to build the object by
+   * conditional spread — which is exactly where a required field gets dropped by accident.
+   */
+
   /** Mandatory for a subsidising model. Validated against the controlled vocabulary. */
-  readonly subsidyReason?: string | null
+  readonly subsidyReason?: string | null | undefined
   /** Required by `PROMOTIONAL_SUBSIDY`: how much of the tariff the platform absorbs. */
-  readonly requestedSubsidyPoisha?: Poisha
+  readonly requestedSubsidyPoisha?: Poisha | undefined
   /** `SELLER_FUNDED` and `SHARED` require the farmer's explicit opt-in on the listing. */
-  readonly sellerOffersFundedDelivery?: boolean
+  readonly sellerOffersFundedDelivery?: boolean | undefined
   /** `SHARED` only: the seller's agreed share of the tariff, in basis points. */
-  readonly sellerShareBps?: number
+  readonly sellerShareBps?: number | undefined
 }
 
 export interface FundingSplit {

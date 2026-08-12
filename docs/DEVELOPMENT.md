@@ -62,15 +62,34 @@ CHECK constraints, append-only rules, PostGIS geography columns, their triggers 
 are **part of the security model** and cannot be expressed in `schema.prisma`. They live in
 hand-authored migrations next to the generated ones:
 
-| Migration                 | Contents                                                               |
-| ------------------------- | ---------------------------------------------------------------------- |
-| `..._enable_extensions`   | `postgis`, `pgcrypto` — must run before any table using their types    |
-| `..._init`                | Prisma-generated tables, enums, indexes and foreign keys               |
-| `..._database_guarantees` | CHECK constraints, append-only rules, geography triggers, GIST indexes |
+| Migration                 | Contents                                                                   |
+| ------------------------- | -------------------------------------------------------------------------- |
+| `..._enable_extensions`   | `postgis`, `pgcrypto` — must run before any table using their types        |
+| `..._init`                | Prisma-generated tables, enums, indexes and foreign keys                   |
+| `..._database_guarantees` | CHECK constraints, append-only rules, geography triggers, GIST indexes     |
+| `..._p2_marketplace_core` | Marketplace tables plus their CHECKs, quote single-use rules, GIST indexes |
 
 Because those objects are invisible to `schema.prisma`, a naive `prisma migrate diff` drift check
 would try to drop them. Integrity is verified instead by `migrate:status` (every migration applied
 and unmodified) plus the two guarantee scripts, which CI runs on every build.
+
+> ### ⚠ Read every generated migration before committing it
+>
+> `prisma migrate dev` **will emit `DROP INDEX` for the hand-authored GIST indexes.** Prisma cannot
+> represent a GIST index on an `Unsupported("geography(...)")` column, so it does not see those
+> indexes in the datamodel, concludes they are drift, and drops them.
+>
+> This happened while generating `20260812204242_p2_marketplace_core`: the generated file contained
+> `DROP INDEX "addresses_geo_gix";` and `DROP INDEX "admin_areas_geo_gix";`. Both were removed by
+> hand and replaced with a comment.
+>
+> **Every time you run `prisma migrate dev`, grep the new migration for `DROP INDEX` and delete any
+> line that drops a `*_geo_gix` index.** Losing them does not fail a test or raise an error — it
+> silently turns every radius search into a full table scan.
+>
+> ```bash
+> grep -n "DROP INDEX" packages/db/prisma/migrations/<new>/migration.sql
+> ```
 
 **The geography column is maintained by a trigger, not `GENERATED ALWAYS`.** A generated column
 would be invisible to Prisma and cause perpetual drift; the trigger keeps the physical schema and
