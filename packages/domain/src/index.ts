@@ -45,6 +45,18 @@ export type {
   SubsidyReason,
 } from './pricing/index.js'
 
+export { Ledger, LedgerError } from './ledger/index.js'
+export type {
+  AccountCode,
+  AccountDefinition,
+  AccountOwnerType,
+  AccountType,
+  Direction,
+  Journal,
+  JournalLine,
+  OrderJournalInput,
+} from './ledger/index.js'
+
 export { Marketplace } from './marketplace/index.js'
 export type {
   FactorScores,

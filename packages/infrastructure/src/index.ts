@@ -18,3 +18,18 @@ export {
   orderPlacement,
   subsidyBudgetPort,
 } from './repositories/marketplace.js'
+export { codAdapter } from './payments/cod.js'
+export { createMockMfsAdapter, type MfsMockOptions } from './payments/mfs-mock.js'
+export { createPaymentRegistry, type RegistryOptions } from './payments/registry.js'
+export {
+  postJournal,
+  accountBalance,
+  findUnbalancedTransactions,
+  type PostedTransaction,
+} from './repositories/ledger.js'
+export {
+  reconcileTrip,
+  reconcilePendingTrips,
+  calibrationSummary,
+  type TripReconciliationResult,
+} from './jobs/reconcile-delivery-trips.js'

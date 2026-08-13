@@ -92,7 +92,53 @@ must be replaced with measured or decided values.
   be `section.key`. A third level collapses to `string` and the compile-time key check stops
   protecting you.
 
-### Not in this change
+### Added — payments, delivery trips, reconciliation and the ledger
 
-Payment adapters, delivery trips and reconciliation, the ledger and settlement. The backlog
-sequences these after quote → checkout → order, and that ordering was kept.
+Delivered after the quote → checkout → order loop was proved, in the order the backlog sets.
+
+**Payment adapters** (`packages/application/src/ports/payments.ts`, `packages/infrastructure/src/payments`)
+
+- A `PaymentAdapter` port, a COD adapter, and a **mock MFS** adapter shaped like bKash/Nagad.
+- `createPaymentRegistry` is the single place every gate is enforced, because a gate that must be
+  remembered is a gate that will eventually be forgotten:
+  - the configured `payments.methods.enabled` list;
+  - `payments.prepaidEnabled`, the **hard gate** from decision D4 — a prepaid adapter is refused
+    while it is false even if the method is in the enabled list;
+  - mock adapters, refused in production and staging (docs/06 §13.8).
+
+**Delivery trips and reconciliation** (`packages/domain/src/pricing/reconciliation.ts`,
+`packages/infrastructure/src/jobs/reconcile-delivery-trips.ts`)
+
+- `Delivery`, `DeliveryTrip`, `TripStop` and `TripCostItem`. Cost is recorded on the **trip**,
+  because delivery cost is incurred per trip and modelling it per order makes "did aggregating
+  four orders reduce cost per order?" unanswerable.
+- `reconcileTripCost` allocates a trip's real cost across its orders by chargeable weight using
+  `Money.allocate`, so the shares sum to the trip cost **exactly** for any weights, and records
+  `actual − expected` as the calibration gap.
+- `reconcileTrip` / `reconcilePendingTrips` write the allocated cost onto each `Delivery` and post
+  the trip cost to the ledger once, keyed on the trip.
+
+**Ledger and settlement** (`packages/domain/src/ledger`, `packages/infrastructure/src/repositories/ledger.ts`)
+
+- The full chart of accounts from docs/06 §3, and pure journal builders for every event in §5:
+  order placed, goods delivered, trip cost, agent remittance, settlement, payment cost.
+- `postJournal` writes a transaction and its entries atomically, creates owner accounts lazily,
+  and is idempotent by construction on the journal's deterministic key.
+- Balances are **always derived** — `accountBalance` is a query every time. No balance is stored.
+
+Database guarantees added with them: `ledger_amount_positive`; a **deferred constraint trigger**
+that refuses any unbalanced transaction at COMMIT; `DO INSTEAD NOTHING` rules making ledger
+entries immutable; an owner-consistency CHECK so a farmer payable cannot have a NULL owner and
+silently pool every farmer's money; `trips_completed_costed` so a completed trip cannot be
+measured before it is costed; and an allocation-share CHECK preventing a zero denominator.
+
+Verified end to end by `pnpm e2e:marketplace`, which now runs listing → quote → checkout → order
+→ trip → reconciliation → ledger and asserts fourteen invariants, including that posting the same
+journal twice does not double the books.
+
+### Still not in this change
+
+Farmer settlement batching and payout rails, refunds and clawbacks, the dispute flow, cancellation
+fees, and the buyer-side order-status UI beyond confirmation. `settlement.holdHours`,
+`cancellation.feeSchedule` and `pilot.lossBudget` remain open product decisions, and the code
+paths that need them refuse rather than assume.

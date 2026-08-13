@@ -859,6 +859,7 @@ model Order {
   items        OrderItem[]
   events       OrderEvent[]
   reservations ListingReservation[]
+  delivery     Delivery?
 
   @@index([buyerUserId, status, placedAt])
   @@index([sellerFarmerProfileId, status, placedAt])
@@ -914,4 +915,259 @@ model OrderEvent {
   @@unique([orderId, sequence])
   @@index([orderId, createdAt])
   @@map("order_events")
+}
+
+// ------------------------------------------------------------- delivery & trips
+//
+// docs/02_DATABASE.md §8, §8.1. Delivery cost is incurred per TRIP, not per order. If cost were
+// only ever attached to an order, "did aggregating four orders reduce cost per order?" would be
+// unanswerable, because there would be no record of the thing that was shared.
+
+/// HOW the goods physically move — the unit of logistics experimentation. docs/04 §7.4.
+enum DeliveryModel {
+  /// One order, one dedicated trip. The honest worst case.
+  INDIVIDUAL
+  /// Several nearby orders on one route. Tests whether pooling actually reduces cost per order.
+  AGGREGATED_ROUTE
+  /// Farmer to retailer, typically one large drop.
+  RETAILER_BULK
+  /// Buyer collects. The floor: near-zero logistics cost to Langgol.
+  PICKUP
+}
+
+enum DeliveryStatus {
+  NOT_REQUIRED
+  PENDING_ASSIGNMENT
+  ASSIGNED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+  RETURNED
+}
+
+enum TripStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  ABORTED
+}
+
+enum AllocationMethod {
+  WEIGHT_SHARE
+  EQUAL_SHARE
+  DISTANCE_WEIGHTED
+  STANDALONE
+}
+
+model Delivery {
+  id            String         @id @default(uuid()) @db.Uuid
+  orderId       String         @unique @map("order_id") @db.Uuid
+  mode          FulfilmentMode
+  /// Experiment stratum. Every order is tagged with the model that actually moved the goods.
+  deliveryModel DeliveryModel  @map("delivery_model")
+  tripId        String?        @map("trip_id") @db.Uuid
+  status        DeliveryStatus @default(PENDING_ASSIGNMENT)
+
+  pickupDistanceMeters   Int?    @map("pickup_distance_meters")
+  deliveryDistanceMeters Int?    @map("delivery_distance_meters")
+  distanceMeters         Int?    @map("distance_meters")
+  vehicleType            String? @map("vehicle_type")
+
+  assignedOpsUserId String?   @map("assigned_ops_user_id") @db.Uuid
+  courierName       String?   @map("courier_name")
+  courierPhone      String?   @map("courier_phone")
+  plannedPickupAt   DateTime? @map("planned_pickup_at")
+  plannedDeliveryAt DateTime? @map("planned_delivery_at")
+  pickedUpAt        DateTime? @map("picked_up_at")
+  deliveredAt       DateTime? @map("delivered_at")
+  failureReason     String?   @map("failure_reason")
+  proofPhotoKey     String?   @map("proof_photo_key")
+  deliveryOtpHash   String?   @map("delivery_otp_hash")
+
+  /// This order's ALLOCATED share of its trip's actual cost — written by reconciliation, never
+  /// by a human and never estimated. Null until the trip is costed. docs/02 §8.
+  actualCostPoisha      BigInt?   @map("actual_cost_poisha")
+  /// What the engine predicted at quote time, copied here so model-vs-reality is one subtraction.
+  expectedCostPoisha    BigInt?   @map("expected_cost_poisha")
+  /// thisOrderChargeableWeight / totalLoadedWeight, as an exact rational. docs/04 §4.
+  allocationNumerator   BigInt?   @map("allocation_numerator")
+  allocationDenominator BigInt?   @map("allocation_denominator")
+  reconciledAt          DateTime? @map("reconciled_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  order Order         @relation(fields: [orderId], references: [id])
+  trip  DeliveryTrip? @relation(fields: [tripId], references: [id])
+
+  @@index([status, plannedDeliveryAt])
+  @@index([tripId])
+  @@map("deliveries")
+}
+
+/// One vehicle movement, carrying one or many orders. **Cost is recorded HERE.**
+model DeliveryTrip {
+  id                  String        @id @default(uuid()) @db.Uuid
+  tripRef             String        @unique @map("trip_ref")
+  deliveryModel       DeliveryModel @map("delivery_model")
+  status              TripStatus    @default(PLANNED)
+  vehicleType         String        @map("vehicle_type")
+  /// Milligrams, matching the quantity base unit. docs/02 §6.1.
+  vehicleCapacityBase BigInt        @map("vehicle_capacity_base")
+  operatedByUserId    String?       @map("operated_by_user_id") @db.Uuid
+  districtId          String?       @map("district_id") @db.Uuid
+
+  plannedStartAt DateTime? @map("planned_start_at")
+  startedAt      DateTime? @map("started_at")
+  completedAt    DateTime? @map("completed_at")
+
+  pickupDistanceMeters   Int    @default(0) @map("pickup_distance_meters")
+  deliveryDistanceMeters Int    @default(0) @map("delivery_distance_meters")
+  /// Total including the unavoidable return leg.
+  routeDistanceMeters    Int    @default(0) @map("route_distance_meters")
+  /// What was actually carried, in milligrams.
+  totalWeightBase        BigInt @default(0) @map("total_weight_base")
+  orderCount             Int    @default(0) @map("order_count")
+
+  /// Sum of cost items, entered by ops with a receipt or a documented standard rate.
+  actualCostPoisha BigInt?          @map("actual_cost_poisha")
+  costEvidenceKey  String?          @map("cost_evidence_key")
+  allocationMethod AllocationMethod @default(WEIGHT_SHARE) @map("allocation_method")
+  costedById       String?          @map("costed_by_id") @db.Uuid
+  costedAt         DateTime?        @map("costed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  stops      TripStop[]
+  costItems  TripCostItem[]
+  deliveries Delivery[]
+
+  @@index([status, plannedStartAt])
+  @@index([deliveryModel, completedAt])
+  @@map("delivery_trips")
+}
+
+model TripStop {
+  id       String @id @default(uuid()) @db.Uuid
+  tripId   String @map("trip_id") @db.Uuid
+  sequence Int
+  /// PICKUP | DROP
+  stopType String @map("stop_type")
+
+  orderId           String?   @map("order_id") @db.Uuid
+  farmId            String?   @map("farm_id") @db.Uuid
+  latitude          Decimal?  @db.Decimal(9, 6)
+  longitude         Decimal?  @db.Decimal(9, 6)
+  legDistanceMeters Int?      @map("leg_distance_meters")
+  weightBase        BigInt    @default(0) @map("weight_base")
+  arrivedAt         DateTime? @map("arrived_at")
+  completedAt       DateTime? @map("completed_at")
+
+  trip DeliveryTrip @relation(fields: [tripId], references: [id])
+
+  @@unique([tripId, sequence])
+  @@index([orderId])
+  @@map("trip_stops")
+}
+
+model TripCostItem {
+  id             String   @id @default(uuid()) @db.Uuid
+  tripId         String   @map("trip_id") @db.Uuid
+  /// FUEL | VEHICLE_HIRE | DRIVER | TOLL | FERRY | LOADING | OTHER
+  category       String
+  amountPoisha   BigInt   @map("amount_poisha")
+  /// True = an applied standard rate, not a receipt. Tells us how much cost data is OBSERVED
+  /// rather than assumed — which is the difference between calibration and circular reasoning.
+  isStandardRate Boolean  @default(false) @map("is_standard_rate")
+  note           String?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  trip DeliveryTrip @relation(fields: [tripId], references: [id])
+
+  @@index([tripId])
+  @@map("trip_cost_items")
+}
+
+// ------------------------------------------------------------------------ ledger
+//
+// docs/06_FINANCIAL_ARCHITECTURE.md §3, §5. No balance is ever stored: a farmer's payable is
+// SUM(credits) − SUM(debits) over account 2000/<farmerId>.
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum AccountOwnerType {
+  PLATFORM
+  FARMER
+  BUYER
+  AGENT
+  PROVIDER
+}
+
+enum LedgerDirection {
+  DEBIT
+  CREDIT
+}
+
+/// Per-farmer and per-agent accounts are created lazily from (code, ownerType, ownerId).
+model LedgerAccount {
+  id        String           @id @default(uuid()) @db.Uuid
+  code      String
+  name      String
+  type      AccountType
+  ownerType AccountOwnerType @map("owner_type")
+  /// Null for a platform-owned account.
+  ownerId   String?          @map("owner_id") @db.Uuid
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  entries LedgerEntry[]
+
+  @@unique([code, ownerId])
+  @@index([code])
+  @@map("ledger_accounts")
+}
+
+model LedgerTransaction {
+  id             String   @id @default(uuid()) @db.Uuid
+  /// Deterministic, derived from the business event: `ORDER:<id>:GOODS_DELIVERED`. The unique
+  /// constraint makes a duplicate posting impossible even when the application layer is wrong.
+  /// This is layer 2 of docs/06 §7, and it is the layer that actually protects the books.
+  idempotencyKey String   @unique @map("idempotency_key")
+  description    String
+  /// ORDER | TRIP | SETTLEMENT | PAYMENT | REMITTANCE
+  referenceType  String?  @map("reference_type")
+  referenceId    String?  @map("reference_id")
+  postedAt       DateTime @default(now()) @map("posted_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  entries LedgerEntry[]
+
+  @@index([referenceType, referenceId])
+  @@index([postedAt])
+  @@map("ledger_transactions")
+}
+
+/// Immutable by database RULE. Amounts are always positive; `direction` carries the sign.
+model LedgerEntry {
+  id            String          @id @default(uuid()) @db.Uuid
+  transactionId String          @map("transaction_id") @db.Uuid
+  accountId     String          @map("account_id") @db.Uuid
+  direction     LedgerDirection
+  amountPoisha  BigInt          @map("amount_poisha")
+  memo          String?
+  createdAt     DateTime        @default(now()) @map("created_at")
+
+  transaction LedgerTransaction @relation(fields: [transactionId], references: [id])
+  account     LedgerAccount     @relation(fields: [accountId], references: [id])
+
+  @@index([accountId, createdAt])
+  @@index([transactionId])
+  @@map("ledger_entries")
 }

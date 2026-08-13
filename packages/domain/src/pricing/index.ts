@@ -66,10 +66,20 @@ export {
   type SerializedSellerBreakdown,
 } from './serialize.js'
 
+export {
+  computeTripMetrics,
+  reconcileTripCost,
+  type AllocatedOrderCost,
+  type AllocationMethod,
+  type TripMetrics,
+  type TripOrderInput,
+  type TripReconciliation,
+} from './reconciliation.js'
 import * as breakdown from './breakdown.js'
 import * as funding from './funding.js'
 import * as internalCost from './internal-cost.js'
 import * as serialize from './serialize.js'
+import * as reconciliation from './reconciliation.js'
 import * as tariff from './tariff.js'
 
 /** Namespace object: `Pricing.computeBreakdown(input, config)`. */
@@ -79,4 +89,5 @@ export const Pricing = {
   ...internalCost,
   ...breakdown,
   ...serialize,
+  ...reconciliation,
 } as const

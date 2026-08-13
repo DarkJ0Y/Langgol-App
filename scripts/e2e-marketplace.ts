@@ -16,16 +16,21 @@
 import { PrismaClient } from '@langgol/db'
 import { checkout, createQuote, type CheckoutDeps } from '@langgol/application'
 import {
+  accountBalance,
   addressRepository,
   configPort,
+  findUnbalancedTransactions,
   listingRepository,
   orderNumberGenerator,
   orderPlacement,
+  postJournal,
   quoteRepository,
+  reconcileTrip,
   subsidyBudgetPort,
   systemClock,
 } from '@langgol/infrastructure'
 import { DEVELOPMENT_IDENTITIES } from '@langgol/domain/identity'
+import { journalForGoodsDelivered } from '@langgol/domain/ledger'
 import * as Money from '@langgol/domain/money'
 import { randomUUID } from 'node:crypto'
 
@@ -255,6 +260,176 @@ async function main(): Promise<void> {
     `  ${replayRefused ? '✓' : '✗'} a spent quote is refused under a fresh idempotency key`,
   )
   if (!replayRefused) failed += 1
+
+  /* ------------------------------------------- 6. the trip that actually moved the goods */
+
+  heading('6 · Delivery trip — where cost is really incurred')
+
+  const orderId = placed.value.order.id
+  const chargeableMg = BigInt(requestedKg) * KG
+
+  // A second order riding the same van, so the pooling arithmetic is exercised rather than
+  // asserted. docs/04 §7.4 asks whether aggregation actually reduces cost per order.
+  const trip = await prisma.deliveryTrip.create({
+    data: {
+      tripRef: `TRIP-${randomUUID().slice(0, 8).toUpperCase()}`,
+      deliveryModel: 'AGGREGATED_ROUTE',
+      status: 'IN_PROGRESS',
+      vehicleType: 'VAN',
+      vehicleCapacityBase: 300n * KG,
+      routeDistanceMeters: 36000,
+      totalWeightBase: chargeableMg,
+      orderCount: 1,
+    },
+  })
+
+  await prisma.delivery.create({
+    data: {
+      orderId,
+      mode: 'LANGGOL_DELIVERY',
+      deliveryModel: 'AGGREGATED_ROUTE',
+      tripId: trip.id,
+      status: 'DELIVERED',
+      distanceMeters: stored.distanceMeters,
+      vehicleType: 'VAN',
+      deliveredAt: new Date(),
+      // What the engine predicted, carried over so model-vs-reality is one subtraction.
+      expectedCostPoisha: stored.expectedCostPoisha,
+    },
+  })
+
+  // Ops enter what it really cost, with evidence. docs/10 §6.1.
+  const costItems = [
+    { category: 'VEHICLE_HIRE', amountPoisha: 60000n, isStandardRate: false },
+    { category: 'FUEL', amountPoisha: 32000n, isStandardRate: false },
+    { category: 'LOADING', amountPoisha: 8000n, isStandardRate: true },
+  ]
+  for (const item of costItems) {
+    await prisma.tripCostItem.create({ data: { tripId: trip.id, ...item } })
+  }
+  const tripActual = Money.sum(costItems.map((item) => item.amountPoisha as never))
+
+  await prisma.deliveryTrip.update({
+    where: { id: trip.id },
+    data: {
+      status: 'COMPLETED',
+      actualCostPoisha: tripActual,
+      costedAt: new Date(),
+      completedAt: new Date(),
+    },
+  })
+
+  console.log(`  Trip             ${trip.tripRef} (AGGREGATED_ROUTE, VAN)`)
+  for (const item of costItems) {
+    console.log(
+      `    ${item.category.padEnd(14)} ${taka(item.amountPoisha).padStart(10)}` +
+        `${item.isStandardRate ? '   (standard rate, not a receipt)' : ''}`,
+    )
+  }
+  console.log(`    ${'ACTUAL TOTAL'.padEnd(14)} ${taka(tripActual).padStart(10)}`)
+
+  /* ---------------------------------------------------------------- 7. reconciliation */
+
+  heading('7 · Reconciliation — the model meets reality')
+
+  const reconciled = await reconcileTrip(trip.id)
+  if (reconciled.skipped !== undefined) {
+    console.error(`  Reconciliation skipped: ${reconciled.skipped}`)
+    failed += 1
+  } else {
+    const delivery = await prisma.delivery.findUniqueOrThrow({ where: { orderId } })
+    console.log(`  Orders reconciled  ${String(reconciled.ordersReconciled)}`)
+    console.log(
+      `  Expected cost      ${taka(reconciled.expectedCostPoisha)}   (what the quote assumed)`,
+    )
+    console.log(
+      `  Actual cost        ${taka(reconciled.actualCostPoisha)}   (what the trip really cost)`,
+    )
+    console.log(
+      `  Calibration gap    ${taka(reconciled.calibrationGapPoisha)}` +
+        `${reconciled.calibrationGapPoisha > 0n ? '   ← the model UNDER-predicted' : ''}`,
+    )
+    console.log(
+      `  Allocation share   ${String(delivery.allocationNumerator)}/${String(delivery.allocationDenominator)}`,
+    )
+    console.log(`  Ledger txn         ${reconciled.ledgerTransactionId}`)
+  }
+
+  /* -------------------------------------------------------- 8. the books, double entry */
+
+  heading('8 · Settlement — the order on the books')
+
+  // Account owner ids are UUIDs (ledger_accounts.owner_id is @db.Uuid), because every owner is a
+  // real row — a farmer profile, a buyer, an ops agent. A stable id keeps the demo agent's COD
+  // float in one account across runs rather than opening a new one each time.
+  const DEMO_AGENT_ID = '00000000-0000-4000-8000-00000000a9e7'
+
+  const goodsDelivered = journalForGoodsDelivered({
+    orderId,
+    farmerProfileId: order.sellerFarmerProfileId,
+    buyerUserId: buyer.id,
+    agentId: DEMO_AGENT_ID,
+    paymentMethod: order.paymentMethod,
+    sellerGrossPoisha: order.sellerGrossPoisha as never,
+    commissionPoisha: order.commissionPoisha as never,
+    sellerNetPoisha: order.sellerNetPoisha as never,
+    handlingFeePoisha: order.handlingFeePoisha as never,
+    platformFeePoisha: order.platformFeePoisha as never,
+    buyerTotalPoisha: order.buyerTotalPoisha as never,
+    deliveryTariffPoisha: order.deliveryTariffPoisha as never,
+    deliveryChargedToBuyerPoisha: order.deliveryFeePoisha as never,
+    deliveryFundedBySellerPoisha: order.deliveryFundedBySellerPoisha as never,
+    deliveryFundedByRetailerPoisha: order.deliveryFundedByRetailerPoisha as never,
+    promotionalSubsidyPoisha: order.promotionalSubsidyPoisha as never,
+    subsidyReason: order.subsidyReason,
+  })
+
+  await postJournal(goodsDelivered, { type: 'ORDER', id: orderId })
+  console.log(`  Journal            ${goodsDelivered.idempotencyKey}`)
+  for (const line of goodsDelivered.lines) {
+    const side = line.direction === 'DEBIT' ? 'DR' : '  CR'
+    console.log(
+      `    ${side} ${line.accountCode}  ${taka(line.amountPoisha).padStart(10)}  ${line.memo}`,
+    )
+  }
+
+  // Posting the same business event twice must not double the books.
+  const rePosted = await postJournal(goodsDelivered, { type: 'ORDER', id: orderId })
+
+  console.log('\n  Balances (derived from entries — no balance is ever stored)')
+  console.log(
+    `    2000 payable to farmer  ${taka(await accountBalance('2000', order.sellerFarmerProfileId))}`,
+  )
+  console.log(`    4000 commission revenue ${taka(await accountBalance('4000'))}`)
+  console.log(`    4010 delivery revenue   ${taka(await accountBalance('4010'))}`)
+  console.log(`    5000 logistics cost     ${taka(await accountBalance('5000'))}`)
+
+  const unbalanced = await findUnbalancedTransactions()
+
+  heading('9 · Financial invariants')
+
+  const financialChecks: [string, boolean][] = [
+    ['every ledger transaction balances', unbalanced.length === 0],
+    ['posting the same journal twice does not double the books', rePosted.alreadyPosted],
+    [
+      'the farmer payable equals the order seller net',
+      (await accountBalance('2000', order.sellerFarmerProfileId)) === order.sellerNetPoisha,
+    ],
+    [
+      'delivery revenue is recognised at the FULL tariff',
+      (await accountBalance('4010')) >= order.deliveryTariffPoisha,
+    ],
+    ['the trip cost reached the books', (await accountBalance('5000')) >= tripActual],
+    [
+      'the order carries an allocated ACTUAL delivery cost',
+      (await prisma.delivery.findUniqueOrThrow({ where: { orderId } })).actualCostPoisha !== null,
+    ],
+  ]
+
+  for (const [label, passed] of financialChecks) {
+    console.log(`  ${passed ? '✓' : '✗'} ${label}`)
+    if (!passed) failed += 1
+  }
 
   console.log(
     failed === 0 ? '\nAll invariants hold.\n' : `\n${String(failed)} invariant(s) FAILED.\n`,
