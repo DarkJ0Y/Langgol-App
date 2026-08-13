@@ -11,6 +11,18 @@ importers:
       '@eslint/js':
         specifier: ^9.18.0
         version: 9.39.5
+      '@langgol/application':
+        specifier: workspace:*
+        version: link:packages/application
+      '@langgol/db':
+        specifier: workspace:*
+        version: link:packages/db
+      '@langgol/domain':
+        specifier: workspace:*
+        version: link:packages/domain
+      '@langgol/infrastructure':
+        specifier: workspace:*
+        version: link:packages/infrastructure
       '@types/node':
         specifier: ^22.10.2
         version: 22.20.1
@@ -23,6 +35,9 @@ importers:
       prettier:
         specifier: ^3.4.2
         version: 3.9.6
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.11
       turbo:
         specifier: ^2.3.3
         version: 2.10.9
