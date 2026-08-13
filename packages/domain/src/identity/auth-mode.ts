@@ -185,6 +185,49 @@ export const DEVELOPMENT_IDENTITIES: readonly DevelopmentIdentity[] = [
     roles: ['FARMER', 'CONSUMER'],
     preferredLanguage: 'BN',
   },
+  /*
+   * The three below exist so the marketplace can be exercised with more than one of each party.
+   * A single farmer cannot demonstrate ranking, and a single buyer cannot demonstrate ownership
+   * scoping or two buyers racing for the last of a crop — the tests that actually matter.
+   *
+   * The reserved phone block is +880170000000[1-9], so nine is the hard ceiling. All nine are now
+   * used; adding a tenth requires widening the CHECK constraint in the
+   * development_auth_fixtures migration, deliberately.
+   */
+  {
+    key: 'farmer-distant',
+    phone: `${DEVELOPMENT_PHONE_PREFIX}7`,
+    fullName: 'Dev Farmer (distant)',
+    nameBn: 'ডেভ কৃষক (দূরের)',
+    nameEn: 'Dev Farmer (distant)',
+    descriptionBn: 'দূরের কৃষক — সস্তা ফসল, কিন্তু পরিবহন খরচ বেশি',
+    descriptionEn: 'A far-away farmer: cheaper at the farm gate, dearer to deliver',
+    roles: ['FARMER'],
+    preferredLanguage: 'BN',
+  },
+  {
+    key: 'consumer-second',
+    phone: `${DEVELOPMENT_PHONE_PREFIX}8`,
+    fullName: 'Dev Consumer (second)',
+    nameBn: 'ডেভ ক্রেতা (দ্বিতীয়)',
+    nameEn: 'Dev Consumer (second)',
+    descriptionBn: 'দ্বিতীয় ক্রেতা — মালিকানা ও একই ফসলের প্রতিযোগিতা পরীক্ষার জন্য',
+    descriptionEn: 'A second buyer, for ownership scoping and races over the same crop',
+    roles: ['CONSUMER'],
+    preferredLanguage: 'BN',
+  },
+  {
+    key: 'ops-second',
+    phone: `${DEVELOPMENT_PHONE_PREFIX}9`,
+    fullName: 'Dev Ops (second)',
+    nameBn: 'ডেভ অপারেশনস (দ্বিতীয়)',
+    nameEn: 'Dev Ops (second)',
+    descriptionBn: 'দ্বিতীয় এজেন্ট — প্রতি-এজেন্ট নগদ হিসাব মেলানোর জন্য',
+    descriptionEn:
+      'A second agent, so per-agent COD float reconciliation has two floats to keep apart',
+    roles: ['OPS_AGENT'],
+    preferredLanguage: 'BN',
+  },
 ] as const
 
 export function findDevelopmentIdentity(key: string): DevelopmentIdentity | undefined {

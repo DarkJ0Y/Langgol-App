@@ -57,6 +57,17 @@ export type {
   OrderJournalInput,
 } from './ledger/index.js'
 
+export { Orders, TransitionError } from './orders/index.js'
+export type {
+  FaultParty,
+  OrderAction,
+  OrderActorRole,
+  OrderStatus,
+  TransitionContext,
+  TransitionEffect,
+  TransitionResult,
+} from './orders/index.js'
+
 export { Marketplace } from './marketplace/index.js'
 export type {
   FactorScores,

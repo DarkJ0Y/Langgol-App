@@ -265,6 +265,10 @@ async function main(): Promise<void> {
 
   heading('6 · Delivery trip — where cost is really incurred')
 
+  // Captured before the trip exists: reconciliation (section 7) posts the trip cost to 5000, so a
+  // baseline taken afterwards would measure a delta of zero and pass vacuously.
+  const logisticsBefore = await accountBalance('5000')
+
   const orderId = placed.value.order.id
   const chargeableMg = BigInt(requestedKg) * KG
 
@@ -384,6 +388,11 @@ async function main(): Promise<void> {
     subsidyReason: order.subsidyReason,
   })
 
+  // Captured BEFORE posting. The farmer payable accumulates across every unsettled order, so the
+  // meaningful assertion is the delta this journal produced, not the account's absolute balance —
+  // that only matched on a virgin database, which is a test that passes once and then rots.
+  const payableBefore = await accountBalance('2000', order.sellerFarmerProfileId)
+
   await postJournal(goodsDelivered, { type: 'ORDER', id: orderId })
   console.log(`  Journal            ${goodsDelivered.idempotencyKey}`)
   for (const line of goodsDelivered.lines) {
@@ -412,14 +421,21 @@ async function main(): Promise<void> {
     ['every ledger transaction balances', unbalanced.length === 0],
     ['posting the same journal twice does not double the books', rePosted.alreadyPosted],
     [
-      'the farmer payable equals the order seller net',
-      (await accountBalance('2000', order.sellerFarmerProfileId)) === order.sellerNetPoisha,
+      'this order increased the farmer payable by exactly its seller net',
+      Money.subtract(
+        (await accountBalance('2000', order.sellerFarmerProfileId)) as never,
+        payableBefore as never,
+      ) === order.sellerNetPoisha,
     ],
     [
       'delivery revenue is recognised at the FULL tariff',
       (await accountBalance('4010')) >= order.deliveryTariffPoisha,
     ],
-    ['the trip cost reached the books', (await accountBalance('5000')) >= tripActual],
+    [
+      'this trip increased logistics cost by exactly its actual cost',
+      Money.subtract((await accountBalance('5000')) as never, logisticsBefore as never) ===
+        tripActual,
+    ],
     [
       'the order carries an allocated ACTUAL delivery cost',
       (await prisma.delivery.findUniqueOrThrow({ where: { orderId } })).actualCostPoisha !== null,

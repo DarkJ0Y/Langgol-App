@@ -25,10 +25,18 @@ export interface MarketplaceSeedResult {
   readonly skipped: boolean
 }
 
-/** Shibganj, Bogura — where the fixture farm sits. */
+/** Shibganj, Bogura — where the nearby fixture farm sits. */
 const FARM_LOCATION = { latitude: 24.9505, longitude: 89.3016 }
-/** Bogura town — where the fixture buyer receives deliveries. About 12 km away by road. */
+/** Bogura town — where the fixture buyers receive deliveries. About 12 km from Shibganj. */
 const BUYER_LOCATION = { latitude: 24.8465, longitude: 89.3776 }
+/**
+ * Rangpur, roughly 120 km north — the "Farmer B" of the docs/04 §7 worked example.
+ *
+ * Cheaper at the farm gate and dearer to deliver, so the delivered-cost engine has a genuine
+ * trade-off to resolve rather than a single option to rubber-stamp. This is what makes the
+ * ranking demonstrable at all.
+ */
+const DISTANT_FARM_LOCATION = { latitude: 25.7439, longitude: 89.2752 }
 
 const KG = 1000000n
 
@@ -248,5 +256,230 @@ export async function seedDevelopmentMarketplace(
     existing += 1
   }
 
+  /* ------------------------------------------------- the distant farmer, for ranking */
+
+  const distantCounts = await seedCompetingFarmer(prisma, fallbackArea.id)
+  created += distantCounts.created
+  existing += distantCounts.existing
+
+  /* ------------------------------------- a second buyer, for ownership and race tests */
+
+  const secondBuyerCounts = await seedAdditionalBuyers(prisma, fallbackArea.id)
+  created += secondBuyerCounts.created
+  existing += secondBuyerCounts.existing
+
   return { created, existing, skipped: false }
+}
+
+/**
+ * A second farmer, 120 km away, selling the same produce cheaper at the farm gate.
+ *
+ * This is the "Farmer B" of docs/04 §7 and it exists to make the engine's central claim
+ * observable: the cheaper farm-gate price loses on delivered cost at small baskets and wins at
+ * large ones. With one farmer seeded there is nothing to rank and the claim is untestable by
+ * inspection.
+ */
+async function seedCompetingFarmer(
+  prisma: PrismaClient,
+  adminAreaId: string,
+): Promise<{ created: number; existing: number }> {
+  let created = 0
+  let existing = 0
+
+  const identity = DEVELOPMENT_IDENTITIES.find((entry) => entry.key === 'farmer-distant')
+  if (!identity) return { created, existing }
+
+  const user = await prisma.user.findUnique({ where: { phone: identity.phone } })
+  if (!user) return { created, existing }
+
+  let farmer = await prisma.farmerProfile.findUnique({ where: { userId: user.id } })
+  if (!farmer) {
+    farmer = await prisma.farmerProfile.create({
+      data: {
+        userId: user.id,
+        displayName: 'Karim Mia',
+        verificationStatus: 'VERIFIED',
+        verifiedAt: new Date(),
+        // A weaker record than the nearby farmer, so reliability has something to separate them
+        // when delivered prices land close together — the docs/04 §7.3 case.
+        ordersAccepted: 12,
+        ordersCompleted: 8,
+        ratingSumStarsMilli: 15000,
+        ratingCount: 4,
+      },
+    })
+    created += 1
+  } else {
+    existing += 1
+  }
+
+  let farm = await prisma.farm.findFirst({
+    where: { farmerProfileId: farmer.id, name: "Karim's Farm" },
+  })
+  if (!farm) {
+    farm = await prisma.farm.create({
+      data: {
+        farmerProfileId: farmer.id,
+        name: "Karim's Farm",
+        adminAreaId,
+        villageOrArea: 'Rangpur',
+        latitude: DISTANT_FARM_LOCATION.latitude,
+        longitude: DISTANT_FARM_LOCATION.longitude,
+        precision: 'APPROXIMATE',
+      },
+    })
+    created += 1
+  } else {
+    existing += 1
+  }
+
+  const now = new Date()
+  const availableTo = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+
+  // ৳25/kg against the nearby farmer's ৳30 — the exact ৳5 farm-gate advantage of docs/04 §7.
+  const distantListings: readonly ListingSeed[] = [
+    {
+      productSlug: 'tomato',
+      title: 'Tomato from Rangpur',
+      grade: 'A',
+      takaPerKg: '25.00',
+      totalKg: 800,
+      allowsPartialFill: true,
+    },
+    {
+      productSlug: 'potato',
+      title: 'Potato, bulk lot',
+      grade: 'A',
+      takaPerKg: '18.00',
+      totalKg: 2000,
+      allowsPartialFill: true,
+    },
+  ]
+
+  for (const seed of distantListings) {
+    const product = await prisma.product.findUnique({ where: { slug: seed.productSlug } })
+    if (!product) continue
+
+    const found = await prisma.listing.findFirst({
+      where: { farmId: farm.id, productId: product.id, grade: seed.grade, deletedAt: null },
+      select: { id: true },
+    })
+    if (found) {
+      existing += 1
+      continue
+    }
+
+    const totalBase = BigInt(seed.totalKg) * KG
+    await prisma.listing.create({
+      data: {
+        farmId: farm.id,
+        farmerProfileId: farmer.id,
+        productId: product.id,
+        grade: seed.grade,
+        title: seed.title,
+        saleUnit: 'KG',
+        saleUnitInBaseUnits: KG,
+        unitPricePoisha: poishaFromTaka(seed.takaPerKg),
+        quantityTotalBase: totalBase,
+        quantityAvailableBase: totalBase,
+        quantityReservedBase: 0n,
+        minOrderBase: 0n,
+        allowsPartialFill: seed.allowsPartialFill,
+        harvestedAt: now,
+        availableFrom: now,
+        availableTo,
+        shelfLifeHours: product.defaultShelfLifeHours,
+        latitude: DISTANT_FARM_LOCATION.latitude,
+        longitude: DISTANT_FARM_LOCATION.longitude,
+        adminAreaId,
+        precision: 'APPROXIMATE',
+        offersPickup: true,
+        offersSellerDelivery: false,
+        offersFundedDelivery: false,
+        status: 'PUBLISHED',
+        publishedAt: now,
+        createdByUserId: user.id,
+      },
+    })
+    created += 1
+  }
+
+  return { created, existing }
+}
+
+/**
+ * Profiles and addresses for the remaining buyer fixtures.
+ *
+ * Two buyers at the same address is deliberate: it makes the ownership-scoping tests meaningful
+ * (a quote belongs to one of them, and the other must get *not found*, not *forbidden*) and lets
+ * the oversell race be reproduced by hand in the UI, not only in a test.
+ */
+async function seedAdditionalBuyers(
+  prisma: PrismaClient,
+  adminAreaId: string,
+): Promise<{ created: number; existing: number }> {
+  let created = 0
+  let existing = 0
+
+  const buyerKeys = ['consumer-second', 'retailer'] as const
+
+  for (const key of buyerKeys) {
+    const identity = DEVELOPMENT_IDENTITIES.find((entry) => entry.key === key)
+    if (!identity) continue
+
+    const user = await prisma.user.findUnique({ where: { phone: identity.phone } })
+    if (!user) continue
+
+    if (key === 'consumer-second') {
+      const profile = await prisma.consumerProfile.findUnique({ where: { userId: user.id } })
+      if (!profile) {
+        await prisma.consumerProfile.create({ data: { userId: user.id } })
+        created += 1
+      } else {
+        existing += 1
+      }
+    } else {
+      const profile = await prisma.retailerProfile.findUnique({ where: { userId: user.id } })
+      if (!profile) {
+        await prisma.retailerProfile.create({
+          data: {
+            userId: user.id,
+            businessName: 'Bogura Bazar Store',
+            businessType: 'GROCERY',
+            verificationStatus: 'VERIFIED',
+          },
+        })
+        created += 1
+      } else {
+        existing += 1
+      }
+    }
+
+    const address = await prisma.address.findFirst({
+      where: { userId: user.id, deletedAt: null },
+      select: { id: true },
+    })
+    if (!address) {
+      await prisma.address.create({
+        data: {
+          userId: user.id,
+          label: key === 'retailer' ? 'Shop' : 'Home',
+          recipientName: user.fullName,
+          recipientPhone: user.phone,
+          adminAreaId,
+          villageOrArea: 'Bogura town',
+          addressLine: key === 'retailer' ? '5 Bazar Road' : '19 Station Road',
+          latitude: BUYER_LOCATION.latitude,
+          longitude: BUYER_LOCATION.longitude,
+          precision: 'APPROXIMATE',
+          isDefault: true,
+        },
+      })
+      created += 1
+    } else {
+      existing += 1
+    }
+  }
+
+  return { created, existing }
 }
