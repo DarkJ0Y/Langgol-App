@@ -23,8 +23,19 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const t = createTranslator(locale)
   const path = (await headers()).get('x-pathname') ?? '/'
 
+  // Browse and order screens need a grid; auth and form screens need a reading measure. The
+  // shell picks the width rather than each page fighting the container.
+  const isWide = path.startsWith('/market') || path.startsWith('/orders')
+
   return (
-    <html lang={locale}>
+    /*
+     * The dark surface is the default. Langgol is used outdoors and after dark, and the
+     * buyer screens are dense with figures — a near-black ground lets the money carry the
+     * emphasis. `data-theme` is explicit so a future preference toggle wins over the OS
+     * setting in both directions; the stylesheet honours `prefers-color-scheme` when no
+     * explicit choice is present.
+     */
+    <html lang={locale} data-theme="dark">
       <body>
         <SkipLink label={locale === 'bn' ? 'মূল অংশে যান' : 'Skip to content'} />
         {isDevelopmentAuth() ? (
@@ -48,7 +59,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               returnTo={path}
             />
           </header>
-          <main className="lg-main" id="main">
+          <main className={isWide ? 'lg-main lg-main--wide' : 'lg-main'} id="main">
             {children}
           </main>
         </div>

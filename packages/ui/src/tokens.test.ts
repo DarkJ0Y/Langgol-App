@@ -4,6 +4,7 @@ import {
   contrastRatio,
   meetsAA,
   semantic,
+  semanticDark,
   spacing,
   tokens,
   tokensToCssVariables,
@@ -80,6 +81,42 @@ describe('touch targets', () => {
   })
 })
 
+describe('the dark palette is held to the same bar, not eyeballed', () => {
+  /*
+   * A dark theme is where contrast bugs hide: light-on-dark "looks fine" at a desk and fails on a
+   * phone at midday. These are the same assertions the light palette faces, run against the dark
+   * aliases, so the second surface cannot quietly ship worse than the first.
+   */
+  it('meets AA for body text on every dark surface', () => {
+    for (const surface of [
+      semanticDark.background,
+      semanticDark.surface,
+      semanticDark.surfaceRaised,
+    ]) {
+      expect(contrastRatio(semanticDark.textPrimary, surface)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(semanticDark.textSecondary, surface)).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it('meets AA for text on dark action surfaces', () => {
+    // The action fill is LIGHT on a dark ground, so its label must be dark. Getting this pair the
+    // wrong way round is the single most common dark-theme mistake.
+    expect(
+      contrastRatio(semanticDark.textOnAction, semanticDark.actionPrimary),
+    ).toBeGreaterThanOrEqual(4.5)
+    expect(
+      contrastRatio(semanticDark.textOnAction, semanticDark.actionPrimaryHover),
+    ).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('meets the non-text threshold for dark borders and focus', () => {
+    expect(
+      contrastRatio(semanticDark.borderStrong, semanticDark.background),
+    ).toBeGreaterThanOrEqual(3)
+    expect(contrastRatio(semanticDark.focusRing, semanticDark.background)).toBeGreaterThanOrEqual(3)
+  })
+})
+
 describe('css generation', () => {
   it('emits custom properties from the same objects the code reads', () => {
     const css = tokensToCssVariables()
@@ -89,6 +126,10 @@ describe('css generation', () => {
     expect(css).toContain('--lg-leading-bn-normal:')
     expect(css).toContain(`--lg-touch-min: ${touch.minTarget};`)
     expect(css.trimEnd().endsWith('}')).toBe(true)
+    // The dark surface must be emitted in both forms: an explicit choice and the system default.
+    expect(css).toContain('@media (prefers-color-scheme: dark)')
+    expect(css).toContain(":root[data-theme='dark']")
+    expect(css).toContain(`--lg-action-primary: ${semanticDark.actionPrimary};`)
   })
 
   it('exposes the whole token set as one object', () => {
@@ -99,6 +140,7 @@ describe('css generation', () => {
         'motion',
         'radius',
         'semantic',
+        'semanticDark',
         'shadow',
         'spacing',
         'touch',

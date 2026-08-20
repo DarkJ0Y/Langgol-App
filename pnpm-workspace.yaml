@@ -10,3 +10,8 @@ allowBuilds:
   '@prisma/engines': true
   prisma: true
   sharp: true
+  # Firebase, added for object storage. Neither script is needed and neither is run:
+  # @firebase/util's is an optional runtime optimisation, and protobufjs's regenerates
+  # bundled type definitions Langgol does not consume. Declining is the safer default.
+  '@firebase/util': false
+  protobufjs: false

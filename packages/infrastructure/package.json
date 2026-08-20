@@ -12,10 +12,11 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@langgol/application": "workspace:*",
     "@langgol/db": "workspace:*",
     "@langgol/domain": "workspace:*",
     "@langgol/shared": "workspace:*",
-    "@langgol/application": "workspace:*"
+    "firebase": "^12.17.1"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

@@ -1,5 +1,6 @@
 export * from './ports/index.js'
 export * from './ports/marketplace.js'
 export * from './ports/payments.js'
+export * from './ports/storage.js'
 export * from './usecases/auth/index.js'
 export * from './usecases/marketplace/index.js'

@@ -1,4 +1,13 @@
-import { colors, motion, radius, semantic, spacing, touch, typography } from './tokens.js'
+import {
+  colors,
+  motion,
+  radius,
+  semantic,
+  semanticDark,
+  spacing,
+  touch,
+  typography,
+} from './tokens.js'
 
 function kebab(value: string): string {
   return value.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
@@ -48,6 +57,29 @@ export function tokensToCssVariables(): string {
   lines.push(`  --lg-touch-min: ${touch.minTarget};`)
   lines.push(`  --lg-motion-base: ${motion.base};`)
   lines.push(`  --lg-motion-easing: ${motion.easing};`)
+  lines.push('}')
+
+  /*
+   * The dark surface.
+   *
+   * Only the SEMANTIC aliases are redefined — the palette, spacing, type and motion are one
+   * system in both themes. Emitted twice on purpose: `[data-theme]` so an explicit choice wins in
+   * either direction, and `prefers-color-scheme` for the default "system" setting, guarded with
+   * `:not([data-theme='light'])` so a reader who has chosen light is not overridden by their OS.
+   */
+  const darkVariables = Object.entries(semanticDark).map(
+    ([name, value]) => `--lg-${kebab(name)}: ${value};`,
+  )
+
+  lines.push('')
+  lines.push('@media (prefers-color-scheme: dark) {')
+  lines.push("  :root:not([data-theme='light']) {")
+  lines.push(...darkVariables.map((line) => `    ${line}`))
+  lines.push('  }')
+  lines.push('}')
+  lines.push('')
+  lines.push(":root[data-theme='dark'] {")
+  lines.push(...darkVariables.map((line) => `  ${line}`))
   lines.push('}')
 
   return lines.join('\n')

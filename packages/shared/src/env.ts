@@ -44,6 +44,29 @@ const schema = z.object({
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
   ERROR_REPORTING_DSN: z.string().optional(),
 
+  /*
+   * --- Firebase -----------------------------------------------------------
+   *
+   * Firebase is a connected SERVICE, not the system of record. PostgreSQL stays authoritative
+   * for money, inventory and the ledger, because those invariants are enforced BY the database:
+   * the deferred balanced-transaction trigger, the atomic conditional inventory UPDATE, the
+   * append-only rules and 39 CHECK constraints. Firestore cannot express any of them, and
+   * docs/06_FINANCIAL_ARCHITECTURE.md §13 is explicit that an unbalanced transaction is
+   * prevented "by a database trigger, not by hope".
+   *
+   * These are deliberately NOT `NEXT_PUBLIC_*`. A Firebase web apiKey is a public project
+   * identifier rather than a credential, so shipping it to the browser is safe — but CI rejects
+   * any NEXT_PUBLIC_* variable whose name matches KEY/SECRET/TOKEN, and that control is worth
+   * more than the convenience. A server component passes the config down to the client instead.
+   */
+  FIREBASE_PROJECT_ID: z.string().optional(),
+  FIREBASE_API_KEY: z.string().optional(),
+  FIREBASE_AUTH_DOMAIN: z.string().optional(),
+  FIREBASE_STORAGE_BUCKET: z.string().optional(),
+  FIREBASE_MESSAGING_SENDER_ID: z.string().optional(),
+  FIREBASE_APP_ID: z.string().optional(),
+  FIREBASE_MEASUREMENT_ID: z.string().optional(),
+
   JOB_TRIGGER_SECRET: z.string().min(16, 'JOB_TRIGGER_SECRET must be at least 16 characters'),
 })
 

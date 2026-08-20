@@ -2,6 +2,7 @@ export {
   tokens,
   colors,
   semantic,
+  semanticDark,
   typography,
   spacing,
   radius,

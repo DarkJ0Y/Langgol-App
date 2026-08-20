@@ -65,9 +65,24 @@ body {
 .lg-main {
   flex: 1;
   width: 100%;
+  /*
+   * 30rem is a deliberate reading measure for the auth and form screens: one column, one
+   * decision, no horizontal eye travel on a phone held one-handed in a field.
+   */
   max-width: 30rem;
   margin: 0 auto;
   padding: var(--lg-space-5) var(--lg-space-4) var(--lg-space-12);
+}
+
+/*
+ * The browse and order screens are a different problem. A marketplace grid needs to show several
+ * farmers side by side so they can be compared at a glance — which is the entire point — and a
+ * 30rem column turns that into a scroll. Applied per route rather than globally so the form
+ * screens keep their measure.
+ */
+.lg-main--wide {
+  max-width: 72rem;
+  padding-inline: var(--lg-space-6);
 }
 
 .lg-stack {
@@ -458,4 +473,289 @@ a.lg-button {
 a.lg-button--primary,
 a.lg-button--secondary {
   display: flex;
+}
+
+/* ==========================================================================
+   Marketplace surfaces
+   ==========================================================================
+
+   A denser, more technical layer for the buyer screens, in the spirit of the
+   Modal.com reference: a near-black ground, one accent, generous space, and
+   almost no ornament. It suits these screens specifically because a delivered-
+   cost breakdown is a table of money — the figures should carry the emphasis,
+   and every decorative flourish competes with them.
+
+   It reads ONLY from the semantic tokens, so it inherits the dark surface and
+   its asserted contrast automatically rather than hard-coding a second palette.
+   ========================================================================== */
+
+.lg-hero {
+  padding: var(--lg-space-12) 0 var(--lg-space-10);
+  border-bottom: 1px solid var(--lg-border);
+}
+
+.lg-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lg-space-2);
+  font-size: var(--lg-text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lg-text-secondary);
+  margin-bottom: var(--lg-space-4);
+}
+
+/* A quiet live indicator. Animation is suppressed under reduced-motion below. */
+.lg-hero__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--lg-radius-full);
+  background: var(--lg-action-primary);
+  animation: lg-pulse 2.4s var(--lg-motion-easing) infinite;
+}
+
+@keyframes lg-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.lg-hero__title {
+  font-size: var(--lg-text-3xl);
+  line-height: var(--lg-leading-en-tight);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--lg-space-4);
+  color: var(--lg-text-primary);
+  max-width: 26ch;
+}
+
+.lg-hero__lede {
+  font-size: var(--lg-text-lg);
+  line-height: var(--lg-leading-en-normal);
+  color: var(--lg-text-secondary);
+  margin: 0;
+  max-width: 58ch;
+}
+
+/* ------------------------------------------------------------------ grid */
+
+.lg-grid {
+  display: grid;
+  gap: var(--lg-space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 40rem) {
+  .lg-grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 60rem) {
+  .lg-grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ------------------------------------------------------------- listing card */
+
+.lg-listing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-3);
+  padding: var(--lg-space-5);
+  background: var(--lg-surface-raised);
+  border: 1px solid var(--lg-border);
+  border-radius: var(--lg-radius-lg);
+  /* Transform only — animating box-shadow or height forces layout on a cheap phone. */
+  transition:
+    transform var(--lg-motion-base) var(--lg-motion-easing),
+    border-color var(--lg-motion-base) var(--lg-motion-easing);
+}
+
+.lg-listing:hover {
+  transform: translateY(-2px);
+  border-color: var(--lg-action-primary);
+}
+
+.lg-listing__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--lg-space-3);
+}
+
+.lg-listing__name {
+  font-size: var(--lg-text-lg);
+  font-weight: 600;
+  margin: 0;
+  color: var(--lg-text-primary);
+}
+
+.lg-listing__farm {
+  font-size: var(--lg-text-sm);
+  color: var(--lg-text-secondary);
+  margin: 0;
+}
+
+.lg-listing__price {
+  font-size: var(--lg-text-2xl);
+  font-weight: 600;
+  color: var(--lg-text-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.lg-listing__unit {
+  font-size: var(--lg-text-sm);
+  color: var(--lg-text-secondary);
+  font-weight: 400;
+}
+
+/* ------------------------------------------------------------------ chips */
+
+.lg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lg-space-1);
+  padding: 0.15rem var(--lg-space-2);
+  border-radius: var(--lg-radius-full);
+  border: 1px solid var(--lg-border);
+  font-size: var(--lg-text-xs);
+  color: var(--lg-text-secondary);
+  white-space: nowrap;
+}
+
+.lg-chip--accent {
+  border-color: var(--lg-action-primary);
+  color: var(--lg-action-primary);
+}
+
+.lg-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lg-space-2);
+}
+
+/* -------------------------------------------------------------- breakdown */
+
+/*
+ * The delivered-cost table. Tabular figures line up the decimal points, which is
+ * the entire reason a buyer can compare two farmers at a glance.
+ */
+.lg-breakdown {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--lg-space-4) 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.lg-breakdown th,
+.lg-breakdown td {
+  padding: var(--lg-space-3) 0;
+  text-align: left;
+  border-bottom: 1px solid var(--lg-border);
+  font-weight: 400;
+  color: var(--lg-text-secondary);
+}
+
+.lg-breakdown td {
+  text-align: right;
+  color: var(--lg-text-primary);
+}
+
+.lg-breakdown-total th,
+.lg-breakdown-total td {
+  border-bottom: none;
+  border-top: 1px solid var(--lg-border-strong);
+  padding-top: var(--lg-space-4);
+  font-size: var(--lg-text-lg);
+  color: var(--lg-text-primary);
+}
+
+/* ------------------------------------------------------------ status strip */
+
+.lg-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lg-space-4);
+  padding: var(--lg-space-4) var(--lg-space-5);
+  background: var(--lg-surface);
+  border: 1px solid var(--lg-border);
+  border-radius: var(--lg-radius-md);
+  font-size: var(--lg-text-sm);
+}
+
+.lg-status__item {
+  display: flex;
+  align-items: center;
+  gap: var(--lg-space-2);
+  color: var(--lg-text-secondary);
+}
+
+.lg-status__value {
+  color: var(--lg-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.lg-status__led {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--lg-radius-full);
+  background: var(--lg-border-strong);
+  flex: none;
+}
+
+.lg-status__led--on {
+  background: var(--lg-action-primary);
+}
+
+.lg-status__led--off {
+  background: var(--lg-color-danger-500);
+}
+
+/*
+ * Motion is a preference, not a decoration. Anything that moves stops moving
+ * when the reader has asked for that.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .lg-hero__dot {
+    animation: none;
+  }
+
+  .lg-listing,
+  .lg-listing:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
+/*
+ * A card's call to action is one of several on screen, so it does not need the full weight of a
+ * form's primary button. The 48px touch target is kept — that floor exists for cracked screens
+ * and soil-covered hands, and a denser layout is no reason to lower it.
+ */
+.lg-listing .lg-button {
+  font-size: var(--lg-text-base);
+  margin-top: auto;
+}
+
+/*
+ * `.lg-button` is full-width because on a phone that is the right answer — a thumb should not
+ * have to aim. In the wide hero it is not: a 1100px button reads as a banner rather than a
+ * control. Constrained here rather than by changing the base, which the form screens rely on.
+ */
+.lg-hero__action {
+  /* A flex row so the button sizes to its content instead of filling the 72rem measure. */
+  display: flex;
+}
+
+.lg-hero__action .lg-button {
+  width: auto;
+  min-width: 14rem;
 }

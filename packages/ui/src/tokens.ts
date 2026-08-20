@@ -106,6 +106,47 @@ export const semantic = {
   focusRing: colors.info[500],
 } as const
 
+/**
+ * Dark semantic aliases.
+ *
+ * A deliberate second surface, not an inversion. Two things drove it:
+ *
+ *  - Langgol is used outdoors, and a farmer checking an order at dusk or before dawn is reading a
+ *    phone at full brightness. A near-black ground is easier on the eye and cheaper on an OLED
+ *    battery than a white one.
+ *  - The buyer-facing screens are dense with figures — a delivered-cost breakdown is a table of
+ *    money. Dark surfaces with a single accent let the numbers carry the emphasis instead of
+ *    competing with decoration.
+ *
+ * The ground is `soil-900` rather than pure black: the palette is warm, and #000 against warm
+ * greys reads as a hole rather than a surface. The accent stays in the leaf family, because green
+ * is what this product is about and borrowing a fashionable colour would say nothing.
+ *
+ * Every pair here is asserted against WCAG 2.2 AA in the token tests, exactly as the light set is.
+ * A dark theme that is merely "eyeballed to look nice" is how contrast bugs ship.
+ */
+export const semanticDark = {
+  background: colors.soil[900],
+  surface: '#191612',
+  surfaceRaised: '#221e19',
+  border: '#3a332a',
+  borderStrong: colors.soil[300],
+
+  textPrimary: colors.soil[50],
+  textSecondary: colors.soil[200],
+  textInverse: colors.neutral[900],
+  // Dark ground needs a LIGHT action fill, so the label on it must be dark — the inverse of the
+  // light theme, and the reason this is a separate token rather than a reused one.
+  textOnAction: colors.soil[900],
+
+  actionPrimary: colors.leaf[300],
+  actionPrimaryHover: colors.leaf[200],
+  actionSecondary: colors.soil[200],
+  accent: colors.harvest[300],
+
+  focusRing: colors.leaf[200],
+} as const
+
 /* -------------------------------------------------------------------- typography */
 
 /**
@@ -208,6 +249,7 @@ export const breakpoints = {
 export const tokens = {
   colors,
   semantic,
+  semanticDark,
   typography,
   spacing,
   radius,
