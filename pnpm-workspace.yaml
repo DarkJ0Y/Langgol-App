@@ -15,3 +15,21 @@ allowBuilds:
   # bundled type definitions Langgol does not consume. Declining is the safer default.
   '@firebase/util': false
   protobufjs: false
+
+# Transitive dependencies carrying high-severity advisories, forced to their patched versions.
+#
+# None of these is a direct dependency: they arrive through Next.js and the Prisma CLI, and the
+# only upstream releases that carry the fixes are Next 16 and Prisma 7 — major upgrades that are
+# a deliberate project decision, not something to slip into a security patch. Overriding pins the
+# fixed versions without moving either framework.
+#
+# Each is verified against the full gate (typecheck, tests, build, `prisma generate`) before being
+# added here; an override that silently breaks a vendor's own expectations is worse than the
+# advisory. Remove an entry once the framework's own floor has moved past it.
+overrides:
+  # GHSA-r28c-9q8g-f849 and one earlier advisory. Patch-level bump inside 8.5.x.
+  postcss: '>=8.5.18'
+  # Optional image optimiser pulled in by Next.
+  sharp: '>=0.35.0'
+  # Stack exhaustion on recursive graphs; reached only via @prisma/config.
+  deepmerge-ts: '>=8.0.0'

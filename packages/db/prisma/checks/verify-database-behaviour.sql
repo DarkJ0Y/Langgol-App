@@ -13,6 +13,7 @@ DECLARE
   v_area_id uuid;
   v_user_id uuid;
   v_geo_present boolean;
+  v_created_area boolean := false;
 BEGIN
   IF (SELECT count(*) FROM users) > 0 THEN
     RAISE EXCEPTION
@@ -92,8 +93,20 @@ BEGIN
     SELECT id INTO v_area_id FROM admin_areas LIMIT 1;
   END IF;
 
+  /*
+   * Create one if the database has none.
+   *
+   * This script must run BEFORE the seed — its own precondition refuses a database that already
+   * holds users, and seeding creates development fixtures. But it also needs somewhere to hang a
+   * test address. Borrowing a seeded area made the two requirements contradictory and left no
+   * valid ordering at all; creating what it needs, like it already does for users and addresses,
+   * makes it self-contained and correct whenever it is run.
+   */
   IF v_area_id IS NULL THEN
-    RAISE EXCEPTION 'No admin areas seeded: cannot verify the geography trigger';
+    INSERT INTO admin_areas (id, type, name_en, name_bn)
+    VALUES (gen_random_uuid(), 'UNION', 'Guarantee Check Union', 'গ্যারান্টি চেক ইউনিয়ন')
+    RETURNING id INTO v_area_id;
+    v_created_area := true;
   END IF;
 
   INSERT INTO users (id, phone, full_name, updated_at)
@@ -154,9 +167,12 @@ BEGIN
     NULL;
   END;
 
-  -- Clean up everything this script created.
+  -- Clean up everything this script created, in dependency order.
   DELETE FROM addresses WHERE user_id = v_user_id;
   DELETE FROM users WHERE id = v_user_id;
+  IF v_created_area THEN
+    DELETE FROM admin_areas WHERE id = v_area_id;
+  END IF;
 
   RAISE NOTICE 'Behavioural guarantee checks passed.';
 END;
