@@ -10,7 +10,9 @@
 import 'server-only'
 import {
   accountRepository,
+  addressBookRepository,
   addressRepository,
+  adminAreaRepository,
   createEmailDelivery,
   auditPort,
   configPort,
@@ -147,6 +149,27 @@ export async function emailVerificationDeps() {
     audit: auditPort,
     appUrl: env().APP_URL,
   }
+}
+
+/**
+ * Dependencies for the address book and the area picker.
+ *
+ * `areas` is here because an address is only as good as the tree it points into: the use case
+ * checks that the chosen area exists and is at least an upazila, rather than trusting a foreign
+ * key to catch "somewhere in Rajshahi".
+ */
+export function locationDeps(): Promise<{
+  clock: typeof systemClock
+  addresses: typeof addressBookRepository
+  areas: typeof adminAreaRepository
+  audit: typeof auditPort
+}> {
+  return Promise.resolve({
+    clock: systemClock,
+    addresses: addressBookRepository,
+    areas: adminAreaRepository,
+    audit: auditPort,
+  })
 }
 
 export function authMode(): AuthMode {

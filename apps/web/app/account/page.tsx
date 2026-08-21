@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { emailVerificationStatus, getCurrentUser, getUserRoles } from '@langgol/application'
 import { GENDERS, LANGUAGES, isRole, maskEmail, roleLabel } from '@langgol/domain/identity'
 import { createTranslator } from '@langgol/i18n'
-import { Card } from '@langgol/ui/components'
+import { Card, LinkButton } from '@langgol/ui/components'
 import { accountDeps, emailVerificationDeps } from '@/lib/deps'
 import { authorize, currentActor } from '@/lib/guard'
 import { getLocale } from '@/lib/locale'
@@ -120,6 +120,14 @@ export default async function AccountPage() {
             unexpected: t.t('errors.unexpected'),
           }}
         />
+      </Card>
+
+      <Card>
+        <h2 className="lg-title">{t.t('address.title')}</h2>
+        <p className="lg-subtitle">{t.t('address.locationHelp')}</p>
+        <LinkButton href="/account/addresses" variant="secondary">
+          {t.t('address.addNew')}
+        </LinkButton>
       </Card>
 
       <Card>

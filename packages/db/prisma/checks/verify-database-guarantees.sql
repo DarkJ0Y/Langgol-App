@@ -41,7 +41,13 @@ DECLARE
     -- P2: verification
     'users_email_verified_requires_email',
     'verification_token_destination_lowercase',
-    'verification_token_expires_after_issue'
+    'verification_token_expires_after_issue',
+
+    -- P3: addresses and farm boundaries
+    'addresses_country_code_iso',
+    'addresses_postal_code_bd',
+    'addresses_coordinates_in_country',
+    'farms_boundary_valid'
   ];
 
   expected_indexes text[] := ARRAY[
@@ -53,7 +59,11 @@ DECLARE
 
     -- P1: one live grant per (user, role); P2: one live verification link per (user, purpose)
     'user_role_assignments_user_id_role_key',
-    'verification_token_one_live_per_purpose'
+    'verification_token_one_live_per_purpose',
+
+    -- P3: postcode corridor lookups, and the farm boundary index
+    'addresses_postal_code_idx',
+    'farms_boundary_gix'
   ];
 
   expected_triggers text[] := ARRAY[

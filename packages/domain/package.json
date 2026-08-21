@@ -15,6 +15,7 @@
     "./policy": "./src/policy/index.ts",
     "./notifications": "./src/notifications/index.ts",
     "./geo": "./src/geo/index.ts",
+    "./location": "./src/location/index.ts",
     "./pricing": "./src/pricing/index.ts",
     "./marketplace": "./src/marketplace/index.ts",
     "./ledger": "./src/ledger/index.ts",

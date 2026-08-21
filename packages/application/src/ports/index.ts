@@ -353,3 +353,5 @@ export interface AuditPort {
     readonly userAgent?: string | null
   }): Promise<void>
 }
+
+export * from './location.js'

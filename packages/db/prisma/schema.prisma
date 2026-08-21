@@ -311,10 +311,17 @@ model Address {
   label          String?
   recipientName  String                                 @map("recipient_name")
   recipientPhone String                                 @map("recipient_phone")
+  /// ISO 3166-1 alpha-2. Bangladesh-only today; the column exists so an address carries its own
+  /// country rather than depending on an assumption held elsewhere. The AdminArea tree is rooted
+  /// at divisions, not a country node, because adding one would re-parent all eight for no gain.
+  countryCode    String                                 @default("BD") @map("country_code")
   /// Union where known, otherwise upazila. Never null — the hierarchy is the address.
   adminAreaId    String                                 @map("admin_area_id") @db.Uuid
   villageOrArea  String?                                @map("village_or_area")
   addressLine    String                                 @map("address_line")
+  /// Four digits where one exists. Optional on purpose: most rural addresses have no reliable
+  /// postcode, and requiring one would reject the majority of this platform's users.
+  postalCode     String?                                @map("postal_code")
   landmark       String?
   latitude       Decimal?                               @db.Decimal(9, 6)
   longitude      Decimal?                               @db.Decimal(9, 6)
@@ -333,6 +340,9 @@ model Address {
 
   @@index([userId, isDefault])
   @@index([adminAreaId])
+  /// Delivery corridors are planned per postcode where postcodes exist; without this the query
+  /// is a sequential scan of every address on the platform.
+  @@index([postalCode])
   @@map("addresses")
 }
 
@@ -607,6 +617,10 @@ model Farm {
   precision        LocationPrecision                      @default(AREA_CENTROID)
   /// Maintained by trigger from latitude/longitude. See the p2_marketplace_core migration.
   geo              Unsupported("geography(Point, 4326)")?
+  /// Field boundary, for a future mapping surface. Nothing writes this yet; the column and its
+  /// GIST index exist so that when something does, it is not a schema change on a hot table.
+  /// `packages/domain/src/location/boundary.ts` owns ring validation and the lon/lat ordering.
+  boundary         Unsupported("geography(Polygon, 4326)")?
   /// Bangladeshi "decimal" = 1/100 acre ≈ 40.46 m².
   landAreaDecimals Int?                                   @map("land_area_decimals")
   createdAt        DateTime                               @default(now()) @map("created_at")
