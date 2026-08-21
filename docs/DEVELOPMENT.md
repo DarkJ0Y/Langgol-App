@@ -6,12 +6,12 @@ Practical setup for working on Langgol. Architecture lives in [`03_ARCHITECTURE.
 
 ## 1. Prerequisites
 
-| Tool       | Version               | Notes                                                             |
-| ---------- | --------------------- | ----------------------------------------------------------------- |
-| Node       | ≥ 22                  | 24 is what CI and local development currently use                 |
-| pnpm       | ≥ 10                  | `corepack enable` picks up the pinned version from `package.json` |
-| PostgreSQL | ≥ 15 **with PostGIS** | Plain `postgres` will fail the extensions migration               |
-| psql       | any                   | Used by the database guarantee checks                             |
+| Tool       | Version               | Notes                                                                       |
+| ---------- | --------------------- | --------------------------------------------------------------------------- |
+| Node       | ≥ 22                  | 24 is what CI and local development currently use                           |
+| pnpm       | ≥ 10                  | `corepack enable` picks up the pinned version from `package.json`           |
+| PostgreSQL | ≥ 15 **with PostGIS** | Optional locally — see §2b. Plain `postgres` fails the extensions migration |
+| psql       | any                   | Only needed if you run the database guarantee checks locally                |
 
 ## 2. First run
 
@@ -30,16 +30,47 @@ Generate the two secrets with:
 openssl rand -base64 48
 ```
 
+## 2b. Working without a local database
+
+A database is **not** required to do most work on this repository, and it is not required to get
+a change verified. The split is deliberate:
+
+```bash
+pnpm verify        # format, lint, typecheck, unit tests — no database, no Docker
+pnpm build         # production build — no database
+```
+
+The integration suites skip themselves unless **both** `LANGGOL_INTEGRATION=1` and `DATABASE_URL`
+are set, so a run without a database is a clean pass rather than a silent gap: the summary says
+how many were skipped.
+
+```bash
+pnpm test                                    # unit tests only; integration suites skipped
+LANGGOL_INTEGRATION=1 pnpm test              # everything, if DATABASE_URL points somewhere real
+```
+
+Anything that genuinely needs PostgreSQL — migrations, CHECK constraints, triggers, partial
+indexes, PostGIS radius search — is verified by the `database` job in
+[.github/workflows/ci.yml](../.github/workflows/ci.yml), which starts a `postgis/postgis` service
+container, applies the migrations, runs both guarantee scripts, seeds, and then runs the
+integration suites. CI triggers on **every branch**, and can be started by hand from the Actions
+tab, precisely so that a contributor without a local database still gets those checks.
+
+Use a local database when you are actively iterating on schema or SQL; otherwise push and let CI
+do it.
+
 ## 3. Database
 
 PostGIS is a hard requirement. Radius search uses `ST_DWithin` against a GIST index; haversine
 in SQL cannot use an index and degenerates to a full scan.
 
-| Option                                        | When                                           |
-| --------------------------------------------- | ---------------------------------------------- |
-| `docker compose up -d`                        | Default. Uses `postgis/postgis:16-3.4`         |
-| A hosted Postgres branch with PostGIS enabled | No local Docker, or shared review environments |
-| A local PostgreSQL install                    | Requires the PostGIS extension package         |
+| Option                                        | When                                                      |
+| --------------------------------------------- | --------------------------------------------------------- |
+| No database at all                            | Most work. See §2b — `pnpm verify` and `pnpm build` pass  |
+| GitHub Actions                                | Anything needing real SQL, without a local container      |
+| `docker compose up -d`                        | Iterating on schema or SQL. Uses `postgis/postgis:16-3.4` |
+| A hosted Postgres branch with PostGIS enabled | Shared review environments                                |
+| A local PostgreSQL install                    | Requires the PostGIS extension package                    |
 
 `DATABASE_URL` may point at a connection pooler; `DIRECT_URL` must not, because migrations
 cannot run over a transaction pooler.
@@ -62,12 +93,16 @@ CHECK constraints, append-only rules, PostGIS geography columns, their triggers 
 are **part of the security model** and cannot be expressed in `schema.prisma`. They live in
 hand-authored migrations next to the generated ones:
 
-| Migration                 | Contents                                                                   |
-| ------------------------- | -------------------------------------------------------------------------- |
-| `..._enable_extensions`   | `postgis`, `pgcrypto` — must run before any table using their types        |
-| `..._init`                | Prisma-generated tables, enums, indexes and foreign keys                   |
-| `..._database_guarantees` | CHECK constraints, append-only rules, geography triggers, GIST indexes     |
-| `..._p2_marketplace_core` | Marketplace tables plus their CHECKs, quote single-use rules, GIST indexes |
+| Migration                              | Contents                                                                   |
+| -------------------------------------- | -------------------------------------------------------------------------- |
+| `..._enable_extensions`                | `postgis`, `pgcrypto` — must run before any table using their types        |
+| `..._init`                             | Prisma-generated tables, enums, indexes and foreign keys                   |
+| `..._database_guarantees`              | CHECK constraints, append-only rules, geography triggers, GIST indexes     |
+| `..._p2_marketplace_core`              | Marketplace tables plus their CHECKs, quote single-use rules, GIST indexes |
+| `..._p1_roles_and_user_profile`        | Role definitions, profile columns, revocation-attribution CHECK            |
+| `..._p1_role_attribution_foreign_keys` | `granted_by`/`revoked_by` FKs, **ON DELETE RESTRICT**                      |
+| `..._p2_email_verification`            | `verification_tokens`, its CHECKs, one-live-token partial unique index     |
+| `..._p2_email_change_retracts_proof`   | Trigger clearing `email_verified_at` when the address changes              |
 
 Because those objects are invisible to `schema.prisma`, a naive `prisma migrate diff` drift check
 would try to drop them. Integrity is verified instead by `migrate:status` (every migration applied
@@ -171,6 +206,21 @@ pnpm lint
 pnpm typecheck
 pnpm format
 ```
+
+### Why `pnpm build` goes through a wrapper
+
+`apps/web`'s build script is `node scripts/build.mjs`, not `next build`. The wrapper exists for
+one Windows-specific reason, documented in full at the top of that file: Next runs `@vercel/nft`
+during the production compile, nft cannot statically resolve the home-directory path inside the
+Prisma client runtime, and so it globs the entire user home directory. That is slow everywhere,
+and fatal on a machine with a Docker Desktop socket under `AppData\Local` that Windows will not
+let a normal process `scandir` — the resulting `EACCES` surfaces as a webpack compilation error
+and the build dies pointing at the server-actions plugin instead of the real cause.
+
+The list nft ignores comes from Next's `traceIgnores`, which is hard-coded to `[]`, so
+`outputFileTracingExcludes` in `next.config.mjs` cannot reach it. The wrapper points `HOME` at an
+empty scratch directory for the duration of the build; the glob then finds nothing and the same
+real files are traced. POSIX builds run plain `next build` and are unaffected.
 
 ## 5. Rules the tooling enforces
 

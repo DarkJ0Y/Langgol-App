@@ -20,6 +20,12 @@ coverage/
 .env.*.local
 !.env.example
 
+# Personal access tokens. This repository has had a `pat.txt` in its working directory more than
+# once; a credential committed to history stays valid until it is revoked, not until it is deleted.
+pat.txt
+*.pat
+
+
 # Editor / OS
 .vscode/*
 !.vscode/extensions.json

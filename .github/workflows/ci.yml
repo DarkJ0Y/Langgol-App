@@ -1,10 +1,13 @@
 name: CI
 
+# Every branch, not just main. CI is where anything needing PostgreSQL is verified — there is no
+# expectation that a contributor runs a local database — so a feature branch that never triggers
+# it is a feature branch whose migrations, constraints and integration tests were never exercised.
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -92,11 +95,22 @@ jobs:
       - name: Verify database guarantees exist
         run: pnpm --filter @langgol/db run verify:guarantees
 
+      # BEFORE the seed, deliberately. This script writes and deletes rows and refuses to run
+      # against a database that already holds users — and the seed creates nine development
+      # fixtures. Running it afterwards aborts every time.
+      - name: Verify database guarantees actually bite
+        run: pnpm --filter @langgol/db run verify:behaviour
+
       - name: Seed reference data
         run: pnpm db:seed
 
-      - name: Verify database guarantees actually bite
-        run: pnpm --filter @langgol/db run verify:behaviour
+      # AFTER the seed: these suites read seeded platform configuration and the development
+      # fixture allowlist. They are the only place the CHECK constraints, triggers, partial
+      # indexes and PostGIS behaviour are exercised through the real repositories.
+      - name: Integration tests
+        env:
+          LANGGOL_INTEGRATION: '1'
+        run: pnpm test
 
   secret-scan:
     name: Secret and dependency scan

@@ -28,7 +28,20 @@ DECLARE
     'notifications_attempts_nonneg',
     'outbox_attempts_nonneg',
     'idempotency_expiry_after_creation',
-    'users_dev_fixture_reserved_block'
+    'users_dev_fixture_reserved_block',
+
+    -- P1: users and roles
+    'users_full_name_present',
+    'users_optional_text_not_blank',
+    'users_email_lowercase',
+    'users_date_of_birth_plausible',
+    'role_revocation_attributed',
+    'role_definition_labelled',
+
+    -- P2: verification
+    'users_email_verified_requires_email',
+    'verification_token_destination_lowercase',
+    'verification_token_expires_after_issue'
   ];
 
   expected_indexes text[] := ARRAY[
@@ -36,12 +49,31 @@ DECLARE
     'admin_areas_geo_gix',
     'addresses_one_default_per_user',
     'outbox_events_pending',
-    'users_development_fixtures'
+    'users_development_fixtures',
+
+    -- P1: one live grant per (user, role); P2: one live verification link per (user, purpose)
+    'user_role_assignments_user_id_role_key',
+    'verification_token_one_live_per_purpose'
   ];
 
   expected_triggers text[] := ARRAY[
     'addresses_sync_geo',
-    'admin_areas_sync_geo'
+    'admin_areas_sync_geo',
+
+    -- P2: changing an email address retracts the proof that it was verified, whatever wrote the
+    -- row. The application does this too; the trigger is what makes it true from psql.
+    'users_email_change_retracts_verification'
+  ];
+
+  /*
+   * Foreign keys whose DELETE behaviour is itself the guarantee. `granted_by_id` and
+   * `revoked_by_id` are RESTRICT so that deleting an administrator cannot silently erase the
+   * record of who granted whom what; a migration that recreated them as CASCADE would compile,
+   * deploy, and quietly destroy the audit trail.
+   */
+  expected_restrict_fks text[] := ARRAY[
+    'user_role_assignments_granted_by_id_fkey',
+    'user_role_assignments_revoked_by_id_fkey'
   ];
 
   expected_rules text[] := ARRAY[
@@ -75,6 +107,15 @@ BEGIN
     END IF;
   END LOOP;
 
+  FOREACH item IN ARRAY expected_restrict_fks LOOP
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_constraint
+      WHERE conname = item AND contype = 'f' AND confdeltype = 'r'
+    ) THEN
+      missing := missing || ('restrict-fk:' || item);
+    END IF;
+  END LOOP;
+
   FOREACH item IN ARRAY expected_rules LOOP
     IF NOT EXISTS (SELECT 1 FROM pg_rules WHERE rulename = item) THEN
       missing := missing || ('rule:' || item);
@@ -87,6 +128,7 @@ BEGIN
 
   RAISE NOTICE 'All % database guarantees are present.',
     array_length(expected_checks, 1) + array_length(expected_indexes, 1)
-    + array_length(expected_triggers, 1) + array_length(expected_rules, 1);
+    + array_length(expected_triggers, 1) + array_length(expected_rules, 1)
+    + array_length(expected_restrict_fks, 1);
 END;
 $$;
