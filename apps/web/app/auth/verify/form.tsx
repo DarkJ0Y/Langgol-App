@@ -28,10 +28,13 @@ export function VerifyForm({ labels }: { labels: VerifyFormLabels }) {
     <form action={formAction} className="lg-stack" noValidate>
       {error !== undefined && state.field !== 'code' ? <Alert tone="error">{error}</Alert> : null}
 
-      {/* The phone is re-submitted rather than held in a session, so the verify step is
-          stateless and a reload does not strand the user mid-flow. The server re-normalises it. */}
-      <input type="hidden" name="phone" value="" />
-
+      {/*
+        No phone field. The number is carried server-side in an HttpOnly cookie set when the code
+        was requested — see lib/otp-handoff.ts. A hidden input here could only ever hold the
+        MASKED number the page was given, which is why this used to post "" and every correct code
+        came back invalid; and a client-supplied number would let a stolen code be redeemed
+        against somebody else's challenge.
+      */}
       <FormField
         id="code"
         label={labels.code}

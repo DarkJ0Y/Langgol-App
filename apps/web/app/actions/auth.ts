@@ -21,6 +21,7 @@ import { isErr } from '@langgol/shared'
 import { authMode, developmentDeps, otpDeps, authDeps } from '@/lib/deps'
 import { getLocale } from '@/lib/locale'
 import { clearSessionCookie, getSession, readSessionToken, setSessionCookie } from '@/lib/session'
+import { forgetOtpPhone, handoffExpiry, readOtpPhone, rememberOtpPhone } from '@/lib/otp-handoff'
 import type { ActionState } from './state'
 
 /** Client-supplied strings are never trusted; the request's own metadata is. */
@@ -87,12 +88,28 @@ export async function requestOtpAction(
 
   if (isErr(result)) return toActionState(result.error.code, result.error.meta)
 
-  // The phone travels in the URL only as a masked value; the full number stays server-side.
+  /*
+   * The verify step needs the real number to find the challenge, and it is a separate request.
+   * It travels in an HttpOnly cookie, never in the URL and never in a form field: a query string
+   * reaches browser history and every `Referer`, and a form field would be attacker-controlled,
+   * which would let a stolen code be redeemed against somebody else's number.
+   */
+  await rememberOtpPhone(
+    parsed.data.phone,
+    handoffExpiry(new Date(), result.value.expiresInSeconds),
+  )
+
+  // The URL carries only the MASKED number, for the "we sent a code to …" line.
   redirect(`/auth/verify?to=${encodeURIComponent(result.value.maskedPhone)}`)
 }
 
+/*
+ * No `phone` field, deliberately. It used to be here, backed by a hidden input the page had no
+ * way to populate — the page only ever holds the masked number — so it always posted "" and
+ * every correct code was reported invalid. The number now comes from the handoff cookie, which
+ * also means a caller cannot choose whose challenge they are answering.
+ */
 const VerifySchema = z.object({
-  phone: z.string().min(1).max(32),
   code: z.string().min(1).max(8),
   fullName: z.string().max(120).optional(),
   role: z.string().max(32).optional(),
@@ -104,8 +121,14 @@ export async function verifyOtpAction(
 ): Promise<ActionState> {
   if (authMode() !== 'otp') return { status: 'error', errorKey: 'errors.unexpected' }
 
+  const phone = await readOtpPhone()
+  if (phone === null) {
+    // The cookie expired, or this browser never asked for a code. Sending them back to request
+    // one is the only honest answer; the challenge cannot be found without the number.
+    return { status: 'error', errorKey: 'errors.codeExpired', field: 'code' }
+  }
+
   const parsed = VerifySchema.safeParse({
-    phone: formData.get('phone'),
     code: formData.get('code'),
     fullName: formData.get('fullName') ?? undefined,
     role: formData.get('role') ?? undefined,
@@ -117,7 +140,7 @@ export async function verifyOtpAction(
 
   const result = await verifyOtp(
     {
-      phone: parsed.data.phone,
+      phone,
       code: parsed.data.code,
       ...(parsed.data.fullName !== undefined && parsed.data.role !== undefined
         ? {
@@ -135,6 +158,9 @@ export async function verifyOtpAction(
   )
 
   if (isErr(result)) return toActionState(result.error.code, result.error.meta)
+
+  // Spent. A number left in a cookie after the code it accompanied is gone serves no purpose.
+  await forgetOtpPhone()
 
   await setSessionCookie(result.value.sessionToken, result.value.expiresAt)
   redirect('/auth/role')
