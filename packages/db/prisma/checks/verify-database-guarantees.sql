@@ -79,7 +79,13 @@ DECLARE
 
     -- P2: changing an email address retracts the proof that it was verified, whatever wrote the
     -- row. The application does this too; the trigger is what makes it true from psql.
-    'users_email_change_retracts_verification'
+    'users_email_change_retracts_verification',
+
+    -- P4: consent that can be edited after the fact is not evidence. Triggers rather than rules,
+    -- because a rule on the child of a foreign key breaks referential integrity — see the
+    -- p4_consent_append_only_triggers migration.
+    'consent_records_block_direct_delete',
+    'consent_records_block_history_rewrite'
   ];
 
   /*
@@ -99,9 +105,6 @@ DECLARE
     'platform_configs_no_update',
     'platform_configs_no_delete',
 
-    -- P4: consent that can be edited after the fact is not evidence.
-    'consent_records_no_delete',
-    'consent_records_supersede_only'
   ];
 
   item text;

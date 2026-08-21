@@ -249,6 +249,41 @@ suite('the consent repository against real SQL', () => {
     })
   })
 
+  it('does not break deleting a user who has NO consent records', async () => {
+    /*
+     * The regression. The append-only guard was first written as a rule, and a rule rewrites the
+     * referential-integrity queries PostgreSQL issues against the child table — so deleting ANY
+     * user failed, including one with nothing to cascade:
+     *
+     *   ERROR: referential integrity query on "users" from constraint
+     *          "consent_records_user_id_fkey" gave unexpected result
+     *
+     * It is a trigger now, which fires per row instead of rewriting the statement.
+     */
+    const user = await prisma.user.create({
+      data: { phone: '+8801792000003', fullName: 'No Consent' },
+    })
+    await expect(prisma.user.delete({ where: { id: user.id } })).resolves.toBeDefined()
+  })
+
+  it('supports UPDATE ... RETURNING, which prisma.update() needs', async () => {
+    /*
+     * The quieter half of the same mistake: PostgreSQL refuses `UPDATE ... RETURNING` on a table
+     * carrying a CONDITIONAL rule, and `prisma.update()` uses RETURNING. The obvious Prisma method
+     * would have failed at runtime pointing nowhere near the cause.
+     */
+    await withUser(async (userId) => {
+      const row = await consentRepository.supersede(decision(userId))
+      const at = new Date()
+
+      const updated = await prisma.consentRecord.update({
+        where: { id: row.id },
+        data: { revokedAt: at },
+      })
+      expect(updated.revokedAt).not.toBeNull()
+    })
+  })
+
   it('removes consent with the user, since it is their record', async () => {
     const user = await prisma.user.create({
       data: { phone: '+8801792000002', fullName: 'Cascade Consent' },
