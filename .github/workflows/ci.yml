@@ -110,7 +110,22 @@ jobs:
       - name: Integration tests
         env:
           LANGGOL_INTEGRATION: '1'
-        run: pnpm test
+        run: pnpm test --reporter=json --outputFile=vitest-results.json
+
+      # A skipped suite and a passing suite look identical in a green checkmark, and this job
+      # exists precisely so the database-backed suites run. If DATABASE_URL ever stopped reaching
+      # the service container they would skip themselves by design, the job would stay green, and
+      # nobody would find out until something reached production unverified.
+      - name: Fail if any integration test was skipped
+        run: |
+          node -e "
+            const r = require('./vitest-results.json');
+            if (r.numPendingTests > 0) {
+              console.error('::error::' + r.numPendingTests + ' test(s) skipped — the database-backed suites did not run.');
+              process.exit(1);
+            }
+            console.log(r.numPassedTests + ' tests ran, none skipped.');
+          "
 
   secret-scan:
     name: Secret and dependency scan

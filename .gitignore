@@ -25,6 +25,9 @@ coverage/
 pat.txt
 *.pat
 
+# Vitest JSON report, written by CI to check that no suite silently skipped.
+vitest-results.json
+
 
 # Editor / OS
 .vscode/*
