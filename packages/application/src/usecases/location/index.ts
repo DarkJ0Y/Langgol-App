@@ -1,4 +1,5 @@
 export {
+  getAddress,
   listAddresses,
   createAddress,
   updateAddress,

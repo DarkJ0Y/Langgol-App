@@ -105,6 +105,32 @@ export async function listAddresses(
   return ok(await deps.addresses.listForUser(actor.userId))
 }
 
+/* --------------------------------------------------------------------- get */
+
+/**
+ * One address, by id, owned by the caller.
+ *
+ * The read counterpart of `updateAddress`, and it answers the same way: an address belonging to
+ * someone else is NOT FOUND. Exists so an edit screen can load a single row rather than fetching
+ * the whole address book to render one of them.
+ */
+export async function getAddress(
+  actor: MaybeActor,
+  addressId: string,
+  deps: AddressDeps,
+): Promise<Result<AddressRecord, AppError>> {
+  if (!isActor(actor)) return err(Errors.unauthenticated())
+
+  const address = await deps.addresses.findOwned(addressId, actor.userId)
+  if (address === null) return err(Errors.notFound('Address'))
+
+  if (!allowed(actor, 'address:read', { ownerUserId: address.userId })) {
+    return err(Errors.forbidden())
+  }
+
+  return ok(address)
+}
+
 /* ------------------------------------------------------------------ create */
 
 export async function createAddress(

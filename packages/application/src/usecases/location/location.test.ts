@@ -24,6 +24,7 @@ import type {
 import {
   createAddress,
   deleteAddress,
+  getAddress,
   listAddresses,
   setDefaultAddress,
   updateAddress,
@@ -381,6 +382,33 @@ describe('listing addresses', () => {
   })
 })
 
+describe('reading one address', () => {
+  it('returns the caller’s own, with its area path', async () => {
+    const h = harness()
+    const created = await createAddress(actor(), VALID, h.deps)
+    if (!created.ok) return
+
+    const result = await getAddress(actor(), created.value.id, h.deps)
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.value.id).toBe(created.value.id)
+    expect(result.value.areaPath.map((a) => a.nameEn)).toEqual(['Rajshahi', 'Bogura', 'Shibganj'])
+  })
+
+  it('reports an id that never existed as not found', async () => {
+    const h = harness()
+    const result = await getAddress(actor(), 'no-such-address', h.deps)
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.error.code).toBe('NOT_FOUND')
+  })
+
+  it('refuses an anonymous caller', async () => {
+    const h = harness()
+    expect((await getAddress(ANONYMOUS, 'anything', h.deps)).ok).toBe(false)
+  })
+})
+
 /* -------------------------------------------------------- another user's data */
 
 describe('another user’s addresses are unreachable', () => {
@@ -391,6 +419,15 @@ describe('another user’s addresses are unreachable', () => {
     h = harness()
     const created = await createAddress(actor({ userId: STRANGER }), VALID, h.deps)
     strangersId = created.ok ? created.value.id : ''
+  })
+
+  it('cannot be read one-by-one either', async () => {
+    // The edit screen loads a single address by id; that path needs the same answer as the list.
+    const result = await getAddress(actor(), strangersId, h.deps)
+
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.error.code).toBe('NOT_FOUND')
   })
 
   it('reports NOT FOUND rather than FORBIDDEN on read', async () => {

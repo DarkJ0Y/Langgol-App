@@ -14,7 +14,6 @@
  */
 
 import { revalidatePath } from 'next/cache'
-import { z } from 'zod'
 import {
   createAddress,
   deleteAddress,
@@ -26,41 +25,15 @@ import {
 import type { MessageKey } from '@langgol/i18n'
 import { locationDeps } from '@/lib/deps'
 import { currentActor } from '@/lib/guard'
+import {
+  AddressFormSchema,
+  IdSchema,
+  coordinatesFrom,
+  firstErrorField,
+  present,
+  readAddressForm,
+} from './form'
 import type { AddressActionState } from './state'
-
-/**
- * Coordinates arrive as strings from a form and may be absent entirely.
- *
- * `coordinateSource` is validated but NOT trusted for precision — the use case decides that, so a
- * client claiming DEVICE_GPS on a dragged pin gains nothing.
- */
-const CoordinateSchema = z
-  .string()
-  .trim()
-  .regex(/^-?\d{1,3}(\.\d+)?$/)
-  .optional()
-
-const AddressSchema = z.object({
-  label: z.string().trim().max(40).optional(),
-  recipientName: z.string().trim().min(1).max(120),
-  recipientPhone: z.string().trim().min(1).max(32),
-  adminAreaId: z.string().uuid(),
-  villageOrArea: z.string().trim().max(120).optional(),
-  addressLine: z.string().trim().min(1).max(250),
-  landmark: z.string().trim().max(160).optional(),
-  postalCode: z.string().trim().max(8).optional(),
-  latitude: CoordinateSchema,
-  longitude: CoordinateSchema,
-  coordinateSource: z.enum(['DEVICE_GPS', 'MAP_PIN', 'NONE']).optional(),
-  makeDefault: z.boolean().optional(),
-})
-
-const IdSchema = z.object({ id: z.string().uuid() })
-
-function present(formData: FormData, key: string): string | undefined {
-  const value = formData.get(key)
-  return value === null ? undefined : String(value)
-}
 
 /** Map a domain error onto a message key. The user never sees an internal message. */
 function toActionState(error: {
@@ -98,16 +71,6 @@ function toActionState(error: {
   }
 }
 
-/** Coordinates are only forwarded when BOTH arrived. Half a coordinate is not a location. */
-function coordinatesFrom(
-  parsed: z.infer<typeof AddressSchema>,
-): { latitude: number | null; longitude: number | null } | null {
-  const { latitude, longitude } = parsed
-  if (latitude === undefined && longitude === undefined) return null
-  if (!latitude || !longitude) return { latitude: null, longitude: null }
-  return { latitude: Number(latitude), longitude: Number(longitude) }
-}
-
 /* --------------------------------------------------------------------- read */
 
 export async function listAddressesAction() {
@@ -130,24 +93,10 @@ export async function createAddressAction(
   _previous: AddressActionState,
   formData: FormData,
 ): Promise<AddressActionState> {
-  const parsed = AddressSchema.safeParse({
-    label: present(formData, 'label'),
-    recipientName: present(formData, 'recipientName'),
-    recipientPhone: present(formData, 'recipientPhone'),
-    adminAreaId: present(formData, 'adminAreaId'),
-    villageOrArea: present(formData, 'villageOrArea'),
-    addressLine: present(formData, 'addressLine'),
-    landmark: present(formData, 'landmark'),
-    postalCode: present(formData, 'postalCode'),
-    latitude: present(formData, 'latitude'),
-    longitude: present(formData, 'longitude'),
-    coordinateSource: present(formData, 'coordinateSource') || undefined,
-    makeDefault: formData.get('makeDefault') !== null,
-  })
+  const parsed = AddressFormSchema.safeParse(readAddressForm(formData))
 
   if (!parsed.success) {
-    const path = parsed.error.issues[0]?.path[0]
-    const field = path === undefined ? undefined : String(path)
+    const field = firstErrorField(parsed.error)
     return {
       status: 'error',
       errorKey:
@@ -202,26 +151,23 @@ export async function updateAddressAction(
   const id = IdSchema.safeParse({ id: present(formData, 'id') })
   if (!id.success) return { status: 'error', errorKey: 'errors.unexpected' }
 
-  const parsed = AddressSchema.safeParse({
-    label: present(formData, 'label'),
-    recipientName: present(formData, 'recipientName'),
-    recipientPhone: present(formData, 'recipientPhone'),
-    adminAreaId: present(formData, 'adminAreaId'),
-    villageOrArea: present(formData, 'villageOrArea'),
-    addressLine: present(formData, 'addressLine'),
-    landmark: present(formData, 'landmark'),
-    postalCode: present(formData, 'postalCode'),
-    latitude: present(formData, 'latitude'),
-    longitude: present(formData, 'longitude'),
-    coordinateSource: present(formData, 'coordinateSource') || undefined,
-  })
+  const parsed = AddressFormSchema.safeParse(readAddressForm(formData))
 
   if (!parsed.success) {
-    const path = parsed.error.issues[0]?.path[0]
+    const field = firstErrorField(parsed.error)
     return {
       status: 'error',
-      errorKey: 'errors.unexpected',
-      ...(path === undefined ? {} : { field: String(path) }),
+      errorKey:
+        field === 'adminAreaId'
+          ? 'errors.areaRequired'
+          : field === 'addressLine'
+            ? 'errors.addressLineRequired'
+            : field === 'recipientPhone'
+              ? 'errors.phoneInvalid'
+              : field === 'recipientName'
+                ? 'errors.nameEmpty'
+                : 'errors.unexpected',
+      ...(field === undefined ? {} : { field }),
     }
   }
 

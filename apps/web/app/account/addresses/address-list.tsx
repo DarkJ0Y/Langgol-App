@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
-import { Alert, Button } from '@langgol/ui/components'
+import { Alert, Button, LinkButton } from '@langgol/ui/components'
 import { deleteAddressAction, setDefaultAddressAction } from './actions'
 import { idleAddressState } from './state'
 
@@ -20,6 +20,8 @@ export interface AddressSummary {
 
 export interface AddressListLabels {
   readonly isDefault: string
+  readonly edit: string
+  readonly hasLocation: string
   readonly setDefault: string
   readonly remove: string
   readonly confirmRemove: string
@@ -89,8 +91,17 @@ export function AddressList({
                 {address.postalCode === null ? '' : ` · ${address.postalCode}`}
               </span>
               <span className="lg-subtitle">{address.areaPath}</span>
+              {/* Whether a pin is attached is worth showing: it is what decides whether the
+                  delivery estimate is anchored to this address or to an area centroid. */}
+              {address.hasCoordinates ? (
+                <span className="lg-subtitle">{labels.hasLocation}</span>
+              ) : null}
 
               <div className="lg-stack-tight">
+                <LinkButton href={`/account/addresses/${address.id}`} variant="secondary">
+                  {labels.edit}
+                </LinkButton>
+
                 {address.isDefault ? null : (
                   <form action={defaultAction}>
                     <input type="hidden" name="id" value={address.id} />
