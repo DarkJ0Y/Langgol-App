@@ -47,7 +47,11 @@ DECLARE
     'addresses_country_code_iso',
     'addresses_postal_code_bd',
     'addresses_coordinates_in_country',
-    'farms_boundary_valid'
+    'farms_boundary_valid',
+
+    -- P4: consent
+    'consent_version_positive',
+    'consent_revoked_after_granted'
   ];
 
   expected_indexes text[] := ARRAY[
@@ -63,7 +67,10 @@ DECLARE
 
     -- P3: postcode corridor lookups, and the farm boundary index
     'addresses_postal_code_idx',
-    'farms_boundary_gix'
+    'farms_boundary_gix',
+
+    -- P4: one live decision per user and permission
+    'consent_one_live_per_type'
   ];
 
   expected_triggers text[] := ARRAY[
@@ -90,7 +97,11 @@ DECLARE
     'audit_logs_no_update',
     'audit_logs_no_delete',
     'platform_configs_no_update',
-    'platform_configs_no_delete'
+    'platform_configs_no_delete',
+
+    -- P4: consent that can be edited after the fact is not evidence.
+    'consent_records_no_delete',
+    'consent_records_supersede_only'
   ];
 
   item text;

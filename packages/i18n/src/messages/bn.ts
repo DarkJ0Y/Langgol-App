@@ -71,6 +71,7 @@ export const bn = {
     postalCodeInvalid: 'পোস্ট কোড চার সংখ্যার হয়',
     coordinatesInvalid: 'অবস্থানটি ঠিক নেই। আবার নিন বা সরিয়ে দিন।',
     addressLimit: 'আর ঠিকানা যোগ করা যাবে না',
+    consentInvalid: 'অনুমতির তথ্য ঠিক নেই। পাতাটি নতুন করে খুলুন।',
   },
 
   address: {
@@ -234,6 +235,29 @@ export const bn = {
     emailConfirmed: 'ধন্যবাদ। আপনার ইমেইল নিশ্চিত হয়েছে।',
     emailLinkDead: 'এই লিংকের মেয়াদ শেষ বা এটি আগেই ব্যবহার হয়েছে। নতুন লিংক নিন।',
     backToAccount: 'আপনার তথ্যে ফিরে যান',
+  },
+
+  consent: {
+    title: 'অনুমতি ও গোপনীয়তা',
+    subtitle: 'কোন তথ্য কীসের জন্য ব্যবহার হবে তা আপনি ঠিক করবেন। যেকোনো সময় বদলাতে পারবেন।',
+    requiredTitle: 'যা মানতেই হয়',
+    requiredSubtitle: 'লাঙ্গল ব্যবহার করতে হলে এই দুটি মানতে হয়।',
+    optionalTitle: 'আপনার পছন্দ',
+    optionalSubtitle: 'এগুলো ইচ্ছা করলে দেবেন। একটিও না দিলেও লাঙ্গলের সব কাজ চলবে।',
+    allowed: 'অনুমতি দেওয়া আছে',
+    notAllowed: 'অনুমতি দেননি',
+    accepted: 'মেনে নেওয়া হয়েছে',
+    acceptedOn: '{date} তারিখে মেনে নিয়েছেন',
+    notAccepted: 'এখনো মেনে নেননি',
+    accept: 'মেনে নিচ্ছি',
+    updated: 'নতুন সংস্করণ এসেছে — আবার দেখে নিন',
+    save: 'সংরক্ষণ করুন',
+    saved: 'আপনার পছন্দ সংরক্ষণ হয়েছে',
+    historyTitle: 'আগের সিদ্ধান্ত',
+    historyEmpty: 'এখনো কোনো সিদ্ধান্ত নেই',
+    grantedOn: '{date} — অনুমতি দিয়েছেন',
+    withdrawnOn: '{date} — অনুমতি তুলে নিয়েছেন',
+    version: 'সংস্করণ {version}',
   },
 
   empty: {

@@ -131,6 +131,14 @@ export default async function AccountPage() {
       </Card>
 
       <Card>
+        <h2 className="lg-title">{t.t('consent.title')}</h2>
+        <p className="lg-subtitle">{t.t('consent.subtitle')}</p>
+        <LinkButton href="/account/privacy" variant="secondary">
+          {t.t('consent.optionalTitle')}
+        </LinkButton>
+      </Card>
+
+      <Card>
         <h2 className="lg-title">{t.t('account.rolesTitle')}</h2>
         <p className="lg-subtitle">{t.t('account.rolesSubtitle')}</p>
 

@@ -111,6 +111,7 @@ model User {
   rolesRevoked UserRoleAssignment[] @relation("RoleRevokedBy")
 
   verificationTokens VerificationToken[]
+  consents           ConsentRecord[]
 
   farmerProfile   FarmerProfile?
   consumerProfile ConsumerProfile?
@@ -209,6 +210,61 @@ enum OtpPurpose {
 
 enum VerificationPurpose {
   EMAIL_VERIFY
+}
+
+enum ConsentType {
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY
+  LOCATION
+  FARM_DATA
+  FINANCIAL_DATA
+  MARKETING
+  PERSONALIZATION
+  AI_DATA_PROCESSING
+  TRANSACTION_DATA
+}
+
+/// Where a decision was taken. Deliberately has no ADMIN member: nobody may decide for someone
+/// else, and the enum is the place that becomes impossible rather than a check that can be
+/// forgotten. docs/07_SECURITY.md §9.2
+enum ConsentSource {
+  SIGNUP
+  ACCOUNT_SETTINGS
+  REPROMPT
+}
+
+/// One consent decision, append-only.
+///
+/// A row is never rewritten to flip an answer. Changing your mind supersedes the live row — its
+/// `revoked_at` is stamped — and inserts a new one, so "what did this person agree to, when, and
+/// to which version of the text?" stays answerable years later. That is the whole point: consent
+/// that cannot be evidenced retrospectively is not consent, it is a checkbox.
+///
+/// `granted = false` is a RECORDED REFUSAL and is different from having no row at all. The
+/// difference matters when someone asks whether they were ever shown the question.
+model ConsentRecord {
+  id          String        @id @default(uuid()) @db.Uuid
+  userId      String        @map("user_id") @db.Uuid
+  consentType ConsentType   @map("consent_type")
+  granted     Boolean
+  /// Which version of the document this answers. Compared against `consent.versions`; an
+  /// agreement to an older version does not carry forward.
+  version     Int
+  grantedAt   DateTime      @map("granted_at")
+  /// Set when this decision is superseded. The row itself is never deleted or edited.
+  revokedAt   DateTime?     @map("revoked_at")
+  source      ConsentSource
+  /// Kept for legal defensibility, never returned by the API. docs/07 §9.2
+  ipAddress   String?       @map("ip_address")
+  userAgent   String?       @map("user_agent")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, consentType, grantedAt])
+  @@index([consentType, granted])
+  @@map("consent_records")
 }
 
 /// A token emailed to an address to prove the recipient controls it.

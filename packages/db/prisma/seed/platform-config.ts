@@ -312,6 +312,23 @@ export const PLATFORM_CONFIG_V1: readonly ConfigSeed[] = [
     note: 'Admin sessions are ~8 hours. docs/07 §3.3.',
   },
   {
+    key: 'consent.versions',
+    value: {
+      TERMS_OF_SERVICE: 1,
+      PRIVACY_POLICY: 1,
+      LOCATION: 1,
+      FARM_DATA: 1,
+      FINANCIAL_DATA: 1,
+      MARKETING: 1,
+      PERSONALIZATION: 1,
+      AI_DATA_PROCESSING: 1,
+      TRANSACTION_DATA: 1,
+    },
+    note:
+      'Raising one of these withdraws every agreement to the previous text and re-prompts the ' +
+      'user. docs/07 §9.2.',
+  },
+  {
     key: 'auth.emailVerification.ttlSeconds',
     value: 86400,
     note:

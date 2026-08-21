@@ -62,6 +62,9 @@ export type Action =
   | 'role:revoke'
   | 'role:assign-privileged'
   // Administration
+  | 'consent:read-own'
+  | 'consent:decide-own'
+  | 'consent:read-any'
   | 'admin:access'
   | 'admin:user-read'
   | 'admin:user-suspend'
@@ -165,6 +168,19 @@ const RULES: Record<Action, Rule> = {
    * approval later, and it cannot be if it is indistinguishable from granting WHOLESALER.
    */
   'role:assign-privileged': { actor: requireRole('ADMIN') },
+
+  /*
+   * Consent is the subject's to give and the subject's to withdraw.
+   *
+   * Note what is NOT in this vocabulary and never should be: any action that would let one user
+   * record a decision for another. There is no `consent:decide-any`, so an administrator has no
+   * permission to grant with — the guarantee is the absence of the action, not a check somewhere
+   * that could be forgotten. `consent:read-any` exists because a data-subject request has to be
+   * answerable, and reading is not deciding. docs/07_SECURITY.md §9.2, §9.4
+   */
+  'consent:read-own': { actor: anyAuthenticated, resource: ownerOnly },
+  'consent:decide-own': { actor: anyAuthenticated, resource: ownerOnly },
+  'consent:read-any': { actor: requireRole('ADMIN') },
 
   'admin:access': { actor: requireRole('ADMIN') },
   'admin:user-read': { actor: requireRole('ADMIN', 'OPS_AGENT') },

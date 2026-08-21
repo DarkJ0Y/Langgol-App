@@ -74,6 +74,7 @@ export const en: Catalogue = {
     postalCodeInvalid: 'A postcode is four digits',
     coordinatesInvalid: 'That location does not look right. Take it again or remove it.',
     addressLimit: 'You cannot add any more addresses',
+    consentInvalid: 'Those permission settings did not look right. Please reload the page.',
   },
 
   address: {
@@ -237,6 +238,29 @@ export const en: Catalogue = {
     emailConfirmed: 'Thank you. Your email is confirmed.',
     emailLinkDead: 'This link has expired or was already used. Request a new one.',
     backToAccount: 'Back to your details',
+  },
+
+  consent: {
+    title: 'Permissions and privacy',
+    subtitle: 'You decide what your data is used for. You can change this at any time.',
+    requiredTitle: 'What you must accept',
+    requiredSubtitle: 'Using Langgol requires accepting these two.',
+    optionalTitle: 'Your choices',
+    optionalSubtitle: 'These are up to you. Langgol works fully even if you allow none of them.',
+    allowed: 'Allowed',
+    notAllowed: 'Not allowed',
+    accepted: 'Accepted',
+    acceptedOn: 'Accepted on {date}',
+    notAccepted: 'Not yet accepted',
+    accept: 'I accept',
+    updated: 'This has been updated — please read it again',
+    save: 'Save my choices',
+    saved: 'Your choices have been saved',
+    historyTitle: 'Earlier decisions',
+    historyEmpty: 'No decisions yet',
+    grantedOn: '{date} — allowed',
+    withdrawnOn: '{date} — withdrawn',
+    version: 'Version {version}',
   },
 
   empty: {

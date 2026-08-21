@@ -355,3 +355,4 @@ export interface AuditPort {
 }
 
 export * from './location.js'
+export * from './consent.js'

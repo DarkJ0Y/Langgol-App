@@ -16,6 +16,7 @@ import {
   createEmailDelivery,
   auditPort,
   configPort,
+  consentRepository,
   cryptoRandom,
   createOtpDelivery,
   getConfig,
@@ -170,6 +171,22 @@ export function locationDeps(): Promise<{
     areas: adminAreaRepository,
     audit: auditPort,
   })
+}
+
+/**
+ * Dependencies for consent.
+ *
+ * `config` is here because the version currently in force decides whether a past agreement still
+ * counts — consent is read against it, never against a constant.
+ */
+export async function consentDeps() {
+  const config = await getConfig()
+  return {
+    config,
+    clock: systemClock,
+    consents: consentRepository,
+    audit: auditPort,
+  }
 }
 
 export function authMode(): AuthMode {

@@ -270,6 +270,26 @@ export const configSchemas = {
    * the SMS bill sane would be needlessly harsh here — and, more importantly, verification
    * traffic must never consume the budget a user needs to log in.
    */
+  /*
+   * The version of each consent document currently in force.
+   *
+   * In versioned configuration rather than a constant because raising one WITHDRAWS every
+   * agreement to the previous text: a user who accepted version 2 has not accepted version 3,
+   * and they are asked again. That is a legal act, so it belongs somewhere immutable and audited
+   * rather than in a deploy.
+   */
+  'consent.versions': z.object({
+    TERMS_OF_SERVICE: z.number().int().positive(),
+    PRIVACY_POLICY: z.number().int().positive(),
+    LOCATION: z.number().int().positive(),
+    FARM_DATA: z.number().int().positive(),
+    FINANCIAL_DATA: z.number().int().positive(),
+    MARKETING: z.number().int().positive(),
+    PERSONALIZATION: z.number().int().positive(),
+    AI_DATA_PROCESSING: z.number().int().positive(),
+    TRANSACTION_DATA: z.number().int().positive(),
+  }),
+
   'auth.emailVerification.ttlSeconds': z.number().int().positive(),
   'auth.emailVerification.rateLimits': z.object({
     perUser: z.object({
