@@ -110,9 +110,15 @@ export default tseslint.config(
     },
   },
 
-  /* Scripts and seeds legitimately report progress to a human operator. */
+  /*
+   * Scripts and seeds legitimately report progress to a human operator, and they run in Node
+   * rather than in a bundle. The plain-JS ones need Node's globals declared: typescript-eslint
+   * turns `no-undef` off for TypeScript, where the compiler already answers that question, but
+   * a `.mjs` file gets no such help.
+   */
   {
-    files: ['packages/db/prisma/seed/**/*.ts', 'scripts/**/*.ts'],
+    files: ['packages/db/prisma/seed/**/*.ts', 'scripts/**/*.ts', 'apps/*/scripts/**/*.mjs'],
+    languageOptions: { globals: { process: 'readonly' } },
     rules: { 'no-console': 'off' },
   },
 )

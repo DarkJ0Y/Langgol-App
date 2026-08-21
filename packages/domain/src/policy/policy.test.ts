@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { ANONYMOUS, can, allowed, hasRole, isActor, type Actor } from './index.js'
+import {
+  ANONYMOUS,
+  assignmentActionFor,
+  can,
+  allowed,
+  hasRole,
+  isActor,
+  type Actor,
+} from './index.js'
+import { ROLES } from '../identity/index.js'
 
 const actor = (over: Partial<Actor> = {}): Actor => ({
   userId: 'user-1',
@@ -106,5 +115,62 @@ describe('actor discrimination', () => {
   it('distinguishes anonymous from an actor', () => {
     expect(isActor(ANONYMOUS)).toBe(false)
     expect(isActor(actor())).toBe(true)
+  })
+})
+
+describe('role administration', () => {
+  const admin = actor({ roles: ['ADMIN'] })
+  const ops = actor({ roles: ['OPS_AGENT'] })
+
+  it('lets anyone signed in read the catalogue', () => {
+    // The signup screen has to render the choices; a role's existence is not a secret.
+    expect(allowed(actor(), 'role:list')).toBe(true)
+    expect(allowed(ANONYMOUS, 'role:list')).toBe(false)
+  })
+
+  it('scopes reading and self-selecting roles to the owner', () => {
+    expect(allowed(actor(), 'role:read-own', ownedBy('user-1'))).toBe(true)
+    expect(allowed(actor(), 'role:read-own', ownedBy('user-2'))).toBe(false)
+    expect(allowed(actor(), 'role:self-select', ownedBy('user-2'))).toBe(false)
+  })
+
+  it('restricts assignment and revocation to administrators', () => {
+    expect(allowed(admin, 'role:assign')).toBe(true)
+    expect(allowed(admin, 'role:revoke')).toBe(true)
+    expect(allowed(actor(), 'role:assign')).toBe(false)
+    expect(allowed(actor({ roles: ['FARMER'] }), 'role:revoke')).toBe(false)
+  })
+
+  it('does not let a field agent grant roles', () => {
+    // OPS_AGENT assists farmers with onboarding; assisting is not administering. docs/07 §8.4
+    expect(allowed(ops, 'role:assign')).toBe(false)
+    expect(allowed(ops, 'role:revoke')).toBe(false)
+    expect(allowed(ops, 'role:assign-privileged')).toBe(false)
+    // They may still look a user up, which is what their job requires.
+    expect(allowed(ops, 'admin:user-read')).toBe(true)
+  })
+
+  it('routes privileged roles to their own action', () => {
+    // Same answer today, different question — so a second approval can be added to one of them
+    // later without also gating ordinary grants.
+    expect(assignmentActionFor('ADMIN')).toBe('role:assign-privileged')
+    expect(assignmentActionFor('OPS_AGENT')).toBe('role:assign-privileged')
+    expect(assignmentActionFor('WHOLESALER')).toBe('role:assign')
+    expect(assignmentActionFor('FARMER')).toBe('role:assign')
+  })
+
+  it('maps every role in the catalogue to a guarded action', () => {
+    // A role added later with no mapping would fall through to whatever the default is.
+    for (const role of ROLES) {
+      const action = assignmentActionFor(role)
+      expect(['role:assign', 'role:assign-privileged']).toContain(action)
+      expect(allowed(actor(), action)).toBe(false)
+      expect(allowed(admin, action)).toBe(true)
+    }
+  })
+
+  it('refuses a suspended administrator', () => {
+    // Suspension takes effect at the next request, not the next sign-in.
+    expect(allowed(actor({ roles: ['ADMIN'], status: 'SUSPENDED' }), 'role:assign')).toBe(false)
   })
 })

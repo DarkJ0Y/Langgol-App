@@ -127,6 +127,20 @@ export function generateSessionToken(): string {
 }
 
 /**
+ * A URL-safe random token of the given byte length.
+ *
+ * base64url so it survives a query string, an email client's link rewriting and a copy-paste out
+ * of a message, none of which are kind to `+` or `/`.
+ */
+export function generateToken(bytes: number): string {
+  if (!Number.isInteger(bytes) || bytes < 16) {
+    // A token shorter than 128 bits is guessable at scale. Refusing beats silently issuing one.
+    throw new RangeError('A verification token must be at least 16 bytes')
+  }
+  return randomBytes(bytes).toString('base64url')
+}
+
+/**
  * Generate a numeric OTP from a CSPRNG.
  *
  * `randomInt` is uniform and rejection-samples internally — `Math.random()` would be predictable

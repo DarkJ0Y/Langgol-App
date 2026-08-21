@@ -31,12 +31,40 @@ enum UserStatus {
   DEACTIVATED
 }
 
+/// Every role the platform recognises. Mirrored by ROLES in packages/domain/src/identity/roles.ts,
+/// which a test asserts, so the enum and the authorization vocabulary cannot drift apart.
+///
+/// Roles are an ENUM rather than rows because the authorization engine reasons about them at
+/// compile time: RULES in policy.ts is an exhaustive Record<Action, Rule>, and that proof only
+/// holds while the vocabulary is known to the compiler. Presentation lives in RoleDefinition.
 enum Role {
   FARMER
   CONSUMER
   RETAILER
   OPS_AGENT
   ADMIN
+  WHOLESALER
+  SUPPLIER
+  AGRICULTURAL_EXPERT
+  LOGISTICS_PROVIDER
+}
+
+/// Recorded because agricultural programmes report on it and the pilot measures women's
+/// participation. PREFER_NOT_TO_SAY is a real answer, distinct from a field never filled in.
+enum Gender {
+  FEMALE
+  MALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+/// How far through setup an account is — a separate axis from UserStatus. An ACTIVE account can
+/// still be half-onboarded, and a SUSPENDED one can be fully set up.
+enum OnboardingStatus {
+  REGISTERED
+  ROLE_SELECTED
+  PROFILE_COMPLETE
+  READY
 }
 
 enum Language {
@@ -45,49 +73,106 @@ enum Language {
 }
 
 model User {
-  id                   String     @id @default(uuid()) @db.Uuid
+  id                   String           @id @default(uuid()) @db.Uuid
   /// E.164, always +8801XXXXXXXXX. The primary identifier: Bangladeshi users authenticate by phone.
-  phone                String     @unique
-  phoneVerifiedAt      DateTime?  @map("phone_verified_at")
-  email                String?    @unique
-  fullName             String     @map("full_name")
-  preferredLanguage    Language   @default(BN) @map("preferred_language")
-  status               UserStatus @default(ACTIVE)
-  lastLoginAt          DateTime?  @map("last_login_at")
+  phone                String           @unique
+  phoneVerifiedAt      DateTime?        @map("phone_verified_at")
+  email                String?          @unique
+  /// Set only by redeeming a token sent TO that address. Changing the address clears it, because
+  /// the proof was about the old address and says nothing about the new one.
+  emailVerifiedAt      DateTime?        @map("email_verified_at")
+  fullName             String           @map("full_name")
+  preferredLanguage    Language         @default(BN) @map("preferred_language")
+  status               UserStatus       @default(ACTIVE)
+  /// Setup progress. Defaults to REGISTERED so existing rows adopt a truthful value rather than
+  /// being backfilled with a claim about work they may not have done.
+  onboardingStatus     OnboardingStatus @default(REGISTERED) @map("onboarding_status")
+  /// Object-storage key, not a URL: a URL expires and would be stale the moment it is stored.
+  profilePhotoKey      String?          @map("profile_photo_key")
+  /// Date only; no time component is meaningful and storing one invites timezone drift.
+  dateOfBirth          DateTime?        @map("date_of_birth") @db.Date
+  gender               Gender?
+  lastLoginAt          DateTime?        @map("last_login_at")
   /// Development sign-in can authenticate ONLY these rows, and a CHECK constraint confines the
   /// flag to a reserved phone block. See the development_auth_fixtures migration.
-  isDevelopmentFixture Boolean    @default(false) @map("is_development_fixture")
-  createdAt            DateTime   @default(now()) @map("created_at")
-  updatedAt            DateTime   @updatedAt @map("updated_at")
-  deletedAt            DateTime?  @map("deleted_at")
+  isDevelopmentFixture Boolean          @default(false) @map("is_development_fixture")
+  createdAt            DateTime         @default(now()) @map("created_at")
+  updatedAt            DateTime         @updatedAt @map("updated_at")
+  deletedAt            DateTime?        @map("deleted_at")
 
   roles     UserRoleAssignment[]
   sessions  Session[]
   addresses Address[]
+
+  /// Role changes this account performed on OTHER accounts. Separate relations from `roles`,
+  /// which is what this account holds. Both are RESTRICT at the database: an administrator's row
+  /// cannot be hard-deleted while the record of what they granted or revoked still stands.
+  rolesGranted UserRoleAssignment[] @relation("RoleGrantedBy")
+  rolesRevoked UserRoleAssignment[] @relation("RoleRevokedBy")
+
+  verificationTokens VerificationToken[]
 
   farmerProfile   FarmerProfile?
   consumerProfile ConsumerProfile?
   retailerProfile RetailerProfile?
 
   @@index([status])
+  @@index([onboardingStatus])
   @@map("users")
 }
 
 /// A user may hold several roles over time — a farmer who also buys is one account, not two.
 model UserRoleAssignment {
-  id          String    @id @default(uuid()) @db.Uuid
-  userId      String    @map("user_id") @db.Uuid
-  role        Role
-  grantedAt   DateTime  @default(now()) @map("granted_at")
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  role         Role
+  grantedAt    DateTime  @default(now()) @map("granted_at")
   /// Null when self-selected at signup; set when an admin granted it.
-  grantedById String?   @map("granted_by_id") @db.Uuid
-  revokedAt   DateTime? @map("revoked_at")
+  grantedById  String?   @map("granted_by_id") @db.Uuid
+  revokedAt    DateTime? @map("revoked_at")
+  /// Who took the role away, and why. A revocation can lock a farmer out of their own listings,
+  /// so an unattributed one is not acceptable — the same principle as fault on a failed order.
+  revokedById  String?   @map("revoked_by_id") @db.Uuid
+  revokeReason String?   @map("revoke_reason")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  /*
+   * Attribution, not ownership. Cascade would delete an administrator's entire grant history
+   * along with their account; SET NULL would breach `role_revocation_attributed`, which requires
+   * a revoker whenever `revoked_at` is set. Restrict is the only option that keeps the record.
+   */
+  grantedBy User? @relation("RoleGrantedBy", fields: [grantedById], references: [id], onDelete: Restrict)
+  revokedBy User? @relation("RoleRevokedBy", fields: [revokedById], references: [id], onDelete: Restrict)
+
   @@unique([userId, role])
   @@index([role])
+  @@index([grantedById])
+  @@index([revokedById])
   @@map("user_role_assignments")
+}
+
+/// Presentation metadata for a Role. The enum is the identity; this table is the label.
+///
+/// Seeded from ROLE_CATALOGUE rather than created at runtime — a role an administrator could
+/// invent would have no rule in the authorization engine, so it could be held but never checked.
+/// `selfSelectable` is mirrored here for the signup screen, but the SERVER-side allowlist in
+/// packages/domain/src/identity/roles.ts is the boundary; this column is a courtesy to the UI.
+model RoleDefinition {
+  role           Role     @id
+  nameBn         String   @map("name_bn")
+  nameEn         String   @map("name_en")
+  descriptionBn  String   @map("description_bn")
+  descriptionEn  String   @map("description_en")
+  selfSelectable Boolean  @default(false) @map("self_selectable")
+  privileged     Boolean  @default(false)
+  sortOrder      Int      @default(0) @map("sort_order")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, sortOrder])
+  @@map("role_definitions")
 }
 
 /// Database-backed sessions: revocable, unlike a stateless JWT. docs/07_SECURITY.md §3.3
@@ -114,9 +199,45 @@ model Session {
 
 enum OtpPurpose {
   LOGIN
+  /// A signed-in user proving the number on their account. Distinct from LOGIN so that verifying
+  /// a number can never spend the rate-limit budget the same person needs in order to sign in.
+  PHONE_VERIFY
   PHONE_CHANGE
   PAYOUT_CHANGE
   DELIVERY_CONFIRM
+}
+
+enum VerificationPurpose {
+  EMAIL_VERIFY
+}
+
+/// A token emailed to an address to prove the recipient controls it.
+///
+/// Stored as a SHA-256 hash, never in plaintext — a leaked database must not yield redeemable
+/// links. A fast hash is correct here and NOT an oversight: the token is 256 bits of CSPRNG
+/// output, so there is no brute-force surface for a slow hash to defend, exactly as with session
+/// tokens. The OTP table uses scrypt because six digits genuinely can be guessed.
+model VerificationToken {
+  id        String              @id @default(uuid()) @db.Uuid
+  userId    String              @map("user_id") @db.Uuid
+  purpose   VerificationPurpose
+  /// The address the token was sent TO. Kept alongside the user so that redeeming a token can
+  /// check the address has not changed since — a token proves control of an address, not of
+  /// whatever address the account happens to hold when the link is finally clicked.
+  destination String
+  tokenHash String              @unique @map("token_hash")
+  expiresAt DateTime            @map("expires_at")
+  consumedAt DateTime?          @map("consumed_at")
+  /// Superseded by a newer request, or cancelled because the address changed.
+  revokedAt DateTime?           @map("revoked_at")
+  requestIp String?             @map("request_ip")
+  createdAt DateTime            @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, createdAt])
+  @@index([expiresAt])
+  @@map("verification_tokens")
 }
 
 /// Short-lived OTP challenge. The code is stored hashed and is never logged. docs/07_SECURITY.md §3.1

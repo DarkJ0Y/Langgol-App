@@ -16,6 +16,8 @@ import type {
   SessionRepository,
   UserRecord,
   UserRepository,
+  VerificationTokenRecord,
+  VerificationTokenRepository,
 } from '@langgol/application'
 
 interface ChallengeRow {
@@ -58,9 +60,9 @@ export const otpChallengeRepository: OtpChallengeRepository = {
     return toChallenge(row)
   },
 
-  async findLatestActive(phone, now) {
+  async findLatestActive(phone, purpose, now) {
     const row = await prisma.otpChallenge.findFirst({
-      where: { phone, purpose: 'LOGIN', consumedAt: null, expiresAt: { gt: now } },
+      where: { phone, purpose, consumedAt: null, expiresAt: { gt: now } },
       orderBy: { createdAt: 'desc' },
     })
     return row === null ? null : toChallenge(row)
@@ -78,13 +80,103 @@ export const otpChallengeRepository: OtpChallengeRepository = {
     await prisma.otpChallenge.update({ where: { id }, data: { consumedAt: at } })
   },
 
-  async recentRequestTimes({ phone, ip, since }) {
+  /**
+   * Burn every live challenge for this phone and purpose.
+   *
+   * `consumedAt` is the single "dead" marker the schema has, so a superseded challenge is marked
+   * the same way a used one is. Conditional on `consumedAt: null` so a re-run counts zero rather
+   * than overwriting the timestamp of an earlier burn.
+   */
+  async invalidateOutstanding({ phone, purpose, at }) {
+    const result = await prisma.otpChallenge.updateMany({
+      where: { phone, purpose, consumedAt: null },
+      data: { consumedAt: at },
+    })
+    return result.count
+  },
+
+  async recentRequestTimes({ phone, ip, purpose, since }) {
     const rows = await prisma.otpChallenge.findMany({
       where: {
         createdAt: { gte: since },
+        // Scoped by purpose, always. Sharing a budget between logging in and verifying would let
+        // one lock the user out of the other.
+        purpose,
         ...(phone === undefined ? {} : { phone }),
         ...(ip === undefined ? {} : { requestIp: ip }),
       },
+      select: { createdAt: true },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    })
+    return rows.map((row) => row.createdAt)
+  },
+}
+
+interface TokenRow {
+  id: string
+  userId: string
+  destination: string
+  expiresAt: Date
+  consumedAt: Date | null
+  revokedAt: Date | null
+  createdAt: Date
+}
+
+function toToken(row: TokenRow): VerificationTokenRecord {
+  return {
+    id: row.id,
+    userId: row.userId,
+    destination: row.destination,
+    expiresAt: row.expiresAt,
+    consumedAt: row.consumedAt,
+    revokedAt: row.revokedAt,
+    createdAt: row.createdAt,
+  }
+}
+
+export const verificationTokenRepository: VerificationTokenRepository = {
+  async create(input) {
+    const row = await prisma.verificationToken.create({
+      data: {
+        userId: input.userId,
+        purpose: input.purpose,
+        destination: input.destination,
+        tokenHash: input.tokenHash,
+        expiresAt: input.expiresAt,
+        requestIp: input.requestIp,
+      },
+    })
+    return toToken(row)
+  },
+
+  /**
+   * Look up by hash — the only lookup this repository offers.
+   *
+   * Note what is NOT here: a finder taking a user id. The plaintext token exists solely in the
+   * message that was sent, so possession of it is the whole proof, and a query that could return
+   * a live token for a named user would undo that.
+   */
+  async findByHash(tokenHash) {
+    const row = await prisma.verificationToken.findUnique({ where: { tokenHash } })
+    return row === null ? null : toToken(row)
+  },
+
+  async consume(id, at) {
+    await prisma.verificationToken.update({ where: { id }, data: { consumedAt: at } })
+  },
+
+  async invalidateOutstanding({ userId, purpose, at }) {
+    const result = await prisma.verificationToken.updateMany({
+      where: { userId, purpose, consumedAt: null, revokedAt: null },
+      data: { revokedAt: at },
+    })
+    return result.count
+  },
+
+  async recentRequestTimes({ userId, purpose, since }) {
+    const rows = await prisma.verificationToken.findMany({
+      where: { userId, purpose, createdAt: { gte: since } },
       select: { createdAt: true },
       orderBy: { createdAt: 'desc' },
       take: 100,

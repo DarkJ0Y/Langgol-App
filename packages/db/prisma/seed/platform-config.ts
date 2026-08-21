@@ -311,4 +311,21 @@ export const PLATFORM_CONFIG_V1: readonly ConfigSeed[] = [
     value: { DEFAULT: 30, ADMIN: 0.333 },
     note: 'Admin sessions are ~8 hours. docs/07 §3.3.',
   },
+  {
+    key: 'auth.emailVerification.ttlSeconds',
+    value: 86400,
+    note:
+      'A day, against five minutes for an SMS code. Email arrives when the reader next opens ' +
+      'their inbox, which on a shared or intermittent connection may be that evening.',
+  },
+  {
+    key: 'auth.emailVerification.rateLimits',
+    value: {
+      perUser: { limit: 3, windowSeconds: 900, dailyLimit: 10 },
+      resendCooldownSeconds: 60,
+    },
+    note:
+      'Separate from auth.otp.rateLimits on purpose: verification traffic must never spend the ' +
+      'budget a user needs to log in. docs/07 §3.2.',
+  },
 ] as const

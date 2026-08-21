@@ -1,6 +1,7 @@
 export {
   can,
   allowed,
+  assignmentActionFor,
   hasRole,
   isActor,
   ANONYMOUS,

@@ -9,7 +9,9 @@
 
 import 'server-only'
 import {
+  accountRepository,
   addressRepository,
+  createEmailDelivery,
   auditPort,
   configPort,
   cryptoRandom,
@@ -25,6 +27,7 @@ import {
   subsidyBudgetPort,
   systemClock,
   userRepository,
+  verificationTokenRepository,
 } from '@langgol/infrastructure'
 import { env } from '@langgol/shared'
 import type { AppEnvironment, AuthMode } from '@langgol/domain/identity'
@@ -82,6 +85,68 @@ export function marketplaceDeps(): Promise<{
     orders: orderPlacement,
     orderNumbers: orderNumberGenerator,
   })
+}
+
+/**
+ * Dependencies for the account and role use cases.
+ *
+ * `audit` is included deliberately: a role grant and a refused grant are both events the audit
+ * log must carry, so the use case cannot be constructed without somewhere to record them.
+ */
+export function accountDeps(): Promise<{
+  clock: typeof systemClock
+  accounts: typeof accountRepository
+  audit: typeof auditPort
+}> {
+  return Promise.resolve({
+    clock: systemClock,
+    accounts: accountRepository,
+    audit: auditPort,
+  })
+}
+
+/**
+ * Dependencies for phone verification.
+ *
+ * The same challenge repository, hasher and SMS delivery the login flow uses — verification is
+ * not a second OTP system, it is the same one asked a different question. `accounts` is here
+ * because the number verified is read from the account rather than supplied by the caller.
+ */
+export async function phoneVerificationDeps() {
+  const config = await getConfig()
+  return {
+    config,
+    clock: systemClock,
+    random: cryptoRandom,
+    hasher: scryptHasher,
+    challenges: otpChallengeRepository,
+    delivery: createOtpDelivery(),
+    accounts: accountRepository,
+    users: userRepository,
+    audit: auditPort,
+  }
+}
+
+/**
+ * Dependencies for email verification.
+ *
+ * `createEmailDelivery()` reports `available: false` when no provider is configured, which is a
+ * supported deployment rather than a fault — so the caller can decline to offer the user a
+ * button that could never work.
+ */
+export async function emailVerificationDeps() {
+  const config = await getConfig()
+  return {
+    config,
+    clock: systemClock,
+    random: cryptoRandom,
+    hasher: scryptHasher,
+    tokens: verificationTokenRepository,
+    accounts: accountRepository,
+    delivery: createEmailDelivery(),
+    audit: auditPort,
+    appUrl: env().APP_URL,
+  }
 }
 
 export function authMode(): AuthMode {

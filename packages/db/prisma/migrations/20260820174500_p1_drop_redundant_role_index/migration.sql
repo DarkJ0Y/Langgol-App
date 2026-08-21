@@ -1,0 +1,15 @@
+-- Drop a redundant unique index introduced by the preceding Phase 1 migration.
+--
+-- `user_role_active_unique` was a partial UNIQUE on (user_id, role) WHERE revoked_at IS NULL,
+-- added on the theory that a revoked row and a live row for the same pairing should be able to
+-- coexist as history. They cannot: `user_role_assignments_user_id_role_key` is a FULL unique on
+-- the same two columns and forbids any second row, revoked or not. The partial index therefore
+-- guaranteed nothing the table did not already guarantee more strongly, while costing a second
+-- index write on every grant and revoke.
+--
+-- The full unique is the one the design depends on. `accountRepository.assignRole` looks a
+-- pairing up by it and REACTIVATES the existing row rather than inserting a second, so one row
+-- per (user, role) carrying its own grant/revoke history is the intended shape.
+--
+-- Nothing about the enforced invariant changes: a user still holds a role at most once.
+DROP INDEX IF EXISTS "user_role_active_unique";

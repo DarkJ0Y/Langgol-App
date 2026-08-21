@@ -84,7 +84,11 @@ export async function requestOtp(
 
   // --- Resend cooldown ------------------------------------------------------
   const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-  const phoneRequests = await deps.challenges.recentRequestTimes({ phone, since: dayAgo })
+  const phoneRequests = await deps.challenges.recentRequestTimes({
+    phone,
+    purpose: 'LOGIN',
+    since: dayAgo,
+  })
   const mostRecent = phoneRequests.reduce<Date | null>(
     (latest, at) => (latest === null || at > latest ? at : latest),
     null,
@@ -126,6 +130,7 @@ export async function requestOtp(
     const since = new Date(now.getTime() - limits.perIp.windowSeconds * 1000)
     const ipRequests = await deps.challenges.recentRequestTimes({
       ip: command.ipAddress,
+      purpose: 'LOGIN',
       since,
     })
     const ipWindow = evaluateRateLimit(ipRequests, limits.perIp, now)
@@ -158,6 +163,13 @@ export async function requestOtp(
   }
 
   // --- Issue the challenge --------------------------------------------------
+  /*
+   * Kill any previous live code first. Without this each request leaves another usable code
+   * behind: the attempt cap counts per challenge, so N outstanding codes quietly grant
+   * N x maxAttempts guesses against one number while every individual counter looks healthy.
+   */
+  await deps.challenges.invalidateOutstanding({ phone, purpose: 'LOGIN', at: now })
+
   const code = deps.random.numericCode(OTP_LENGTH)
   const codeHash = await deps.hasher.hash(code)
   const expiresAt = new Date(now.getTime() + ttlSeconds * 1000)

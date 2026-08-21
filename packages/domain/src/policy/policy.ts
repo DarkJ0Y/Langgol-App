@@ -17,7 +17,14 @@
  * Refs: docs/07_SECURITY.md §4
  */
 
-export type Role = 'FARMER' | 'CONSUMER' | 'RETAILER' | 'OPS_AGENT' | 'ADMIN'
+import { PRIVILEGED_ROLES, type Role } from '../identity/roles.js'
+
+/**
+ * Re-exported so the policy layer stays the one import a caller needs for authorization, while
+ * the vocabulary itself lives in `identity/roles.ts`. Two hand-written role lists is one too
+ * many: they drift, and the one that drifts is always the one guarding something.
+ */
+export type { Role }
 
 export interface Actor {
   readonly userId: string
@@ -47,6 +54,13 @@ export type Action =
   // Platform configuration
   | 'config:read'
   | 'config:write'
+  // Roles
+  | 'role:list'
+  | 'role:read-own'
+  | 'role:self-select'
+  | 'role:assign'
+  | 'role:revoke'
+  | 'role:assign-privileged'
   // Administration
   | 'admin:access'
   | 'admin:user-read'
@@ -128,6 +142,30 @@ const RULES: Record<Action, Rule> = {
   'config:read': { actor: anyAuthenticated },
   'config:write': { actor: requireRole('ADMIN') },
 
+  /*
+   * The catalogue is readable by anyone signed in: the signup screen has to render the choices,
+   * and a role's existence is not a secret. Holding one is a different question.
+   */
+  'role:list': { actor: anyAuthenticated },
+  'role:read-own': { actor: anyAuthenticated, resource: ownerOnly },
+  'role:self-select': { actor: anyAuthenticated, resource: ownerOnly },
+
+  /*
+   * Assignment and revocation are ADMIN-only, and deliberately separate actions from
+   * `admin:role-grant` so a future ops-scoped grant can be widened without also widening
+   * revocation. Taking a role away can lock a farmer out of their own listings, so it is the
+   * more dangerous half of the pair, not the lesser one.
+   */
+  'role:assign': { actor: requireRole('ADMIN') },
+  'role:revoke': { actor: requireRole('ADMIN') },
+
+  /*
+   * Granting ADMIN or OPS_AGENT is called out separately from ordinary assignment. Both resolve
+   * to the same role today, but a privileged grant is the action worth putting behind a second
+   * approval later, and it cannot be if it is indistinguishable from granting WHOLESALER.
+   */
+  'role:assign-privileged': { actor: requireRole('ADMIN') },
+
   'admin:access': { actor: requireRole('ADMIN') },
   'admin:user-read': { actor: requireRole('ADMIN', 'OPS_AGENT') },
   'admin:user-suspend': { actor: requireRole('ADMIN') },
@@ -166,4 +204,17 @@ export function can(actor: MaybeActor, action: Action, resource?: OwnedResource)
 
 export function allowed(actor: MaybeActor, action: Action, resource?: OwnedResource): boolean {
   return can(actor, action, resource).allowed
+}
+
+/**
+ * The action required to grant a particular role.
+ *
+ * Exists so a caller cannot accidentally check the weaker permission when handing out ADMIN. The
+ * decision of *which* question to ask is itself part of the policy, and belongs here rather than
+ * at each call site.
+ */
+export function assignmentActionFor(role: Role): Action {
+  return (PRIVILEGED_ROLES as readonly string[]).includes(role)
+    ? 'role:assign-privileged'
+    : 'role:assign'
 }

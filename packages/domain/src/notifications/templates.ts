@@ -22,7 +22,12 @@ export type MessageLocale = 'bn' | 'en'
 export const SMS_SEGMENT_GSM7 = 160
 export const SMS_SEGMENT_UNICODE = 70
 
-export type TemplateId = 'auth.otp' | 'auth.new-device' | 'account.role-granted'
+export type TemplateId =
+  | 'auth.otp'
+  | 'auth.new-device'
+  | 'auth.email-verify'
+  | 'auth.email-verified'
+  | 'account.role-granted'
 
 export interface TemplateVariables {
   readonly [key: string]: string | number
@@ -70,6 +75,37 @@ const TEMPLATES: Record<TemplateId, TemplateDefinition> = {
     render: {
       bn: (v) => `নতুন ডিভাইস থেকে আপনার লাঙ্গল অ্যাকাউন্টে প্রবেশ হয়েছে (${String(v['when'])})।`,
       en: (v) => `Your Langgol account was signed in from a new device (${String(v['when'])}).`,
+    },
+  },
+
+  /*
+   * The verification link IS a bearer credential: anyone holding it can prove control of the
+   * address until it expires. Marked sensitive for exactly the same reason as the OTP — the
+   * rendered body is delivered and never persisted.
+   */
+  'auth.email-verify': {
+    id: 'auth.email-verify',
+    channels: ['EMAIL'],
+    required: ['link', 'hours'],
+    sensitive: true,
+    render: {
+      bn: (v) =>
+        `আপনার লাঙ্গল ইমেইল ঠিকানা নিশ্চিত করতে এই লিংকে যান: ${String(v['link'])} — ` +
+        `${String(v['hours'])} ঘণ্টা পর মেয়াদ শেষ। আপনি না চাইলে কিছু করার দরকার নেই।`,
+      en: (v) =>
+        `Confirm your Langgol email address: ${String(v['link'])} — it expires in ` +
+        `${String(v['hours'])} hours. If you did not ask for this, ignore this message.`,
+    },
+  },
+
+  'auth.email-verified': {
+    id: 'auth.email-verified',
+    channels: ['EMAIL', 'IN_APP'],
+    required: [],
+    sensitive: false,
+    render: {
+      bn: () => 'আপনার ইমেইল ঠিকানা নিশ্চিত হয়েছে।',
+      en: () => 'Your email address has been confirmed.',
     },
   },
 

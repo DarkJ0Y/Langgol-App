@@ -2,6 +2,7 @@ import type { RandomSource, SecretHasher } from '@langgol/application'
 import {
   generateNumericCode,
   generateSessionToken,
+  generateToken,
   hashSecret,
   hashToken,
   verifySecret,
@@ -16,6 +17,14 @@ export const scryptHasher: SecretHasher = {
 export const cryptoRandom: RandomSource = {
   numericCode: generateNumericCode,
   sessionToken: generateSessionToken,
+  token: generateToken,
 }
 
-export { hashSecret, verifySecret, hashToken, generateSessionToken, generateNumericCode }
+export {
+  hashSecret,
+  verifySecret,
+  hashToken,
+  generateSessionToken,
+  generateNumericCode,
+  generateToken,
+}

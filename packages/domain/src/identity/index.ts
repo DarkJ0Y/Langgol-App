@@ -36,3 +36,54 @@ export {
   type RateLimitWindow,
   type RateLimitVerdict,
 } from './otp.js'
+
+export {
+  ROLES,
+  ROLE_CATALOGUE,
+  SELF_SELECTABLE_ROLES,
+  CONTROLLED_ROLES,
+  PRIVILEGED_ROLES,
+  isRole,
+  isSelfSelectableRole,
+  isControlledRole,
+  isPrivilegedRole,
+  roleDescriptor,
+  roleLabel,
+  type Role,
+  type RoleDescriptor,
+  type SelfSelectableRole,
+} from './roles.js'
+
+export {
+  GENDERS,
+  ONBOARDING_STATUSES,
+  LANGUAGES,
+  ProfileError,
+  isGender,
+  isOnboardingStatus,
+  isLanguageCode,
+  validateProfileUpdate,
+  nextOnboardingStatus,
+  yearsBetween,
+  type Gender,
+  type LanguageCode,
+  type OnboardingStatus,
+  type ProfileErrorCode,
+  type ProfileUpdate,
+  type ValidatedProfileUpdate,
+} from './profile.js'
+
+export {
+  OTP_PURPOSES,
+  VERIFICATION_PURPOSES,
+  VERIFICATION_TOKEN_BYTES,
+  isOtpPurpose,
+  isVerificationPurpose,
+  emailVerificationRequired,
+  evaluateVerificationToken,
+  maskEmail,
+  type OtpPurpose,
+  type VerificationPurpose,
+  type VerificationTokenState,
+  type VerificationVerdict,
+} from './verification.js'

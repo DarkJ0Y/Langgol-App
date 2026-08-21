@@ -80,7 +80,7 @@ export async function verifyOtp(
   }
 
   const now = deps.clock.now()
-  const challenge = await deps.challenges.findLatestActive(phone, now)
+  const challenge = await deps.challenges.findLatestActive(phone, 'LOGIN', now)
 
   if (challenge === null) {
     // Same error whether the challenge never existed, expired or was already used — the

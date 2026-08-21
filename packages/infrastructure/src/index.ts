@@ -5,6 +5,7 @@ export * from './sms/index.js'
 export { createOtpDelivery } from './otp-delivery.js'
 export {
   otpChallengeRepository,
+  verificationTokenRepository,
   userRepository,
   sessionRepository,
   auditPort,
@@ -34,3 +35,6 @@ export {
   type TripReconciliationResult,
 } from './jobs/reconcile-delivery-trips.js'
 export * from './firebase/index.js'
+export * from './email/index.js'
+export { createEmailDelivery } from './email-delivery.js'
+export { accountRepository } from './repositories/account.js'

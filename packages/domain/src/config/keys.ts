@@ -263,6 +263,22 @@ export const configSchemas = {
     DEFAULT: z.number().positive(),
     ADMIN: z.number().positive(),
   }),
+
+  /*
+   * Email verification. Deliberately its own budget rather than sharing `auth.otp.rateLimits`:
+   * an email costs a fraction of an SMS and reaches a different inbox, so the limits that keep
+   * the SMS bill sane would be needlessly harsh here — and, more importantly, verification
+   * traffic must never consume the budget a user needs to log in.
+   */
+  'auth.emailVerification.ttlSeconds': z.number().int().positive(),
+  'auth.emailVerification.rateLimits': z.object({
+    perUser: z.object({
+      limit: z.number().int().positive(),
+      windowSeconds: z.number().int().positive(),
+      dailyLimit: z.number().int().positive(),
+    }),
+    resendCooldownSeconds: z.number().int().positive(),
+  }),
 } as const
 
 export type ConfigKey = keyof typeof configSchemas

@@ -37,6 +37,9 @@ class FixedRandom implements RandomSource {
   numericCode(): string {
     return '123456'
   }
+  token(bytes: number): string {
+    return `verify-token-${String(bytes)}`
+  }
   sessionToken(): string {
     this.count += 1
     return `dev-token-${String(this.count)}`

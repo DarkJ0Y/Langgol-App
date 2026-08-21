@@ -14,6 +14,7 @@ import { DIVISIONS, type AreaSeed } from './admin-areas.js'
 import { PLATFORM_CONFIG_V1 } from './platform-config.js'
 import { seedDevelopmentFixtures } from './development-fixtures.js'
 import { CATALOGUE } from './catalogue.js'
+import { seedRoleDefinitions } from './roles.js'
 import { seedDevelopmentMarketplace } from './development-marketplace.js'
 
 const prisma = new PrismaClient()
@@ -158,6 +159,9 @@ async function main(): Promise<void> {
 
   const config = await seedPlatformConfig()
   console.log(`  platform config:  ${config.created} created, ${config.existing} already present`)
+
+  const roles = await seedRoleDefinitions(prisma)
+  console.log(`  role definitions: ${roles.created} created, ${roles.updated} updated`)
 
   const catalogue = await seedCatalogue()
   console.log(

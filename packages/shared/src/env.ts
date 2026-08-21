@@ -41,6 +41,15 @@ const schema = z.object({
   // Approximate cost of one message, used by the spend circuit breaker.
   SMS_UNIT_COST_POISHA: z.coerce.number().int().positive().default(50),
 
+  /*
+   * Email. Defaults to `none` because email is optional to the platform: a farmer signing in by
+   * OTP never needs one, and a deployment without a vendor should start rather than fail.
+   */
+  EMAIL_PROVIDER: z.enum(['none', 'console', 'memory', 'http']).default('none'),
+  EMAIL_API_URL: z.string().optional(),
+  EMAIL_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().default('Langgol <no-reply@langgol.app>'),
+
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
   ERROR_REPORTING_DSN: z.string().optional(),
 
@@ -118,6 +127,29 @@ export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
     throw new EnvironmentError(
       'SMS_PROVIDER=http requires SMS_API_URL and SMS_API_KEY. Without them, OTP delivery ' +
         'fails at send time rather than at boot.',
+    )
+  }
+
+  // Same reasoning as the SMS check: credentials missing at boot beat a silent failure at send
+  // time, when the user is staring at "we've emailed you" and nothing arrives.
+  if (env.EMAIL_PROVIDER === 'http' && (!env.EMAIL_API_URL || !env.EMAIL_API_KEY)) {
+    throw new EnvironmentError(
+      'EMAIL_PROVIDER=http requires EMAIL_API_URL and EMAIL_API_KEY. Without them, verification ' +
+        'email delivery fails at send time rather than at boot.',
+    )
+  }
+
+  /*
+   * A fake email provider in production would tell users "check your inbox" and print the
+   * verification link to a server log instead. Unlike SMS this is not a total outage — email is
+   * optional — so `none` remains a valid production choice, and only the pretend providers are
+   * refused.
+   */
+  if (isProduction && (env.EMAIL_PROVIDER === 'console' || env.EMAIL_PROVIDER === 'memory')) {
+    throw new EnvironmentError(
+      `EMAIL_PROVIDER="${env.EMAIL_PROVIDER}" cannot be used in production: the verification ` +
+        'link would be written to a log instead of delivered. Use "http", or "none" to disable ' +
+        'email verification entirely.',
     )
   }
 

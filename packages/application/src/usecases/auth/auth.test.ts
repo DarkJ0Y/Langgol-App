@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createConfigSnapshot, type ConfigSnapshot } from '@langgol/domain/config'
 import { Money } from '@langgol/domain/money'
-import { normalizePhone, type E164Phone } from '@langgol/domain/identity'
+import { normalizePhone, type E164Phone, type OtpPurpose } from '@langgol/domain/identity'
 import { isErr, isOk, type AppError, type Result } from '@langgol/shared'
 import { requestOtp } from './request-otp.js'
 import { verifyOtp } from './verify-otp.js'
@@ -47,11 +47,16 @@ class FixedRandom implements RandomSource {
     this.tokenCount += 1
     return `session-token-${String(this.tokenCount)}`
   }
+  token(bytes: number): string {
+    this.tokenCount += 1
+    return `verify-token-${String(bytes)}-${String(this.tokenCount)}`
+  }
 }
 
 /** Mutable mirror of OtpChallengeRecord — the real record is readonly, this fake is not. */
 type MutableChallenge = { -readonly [K in keyof OtpChallengeRecord]: OtpChallengeRecord[K] } & {
   requestIp: string | null
+  purpose: OtpPurpose
 }
 
 class InMemoryChallenges implements OtpChallengeRepository {
@@ -61,6 +66,7 @@ class InMemoryChallenges implements OtpChallengeRepository {
   create(input: {
     phone: E164Phone
     codeHash: string
+    purpose: OtpPurpose
     expiresAt: Date
     maxAttempts: number
     requestIp: string | null
@@ -69,6 +75,7 @@ class InMemoryChallenges implements OtpChallengeRepository {
       id: `challenge-${String(this.nextId++)}`,
       phone: input.phone,
       codeHash: input.codeHash,
+      purpose: input.purpose,
       expiresAt: input.expiresAt,
       attempts: 0,
       maxAttempts: input.maxAttempts,
@@ -82,9 +89,29 @@ class InMemoryChallenges implements OtpChallengeRepository {
 
   createdAt = new Date()
 
-  findLatestActive(phone: E164Phone): Promise<OtpChallengeRecord | null> {
-    const active = this.rows.filter((row) => row.phone === phone && row.consumedAt === null)
+  /*
+   * Purpose is honoured here, exactly as the SQL honours it. An earlier version of this fake
+   * ignored it, which is precisely why the production adapter could count a verification request
+   * against a login budget without a single test noticing.
+   */
+  findLatestActive(phone: E164Phone, purpose: OtpPurpose): Promise<OtpChallengeRecord | null> {
+    const active = this.rows.filter(
+      (row) => row.phone === phone && row.purpose === purpose && row.consumedAt === null,
+    )
     return Promise.resolve(active.at(-1) ?? null)
+  }
+
+  invalidateOutstanding(input: {
+    phone: E164Phone
+    purpose: OtpPurpose
+    at: Date
+  }): Promise<number> {
+    const live = this.rows.filter(
+      (row) =>
+        row.phone === input.phone && row.purpose === input.purpose && row.consumedAt === null,
+    )
+    for (const row of live) row.consumedAt = input.at
+    return Promise.resolve(live.length)
   }
 
   recordAttempt(id: string): Promise<void> {
@@ -103,9 +130,15 @@ class InMemoryChallenges implements OtpChallengeRepository {
     return this.consume(id, at)
   }
 
-  recentRequestTimes(input: { phone?: E164Phone; ip?: string; since: Date }): Promise<Date[]> {
+  recentRequestTimes(input: {
+    phone?: E164Phone
+    ip?: string
+    purpose: OtpPurpose
+    since: Date
+  }): Promise<Date[]> {
     return Promise.resolve(
       this.rows
+        .filter((row) => row.purpose === input.purpose)
         .filter((row) => (input.phone === undefined ? true : row.phone === input.phone))
         .filter((row) => (input.ip === undefined ? true : row.requestIp === input.ip))
         .filter((row) => row.createdAt >= input.since)
