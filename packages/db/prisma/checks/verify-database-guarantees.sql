@@ -103,8 +103,7 @@ DECLARE
     'audit_logs_no_update',
     'audit_logs_no_delete',
     'platform_configs_no_update',
-    'platform_configs_no_delete',
-
+    'platform_configs_no_delete'
   ];
 
   item text;
