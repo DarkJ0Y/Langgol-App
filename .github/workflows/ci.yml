@@ -92,14 +92,33 @@ jobs:
       - name: Verify migration status
         run: pnpm --filter @langgol/db run migrate:status
 
+      # The psql output is echoed AND re-emitted as ::error:: annotations. Step logs need a token
+      # to read; annotations are readable from the public API, so a failing SQL check can say why
+      # it failed rather than only "exit code 3".
       - name: Verify database guarantees exist
-        run: pnpm --filter @langgol/db run verify:guarantees
+        run: |
+          set +e
+          output=$(pnpm --filter @langgol/db run verify:guarantees 2>&1)
+          status=$?
+          echo "$output"
+          if [ $status -ne 0 ]; then
+            echo "$output" | grep -aiE 'error|exception|detail|hint|fatal' | head -20               | while IFS= read -r line; do echo "::error::guarantees: $line"; done
+            exit $status
+          fi
 
       # BEFORE the seed, deliberately. This script writes and deletes rows and refuses to run
       # against a database that already holds users — and the seed creates nine development
       # fixtures. Running it afterwards aborts every time.
       - name: Verify database guarantees actually bite
-        run: pnpm --filter @langgol/db run verify:behaviour
+        run: |
+          set +e
+          output=$(pnpm --filter @langgol/db run verify:behaviour 2>&1)
+          status=$?
+          echo "$output"
+          if [ $status -ne 0 ]; then
+            echo "$output" | grep -aiE 'error|exception|detail|hint|fatal' | head -20               | while IFS= read -r line; do echo "::error::behaviour: $line"; done
+            exit $status
+          fi
 
       - name: Seed reference data
         run: pnpm db:seed
