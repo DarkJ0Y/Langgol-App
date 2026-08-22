@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState, useState } from 'react'
-import { Alert, Button, Choice, FormField, Input, PhoneInput } from '@langgol/ui/components'
+import { Alert, Button, Checkbox, FormField, Input, PhoneInput } from '@langgol/ui/components'
 import { createAddressAction, updateAddressAction } from './actions'
 import { idleAddressState } from './state'
 import { AreaPicker, type AreaOption, type AreaPickerLabels } from './area-picker'
@@ -305,12 +305,7 @@ export function AddressForm({
         )}
       </div>
 
-      <Choice
-        name="makeDefault"
-        value="yes"
-        label={labels.makeDefault}
-        defaultChecked={values.isDefault}
-      />
+      <Checkbox name="makeDefault" label={labels.makeDefault} defaultChecked={values.isDefault} />
 
       <Button type="submit" loading={pending}>
         {pending ? labels.loading : labels.save}

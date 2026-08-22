@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
-import { Alert, Button, Choice } from '@langgol/ui/components'
+import { Alert, Button, Checkbox } from '@langgol/ui/components'
 import { acceptTermsAction, saveConsentPreferencesAction } from './actions'
 import { CONSENT_FIELD_PREFIX } from './form'
 import { idleConsentState } from './state'
@@ -134,9 +134,8 @@ export function ConsentForm({
 
         {optional.map((item) => (
           <div key={item.type} className="lg-stack-tight">
-            <Choice
+            <Checkbox
               name={`${CONSENT_FIELD_PREFIX}${item.type}`}
-              value="on"
               label={item.title}
               description={item.purpose}
               // Reflects what is stored. Never defaulted to true.

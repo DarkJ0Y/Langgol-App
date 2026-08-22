@@ -232,6 +232,38 @@ export function Select({ invalid, describedBy, className, children, ...rest }: S
 
 /* ------------------------------------------------------------------ choices */
 
+export interface CheckboxProps {
+  readonly name: string
+  readonly value?: string | undefined
+  readonly label: string
+  readonly description?: string | undefined
+  readonly defaultChecked?: boolean | undefined
+}
+
+/**
+ * An independent yes/no the user can turn on AND off.
+ *
+ * Exists because `Choice` is a radio, and a radio alone in its group is a one-way switch: HTML
+ * gives no way to clear it by clicking. Used for a consent toggle that would otherwise be
+ * impossible to withdraw, which is exactly the bug that prompted this component.
+ *
+ * Shares `Choice`'s markup and classes on purpose — the two read as one control family, and the
+ * difference the user feels is that this one lets go.
+ */
+export function Checkbox({ name, value, label, description, defaultChecked }: CheckboxProps) {
+  return (
+    <label className="lg-choice">
+      <input type="checkbox" name={name} value={value ?? 'on'} defaultChecked={defaultChecked} />
+      <span>
+        <span className="lg-choice__label">{label}</span>
+        {description === undefined ? null : (
+          <span className="lg-choice__description">{description}</span>
+        )}
+      </span>
+    </label>
+  )
+}
+
 export interface ChoiceProps {
   readonly name: string
   readonly value: string
@@ -245,6 +277,13 @@ export interface ChoiceProps {
  *
  * A real `<input type="radio">` under a label rather than a styled `<div>`: keyboard navigation,
  * grouping and screen-reader semantics come free, and nothing here can get them wrong.
+ */
+/**
+ * A radio: ONE answer from several, in a group sharing a `name`.
+ *
+ * Not the right control for an independent yes/no — a radio alone in its group can be checked
+ * but never unchecked, because the only way to clear a radio is to select a sibling. Use
+ * `Checkbox` for anything a user has to be able to turn back off.
  */
 export function Choice({ name, value, label, description, defaultChecked }: ChoiceProps) {
   return (
