@@ -24,9 +24,21 @@
 import 'server-only'
 import { cookies } from 'next/headers'
 import { env } from '@langgol/shared'
-import { OTP_HANDOFF_COOKIE, OTP_HANDOFF_COOKIE_DEV } from './otp-handoff-policy'
+import {
+  OTP_HANDOFF_COOKIE,
+  OTP_HANDOFF_COOKIE_DEV,
+  decodeHandoff,
+  encodeHandoff,
+  type OtpHandoff,
+} from './otp-handoff-policy'
 
-export { HANDOFF_GRACE_SECONDS, handoffExpiry } from './otp-handoff-policy'
+export {
+  HANDOFF_GRACE_SECONDS,
+  destinationAfterSignIn,
+  handoffExpiry,
+  type OtpHandoff,
+  type SignupIntent,
+} from './otp-handoff-policy'
 
 export function otpHandoffCookieName(): string {
   return env().isProduction || env().APP_ENV === 'staging'
@@ -34,11 +46,18 @@ export function otpHandoffCookieName(): string {
     : OTP_HANDOFF_COOKIE_DEV
 }
 
-/** Remember which number a code was just sent to. Overwrites any previous attempt. */
-export async function rememberOtpPhone(phone: string, expiresAt: Date): Promise<void> {
+/**
+ * Remember which number a code was just sent to, and — for a registration — who said they were
+ * sending it. Overwrites any previous attempt.
+ *
+ * The signup intent rides in the same cookie rather than in a hidden field on the verify form.
+ * A hidden field would let a caller attach a different role to a verification they had already
+ * started, and the server would have no way to know which one the person actually saw.
+ */
+export async function rememberOtpHandoff(handoff: OtpHandoff, expiresAt: Date): Promise<void> {
   const store = await cookies()
   const secure = env().isProduction || env().APP_ENV === 'staging'
-  store.set(otpHandoffCookieName(), phone, {
+  store.set(otpHandoffCookieName(), encodeHandoff(handoff), {
     httpOnly: true,
     secure,
     // `lax` rather than `strict`: the value has to survive the redirect from the request step.
@@ -48,13 +67,13 @@ export async function rememberOtpPhone(phone: string, expiresAt: Date): Promise<
   })
 }
 
-export async function readOtpPhone(): Promise<string | null> {
+export async function readOtpHandoff(): Promise<OtpHandoff | null> {
   const store = await cookies()
-  return store.get(otpHandoffCookieName())?.value ?? null
+  return decodeHandoff(store.get(otpHandoffCookieName())?.value)
 }
 
 /** Spend it. Called on success and on any terminal failure, so a stale number cannot linger. */
-export async function forgetOtpPhone(): Promise<void> {
+export async function forgetOtpHandoff(): Promise<void> {
   const store = await cookies()
   store.delete(otpHandoffCookieName())
 }

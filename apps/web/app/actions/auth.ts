@@ -21,7 +21,14 @@ import { isErr } from '@langgol/shared'
 import { authMode, developmentDeps, otpDeps, authDeps } from '@/lib/deps'
 import { getLocale } from '@/lib/locale'
 import { clearSessionCookie, getSession, readSessionToken, setSessionCookie } from '@/lib/session'
-import { forgetOtpPhone, handoffExpiry, readOtpPhone, rememberOtpPhone } from '@/lib/otp-handoff'
+import {
+  destinationAfterSignIn,
+  forgetOtpHandoff,
+  handoffExpiry,
+  readOtpHandoff,
+  rememberOtpHandoff,
+} from '@/lib/otp-handoff'
+import { MAX_FULL_NAME_LENGTH, REGISTERABLE_ROLES } from '@/lib/otp-handoff-policy'
 import type { ActionState } from './state'
 
 /** Client-supplied strings are never trusted; the request's own metadata is. */
@@ -94,12 +101,81 @@ export async function requestOtpAction(
    * reaches browser history and every `Referer`, and a form field would be attacker-controlled,
    * which would let a stolen code be redeemed against somebody else's number.
    */
-  await rememberOtpPhone(
-    parsed.data.phone,
+  await rememberOtpHandoff(
+    { phone: parsed.data.phone },
     handoffExpiry(new Date(), result.value.expiresInSeconds),
   )
 
   // The URL carries only the MASKED number, for the "we sent a code to …" line.
+  redirect(`/auth/verify?to=${encodeURIComponent(result.value.maskedPhone)}`)
+}
+
+/* ------------------------------------------------------------------ registration */
+
+const RegisterSchema = z.object({
+  phone: z.string().min(1).max(32),
+  fullName: z.string().trim().min(1).max(MAX_FULL_NAME_LENGTH),
+  role: z.enum(REGISTERABLE_ROLES),
+})
+
+/**
+ * Register: name and role first, then the code.
+ *
+ * The order is the point. Verifying first and asking afterwards needs somewhere to hang the
+ * half-made account while the questions are answered — a session a brand-new user does not have,
+ * or a user row with no name and no role, which is a state nothing else in the system is
+ * prepared for. Asking first means the account is created complete in a single write, or not at
+ * all.
+ *
+ * The answers travel in the same HttpOnly cookie as the phone. `verifyOtp` re-checks the role
+ * against its own allowlist regardless — this action is the outer of two gates.
+ *
+ * Note that this deliberately does NOT tell the caller whether the number is already registered.
+ * An existing user who comes through this screen simply signs in, and their stored name and
+ * roles are left untouched. Reporting "that number already exists" would turn the register form
+ * into an oracle for which numbers hold accounts.
+ */
+export async function registerAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  if (authMode() !== 'otp') return { status: 'error', errorKey: 'errors.unexpected' }
+
+  const parsed = RegisterSchema.safeParse({
+    phone: formData.get('phone'),
+    fullName: formData.get('fullName'),
+    role: formData.get('role'),
+  })
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path[0]
+    return {
+      status: 'error',
+      errorKey:
+        field === 'phone'
+          ? 'errors.phoneEmpty'
+          : field === 'fullName'
+            ? 'errors.nameEmpty'
+            : 'errors.notAllowed',
+      field: typeof field === 'string' ? field : undefined,
+    }
+  }
+
+  const meta = await requestMeta()
+  const result = await requestOtp(
+    { phone: parsed.data.phone, locale: await getLocale(), ...meta, deviceId: null },
+    await otpDeps(),
+  )
+
+  if (isErr(result)) return toActionState(result.error.code, result.error.meta)
+
+  await rememberOtpHandoff(
+    {
+      phone: parsed.data.phone,
+      signup: { fullName: parsed.data.fullName, role: parsed.data.role },
+    },
+    handoffExpiry(new Date(), result.value.expiresInSeconds),
+  )
+
   redirect(`/auth/verify?to=${encodeURIComponent(result.value.maskedPhone)}`)
 }
 
@@ -109,11 +185,7 @@ export async function requestOtpAction(
  * every correct code was reported invalid. The number now comes from the handoff cookie, which
  * also means a caller cannot choose whose challenge they are answering.
  */
-const VerifySchema = z.object({
-  code: z.string().min(1).max(8),
-  fullName: z.string().max(120).optional(),
-  role: z.string().max(32).optional(),
-})
+const VerifySchema = z.object({ code: z.string().min(1).max(8) })
 
 export async function verifyOtpAction(
   _previous: ActionState,
@@ -121,18 +193,14 @@ export async function verifyOtpAction(
 ): Promise<ActionState> {
   if (authMode() !== 'otp') return { status: 'error', errorKey: 'errors.unexpected' }
 
-  const phone = await readOtpPhone()
-  if (phone === null) {
+  const handoff = await readOtpHandoff()
+  if (handoff === null) {
     // The cookie expired, or this browser never asked for a code. Sending them back to request
     // one is the only honest answer; the challenge cannot be found without the number.
     return { status: 'error', errorKey: 'errors.codeExpired', field: 'code' }
   }
 
-  const parsed = VerifySchema.safeParse({
-    code: formData.get('code'),
-    fullName: formData.get('fullName') ?? undefined,
-    role: formData.get('role') ?? undefined,
-  })
+  const parsed = VerifySchema.safeParse({ code: formData.get('code') })
   if (!parsed.success) return { status: 'error', errorKey: 'errors.codeInvalid', field: 'code' }
 
   const meta = await requestMeta()
@@ -140,14 +208,24 @@ export async function verifyOtpAction(
 
   const result = await verifyOtp(
     {
-      phone,
+      phone: handoff.phone,
       code: parsed.data.code,
-      ...(parsed.data.fullName !== undefined && parsed.data.role !== undefined
+      /*
+       * From the cookie, never from the form. The name and role were shown to the person on the
+       * register screen and set server-side there; a hidden field here would let a caller attach
+       * a different role to a verification they had already begun.
+       *
+       * An existing account ignores this entirely — `verifyOtp` uses it only when there is no
+       * user to find — so a returning farmer who happens to come through the register screen
+       * signs in with their stored roles untouched.
+       */
+      ...(handoff.signup !== undefined
         ? {
             signup: {
-              fullName: parsed.data.fullName,
-              // The use case re-checks this against the allowlist; the form is not the boundary.
-              role: parsed.data.role as 'FARMER' | 'CONSUMER' | 'RETAILER',
+              fullName: handoff.signup.fullName,
+              // The use case re-checks this against its own allowlist; the cookie is not the
+              // boundary, it is the outer of two gates.
+              role: handoff.signup.role,
               preferredLanguage: locale === 'bn' ? ('BN' as const) : ('EN' as const),
             },
           }
@@ -160,10 +238,17 @@ export async function verifyOtpAction(
   if (isErr(result)) return toActionState(result.error.code, result.error.meta)
 
   // Spent. A number left in a cookie after the code it accompanied is gone serves no purpose.
-  await forgetOtpPhone()
+  await forgetOtpHandoff()
 
   await setSessionCookie(result.value.sessionToken, result.value.expiresAt)
-  redirect('/auth/role')
+
+  /*
+   * A brand-new account already chose its role on the register screen, so sending it to
+   * `/auth/role` would ask the same question twice. A returning user has roles already. Either
+   * way the role screen is the wrong next step; it stays reachable for somebody who wants to add
+   * a second role.
+   */
+  redirect(destinationAfterSignIn(result.value.roles))
 }
 
 /* ---------------------------------------------------------- development mode */
@@ -186,7 +271,10 @@ export async function developmentSignInAction(
   if (isErr(result)) return toActionState(result.error.code, result.error.meta)
 
   await setSessionCookie(result.value.sessionToken, result.value.expiresAt)
-  redirect('/auth/role')
+
+  // The same destination rule as a real sign-in, so signing in as the farmer fixture exercises
+  // the farmer's actual first screen rather than a path only development takes.
+  redirect(destinationAfterSignIn(result.value.roles))
 }
 
 /* ------------------------------------------------------------ role selection */
@@ -211,7 +299,8 @@ export async function selectRoleAction(
 
   if (isErr(result)) return toActionState(result.error.code, result.error.meta)
 
-  redirect('/')
+  // Somebody who has just said they want to sell has setup left to do; anybody else came to buy.
+  redirect(destinationAfterSignIn([parsed.data.role]))
 }
 
 /* --------------------------------------------------------------------- exit */

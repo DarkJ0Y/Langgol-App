@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createTranslator } from '@langgol/i18n'
-import { Card } from '@langgol/ui/components'
+import { Card, LinkButton } from '@langgol/ui/components'
 import { getLocale } from '@/lib/locale'
 import { authMode } from '@/lib/deps'
 import { PhoneForm } from './form'
@@ -26,6 +26,15 @@ export default async function PhonePage() {
           unexpected: t.t('errors.unexpected'),
         }}
       />
+
+      {/*
+        Sign-in cannot create an account: `verifyOtp` needs a name and a role for an unknown
+        number and this screen collects neither. Without this link a new user would request a
+        code, type it correctly, and be told their number is not registered with nowhere to go.
+      */}
+      <LinkButton href="/auth/register" variant="ghost">
+        {t.t('auth.registerLink')}
+      </LinkButton>
     </Card>
   )
 }
