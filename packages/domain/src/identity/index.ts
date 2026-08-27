@@ -87,3 +87,11 @@ export {
   type VerificationTokenState,
   type VerificationVerdict,
 } from './verification.js'
+
+export {
+  TEST_OTP_NUMBERS,
+  fixedOtpCodeFor,
+  isTestOtpPhone,
+  testOtpNumberFor,
+  type TestOtpNumber,
+} from './test-numbers.js'

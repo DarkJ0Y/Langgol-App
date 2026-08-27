@@ -36,7 +36,18 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
      * explicit choice is present.
      */
     <html lang={locale} data-theme="dark">
-      <body>
+      {/*
+       * `suppressHydrationWarning` covers ONE thing: browser extensions that write attributes
+       * onto <body> before React hydrates. Grammarly is the usual culprit — it adds
+       * `data-gr-ext-installed` and `data-new-gr-c-s-check-loaded` — and password managers and
+       * dark-mode extensions do the same. The server cannot know about them, so every affected
+       * developer sees a hydration warning about markup the app never produced.
+       *
+       * Deliberately narrow: React applies this to this element's own attributes only, one level
+       * deep. A genuine hydration mismatch anywhere inside still reports normally, so this hides
+       * the extension noise without hiding our own bugs.
+       */}
+      <body suppressHydrationWarning>
         <SkipLink label={locale === 'bn' ? 'মূল অংশে যান' : 'Skip to content'} />
         {isDevelopmentAuth() ? (
           <DevelopmentBanner

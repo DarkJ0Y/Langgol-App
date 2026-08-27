@@ -61,6 +61,15 @@ export interface RequestOtpDeps {
   readonly challenges: OtpChallengeRepository
   readonly delivery: OtpDeliveryPort
   readonly audit: AuditPort
+  /**
+   * Returns a predictable code for a reserved test number, or null for every real number.
+   *
+   * Optional, and **absent in production** — `otpDeps()` only supplies it outside production and
+   * staging, so there the branch below is unreachable rather than merely unused. See
+   * `packages/domain/src/identity/test-numbers.ts` for why this is not a verification bypass:
+   * the code it returns is hashed, stored, expired and attempt-capped exactly like a random one.
+   */
+  readonly fixedCode?: ((phone: E164Phone) => string | null) | undefined
 }
 
 export async function requestOtp(
@@ -170,7 +179,12 @@ export async function requestOtp(
    */
   await deps.challenges.invalidateOutstanding({ phone, purpose: 'LOGIN', at: now })
 
-  const code = deps.random.numericCode(OTP_LENGTH)
+  /*
+   * A reserved test number gets its published code; everything else gets a random one. Note what
+   * is NOT skipped: the code is hashed below, stored with the same expiry, and verified through
+   * the same attempt-capped path. Only the generator changes.
+   */
+  const code = deps.fixedCode?.(phone) ?? deps.random.numericCode(OTP_LENGTH)
   const codeHash = await deps.hasher.hash(code)
   const expiresAt = new Date(now.getTime() + ttlSeconds * 1000)
 

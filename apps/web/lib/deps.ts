@@ -34,6 +34,7 @@ import {
   verificationTokenRepository,
 } from '@langgol/infrastructure'
 import { env } from '@langgol/shared'
+import { fixedOtpCodeFor } from '@langgol/domain/identity'
 import type { AppEnvironment, AuthMode } from '@langgol/domain/identity'
 
 export async function authDeps() {
@@ -50,8 +51,23 @@ export async function authDeps() {
   }
 }
 
+/**
+ * OTP dependencies.
+ *
+ * `fixedCode` is the lock that keeps the reserved test numbers out of production. It is supplied
+ * ONLY outside production and staging, so in those environments `requestOtp` has no way to obtain
+ * a predictable code — the branch is unreachable rather than disabled by a flag somebody could
+ * flip. See packages/domain/src/identity/test-numbers.ts.
+ */
 export async function otpDeps() {
-  return { ...(await authDeps()), delivery: createOtpDelivery() }
+  const configuration = env()
+  const isReal = configuration.isProduction || configuration.APP_ENV === 'staging'
+
+  return {
+    ...(await authDeps()),
+    delivery: createOtpDelivery(),
+    ...(isReal ? {} : { fixedCode: fixedOtpCodeFor }),
+  }
 }
 
 export async function developmentDeps() {
