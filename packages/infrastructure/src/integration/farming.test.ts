@@ -28,7 +28,19 @@ const enabled =
 const suite = enabled ? describe : describe.skip
 
 const prisma = new PrismaClient()
-const PHONE = '+8801793000001'
+
+/**
+ * This file's own phone block, and it must stay its own.
+ *
+ * Vitest runs test FILES in parallel against one database, and `users.phone` is UNIQUE — so two
+ * files sharing a number race to create the same row and one of them fails with a unique-constraint
+ * error that looks nothing like the real cause. This file originally reused `+8801793…`, which
+ * `location.test.ts` already owned; it passed in CI on timing luck and failed the first time it met
+ * a slower connection.
+ *
+ * Blocks currently spoken for: 792 consent, 793 location, 795 verification, 796 account.
+ */
+const PHONE = '+8801794000001'
 
 afterAll(async () => {
   await prisma.$disconnect()
@@ -228,7 +240,7 @@ suite('the repository against real SQL', () => {
      */
     const user = await prisma.user.create({
       data: {
-        phone: '+8801793000002',
+        phone: '+8801794000002',
         fullName: 'নতুন চাষি',
         roles: { create: { role: 'FARMER' } },
       },
@@ -289,7 +301,7 @@ suite('the repository against real SQL', () => {
 
   it('reports null rather than throwing for a user with no profile', async () => {
     const user = await prisma.user.create({
-      data: { phone: '+8801793000003', fullName: 'প্রোফাইলহীন' },
+      data: { phone: '+8801794000003', fullName: 'প্রোফাইলহীন' },
     })
     try {
       expect(await farmerProfileRepository.findByUserId(user.id)).toBeNull()
@@ -304,7 +316,7 @@ suite('the repository against real SQL', () => {
   it('removes the profile with the user, since it is their record', async () => {
     const user = await prisma.user.create({
       data: {
-        phone: '+8801793000004',
+        phone: '+8801794000004',
         fullName: 'মুছে যাবে',
         roles: { create: { role: 'FARMER' } },
       },

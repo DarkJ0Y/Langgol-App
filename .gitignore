@@ -47,3 +47,4 @@ packages/db/generated/
 # Local scratch
 tmp/
 scratch/
+.neon
