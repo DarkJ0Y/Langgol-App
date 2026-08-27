@@ -19,6 +19,7 @@ import {
   consentRepository,
   cryptoRandom,
   createOtpDelivery,
+  farmerProfileRepository,
   getConfig,
   listingRepository,
   orderNumberGenerator,
@@ -185,6 +186,22 @@ export async function consentDeps() {
     config,
     clock: systemClock,
     consents: consentRepository,
+    audit: auditPort,
+  }
+}
+
+/**
+ * The farmer profile use cases.
+ *
+ * No config snapshot: nothing about the farming questionnaire is a versioned business parameter.
+ * The land-unit conversions are physical constants and the plausibility bounds are typo guards,
+ * both of which live in the domain — putting them in `PlatformConfig` would imply somebody may
+ * tune them, and a bigha does not change because the pricing committee met.
+ */
+export async function farmerDeps() {
+  return {
+    clock: systemClock,
+    farmers: farmerProfileRepository,
     audit: auditPort,
   }
 }

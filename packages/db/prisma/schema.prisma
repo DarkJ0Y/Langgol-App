@@ -550,6 +550,81 @@ enum SettlementRail {
   REGULATED_PROVIDER
 }
 
+/// How somebody farms — six independent axes, mirrored by the vocabularies in
+/// packages/domain/src/farming/catalogue.ts, which an integration test asserts against
+/// `enum_range` so the two cannot drift apart.
+///
+/// Closed lists rather than free text for the same reason the product catalogue is curated
+/// (§6.1): "সেচ আছে", "sech ache" and "irrigated" are one fact typed three ways, and free text
+/// cannot be aggregated, translated, or matched against an advisory rule.
+
+/// `MIXED` is the common answer, not the fallback: the smallholder norm is rice plus a homestead
+/// vegetable plot plus a few birds. A list without it would force most farmers to misdescribe
+/// themselves.
+enum FarmerType {
+  CROP
+  VEGETABLE
+  FRUIT
+  FISH
+  LIVESTOCK
+  POULTRY
+  DAIRY
+  MIXED
+}
+
+/// The units a Bangladeshi farmer actually speaks. Nobody says "0.27 hectares"; they say
+/// "দুই বিঘা". The unit is stored beside the number and converted in the domain, never in the
+/// farmer's head. docs/08_BANGLADESH_CONTEXT.md §2
+enum LandUnit {
+  DECIMAL
+  KATHA
+  BIGHA
+  ACRE
+  HECTARE
+}
+
+/// Tenure, which matters well beyond bookkeeping: a sharecropper (বর্গা) does not control what is
+/// planted and usually cannot pledge the crop, so credit and advisory features must be able to
+/// tell them apart from an owner.
+enum LandOwnershipType {
+  OWNED
+  LEASED
+  SHARECROPPED
+  MIXED
+  COMMUNITY
+}
+
+/// How water reaches the field — deliberately separate from WHERE it comes from. The same pond
+/// serves a bucket and a sprinkler, and those are different capital positions.
+enum IrrigationMethod {
+  MANUAL
+  FLOOD
+  FURROW
+  SPRINKLER
+  DRIP
+}
+
+enum WaterSource {
+  RAIN
+  RIVER
+  CANAL
+  POND
+  SHALLOW_TUBEWELL
+  DEEP_TUBEWELL
+  SUPPLY
+}
+
+/// The farmer's OWN description of their practice. `ORGANIC` here is a self-declaration and must
+/// never be surfaced to a buyer as a certified claim — that would turn an unverified answer into
+/// a marketing assertion the platform cannot stand behind. Certification, if it is ever added,
+/// is a separate field with evidence behind it.
+enum FarmingMethod {
+  CONVENTIONAL
+  ORGANIC
+  INTEGRATED
+  MIXED
+}
+
 model FarmerProfile {
   id                 String             @id @default(uuid()) @db.Uuid
   userId             String             @unique @map("user_id") @db.Uuid
@@ -564,6 +639,29 @@ model FarmerProfile {
   payoutAccountName  String?            @map("payout_account_name")
   payoutVerifiedAt   DateTime?          @map("payout_verified_at")
   payoutChangedAt    DateTime?          @map("payout_changed_at")
+
+  /// --- How they farm (P5) -------------------------------------------------------------
+  ///
+  /// EVERY field here is nullable, and that is the design. A farmer signing up on a borrowed
+  /// phone at the edge of coverage must reach a working account; "has not answered the
+  /// irrigation question yet" is not the same as "invalid". NID, payout details, GPS and email
+  /// are separate systems with their own verification and none of them gates this profile.
+  ///
+  /// What the database DOES enforce is internal consistency — see the p5 migration's CHECK
+  /// constraints. A profile may be incomplete; it may not be self-contradictory.
+  farmingExperienceYears Int?               @map("farming_experience_years")
+  farmerType             FarmerType?        @map("farmer_type")
+  /// The farmer's own number, scaled by 1000 so "আড়াই বিঘা" survives as 2500 rather than as a
+  /// float. Meaningless without `landUnit`, and a CHECK keeps the pair together.
+  totalLandAmountMilli   Int?               @map("total_land_amount_milli")
+  /// Kept rather than normalised away: a farmer who said "two bigha" and is shown "66 decimals"
+  /// will reasonably conclude the record is wrong. Conversion happens on read, in the domain.
+  landUnit               LandUnit?          @map("land_unit")
+  ownershipType          LandOwnershipType? @map("ownership_type")
+  irrigationAvailable    Boolean?           @map("irrigation_available")
+  irrigationMethod       IrrigationMethod?  @map("irrigation_method")
+  waterSource            WaterSource?       @map("water_source")
+  farmingMethod          FarmingMethod?     @map("farming_method")
 
   /// NEW | STANDARD | TRUSTED — governs the hold between delivery and payout (D5, open Q2).
   riskTier                    String @default("NEW") @map("risk_tier")

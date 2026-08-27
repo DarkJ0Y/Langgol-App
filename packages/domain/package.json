@@ -14,6 +14,7 @@
     "./identity": "./src/identity/index.ts",
     "./policy": "./src/policy/index.ts",
     "./consent": "./src/consent/index.ts",
+    "./farming": "./src/farming/index.ts",
     "./notifications": "./src/notifications/index.ts",
     "./geo": "./src/geo/index.ts",
     "./location": "./src/location/index.ts",

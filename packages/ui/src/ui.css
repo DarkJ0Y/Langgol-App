@@ -759,3 +759,42 @@ a.lg-button--secondary {
   width: auto;
   min-width: 14rem;
 }
+
+/* ------------------------------------------------------------------ progress */
+
+/*
+ * A native <progress> rather than a styled div, so the value is announced to a screen reader and
+ * respects the browser's own zoom without any help from us. Only the appearance is restyled.
+ *
+ * The track is `--lg-border` rather than a sunken-surface token: the meter sits on a card, which
+ * is already `--lg-surface-raised`, and a track the same colour as its background reads as an
+ * empty bar rather than an unfilled one.
+ */
+.lg-progress {
+  inline-size: 100%;
+  block-size: var(--lg-space-3);
+  appearance: none;
+  border: 0;
+  border-radius: var(--lg-radius-full);
+  overflow: hidden;
+  background-color: var(--lg-border);
+}
+
+.lg-progress::-webkit-progress-bar {
+  background-color: var(--lg-border);
+}
+
+.lg-progress::-webkit-progress-value {
+  background-color: var(--lg-action-primary);
+  transition: inline-size var(--lg-motion-base) var(--lg-motion-easing);
+}
+
+.lg-progress::-moz-progress-bar {
+  background-color: var(--lg-action-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lg-progress::-webkit-progress-value {
+    transition: none;
+  }
+}

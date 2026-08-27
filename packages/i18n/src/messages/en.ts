@@ -46,6 +46,14 @@ export const en: Catalogue = {
     roleRetailer: 'Buy for my shop',
     nameLabel: 'Your name',
     signOut: 'Sign out',
+
+    registerTitle: 'Create your account',
+    registerSubtitle: 'Three things, then we will send you a code.',
+    registerNameHelp: 'The name people will know you by',
+    registerRoleLabel: 'What would you like to do?',
+    registerSubmit: 'Send code',
+    registerLink: 'New here? Create an account',
+    haveAccount: 'Already have an account? Sign in',
   },
 
   errors: {
@@ -60,6 +68,9 @@ export const en: Catalogue = {
     network: 'No internet connection. Please try again.',
     unexpected: 'Something went wrong. Please try again.',
     notFound: 'Not found',
+    experienceInvalid: 'Enter your farming years as a number',
+    landInvalid: 'Enter the land area as a number, for example 2 or 2.5',
+    irrigationInconsistent: 'You said there is no irrigation, so leave the method blank',
     notAllowed: 'You do not have permission',
     nameEmpty: 'Enter your name',
     nameTooLong: 'That name is too long. Please shorten it.',
@@ -261,6 +272,89 @@ export const en: Catalogue = {
     grantedOn: '{date} — allowed',
     withdrawnOn: '{date} — withdrawn',
     version: 'Version {version}',
+  },
+
+  farmer: {
+    onboardingTitle: 'About your farming',
+    onboardingSubtitle: 'A few questions. Answer what you know — the rest can wait until later.',
+    optionalNote: 'Skipping a question is fine. You can add it later.',
+
+    experienceLabel: 'How long have you been farming?',
+    experienceHint: 'Just the number. Enter 0 if you started this year.',
+    experienceUnit: 'years',
+
+    farmerTypeLabel: 'What do you mainly grow or raise?',
+
+    landLabel: 'How much land in total?',
+    landHint: 'Choose the unit you normally use',
+    landUnitLabel: 'Unit',
+
+    ownershipLabel: 'How do you hold the land?',
+
+    irrigationLabel: 'Do you have irrigation?',
+    irrigationYes: 'Yes, I can irrigate',
+    irrigationNo: 'No, I depend on rain',
+    irrigationMethodLabel: 'How do you irrigate?',
+    waterSourceLabel: 'Where does the water come from?',
+
+    methodLabel: 'How do you farm?',
+    methodNote: 'This is your own description, not a certification.',
+
+    save: 'Save',
+    saved: 'Your details have been saved',
+    skip: 'I will do this later',
+
+    completionTitle: 'Profile progress',
+    completionPercent: '{percent}% complete',
+    completionDone: 'Your profile is complete',
+    completionRemaining: '{count} questions left',
+
+    dashboardTitle: 'My farm',
+    dashboardWelcome: 'Welcome, {name}',
+    profileCard: 'Farming details',
+    profileCardHint: 'Your land and irrigation',
+    notAnswered: 'Not answered',
+    editProfile: 'Change details',
+
+    typeCROP: 'Rice or other grain',
+    typeVEGETABLE: 'Vegetables',
+    typeFRUIT: 'Fruit',
+    typeFISH: 'Fish',
+    typeLIVESTOCK: 'Livestock',
+    typePOULTRY: 'Poultry',
+    typeDAIRY: 'Dairy',
+    typeMIXED: 'A mix',
+
+    unitDECIMAL: 'Decimal (শতক)',
+    unitKATHA: 'Katha',
+    unitBIGHA: 'Bigha',
+    unitACRE: 'Acre',
+    unitHECTARE: 'Hectare',
+
+    ownershipOWNED: 'I own it',
+    ownershipLEASED: 'Rented or leased',
+    ownershipSHARECROPPED: 'Sharecropped (বর্গা)',
+    ownershipMIXED: 'Some owned, some sharecropped',
+    ownershipCOMMUNITY: 'Community or shared land',
+
+    irrigationMANUAL: 'By hand or bucket',
+    irrigationFLOOD: 'Flooding the field',
+    irrigationFURROW: 'Channels between rows',
+    irrigationSPRINKLER: 'Sprinkler',
+    irrigationDRIP: 'Drip irrigation',
+
+    waterRAIN: 'Rain',
+    waterRIVER: 'River',
+    waterCANAL: 'Canal',
+    waterPOND: 'Pond',
+    waterSHALLOW_TUBEWELL: 'Shallow tubewell',
+    waterDEEP_TUBEWELL: 'Deep tubewell',
+    waterSUPPLY: 'Government irrigation scheme',
+
+    methodCONVENTIONAL: 'Conventional',
+    methodORGANIC: 'Organic',
+    methodINTEGRATED: 'Integrated pest management',
+    methodMIXED: 'A mix',
   },
 
   empty: {

@@ -43,6 +43,16 @@ export const bn = {
     roleRetailer: 'দোকানের জন্য কিনব',
     nameLabel: 'আপনার নাম',
     signOut: 'বের হয়ে যান',
+
+    // Registration. Name and role are asked BEFORE the code, so the account is created complete
+    // in one write — see apps/web/app/actions/auth.ts.
+    registerTitle: 'নতুন অ্যাকাউন্ট খুলুন',
+    registerSubtitle: 'তিনটি তথ্য দিন। এরপর আমরা একটি কোড পাঠাব।',
+    registerNameHelp: 'যে নামে আপনাকে চিনবে',
+    registerRoleLabel: 'আপনি কী করতে চান?',
+    registerSubmit: 'কোড পাঠান',
+    registerLink: 'নতুন? অ্যাকাউন্ট খুলুন',
+    haveAccount: 'আগে থেকেই অ্যাকাউন্ট আছে? প্রবেশ করুন',
   },
 
   errors: {
@@ -58,6 +68,9 @@ export const bn = {
     network: 'ইন্টারনেট সংযোগ পাওয়া যাচ্ছে না। আবার চেষ্টা করুন।',
     unexpected: 'কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।',
     notFound: 'পাওয়া যায়নি',
+    experienceInvalid: 'কত বছর চাষ করছেন, শুধু সংখ্যায় লিখুন',
+    landInvalid: 'জমির পরিমাণ সংখ্যায় লিখুন, যেমন ২ বা ২.৫',
+    irrigationInconsistent: 'সেচ নেই বললে সেচের পদ্ধতি দেওয়া যাবে না',
     notAllowed: 'আপনার অনুমতি নেই',
     nameEmpty: 'আপনার নাম লিখুন',
     nameTooLong: 'নামটি অনেক বড় হয়ে গেছে। ছোট করে লিখুন।',
@@ -258,6 +271,99 @@ export const bn = {
     grantedOn: '{date} — অনুমতি দিয়েছেন',
     withdrawnOn: '{date} — অনুমতি তুলে নিয়েছেন',
     version: 'সংস্করণ {version}',
+  },
+
+  /*
+   * The farmer questionnaire.
+   *
+   * Written the way a farmer speaks, not the way the column is named. "মোট জমি কতটুকু?" rather
+   * than "total land area", and every unit is one a farmer actually uses — শতক, কাঠা, বিঘা. A
+   * question phrased in agronomist's English is a question that gets abandoned.
+   *
+   * Every one of them is skippable, and the screen says so.
+   */
+  farmer: {
+    onboardingTitle: 'আপনার চাষের তথ্য',
+    onboardingSubtitle: 'কয়েকটি প্রশ্ন। যেগুলো জানেন সেগুলো দিন, বাকিগুলো পরে দিলেও চলবে।',
+    optionalNote: 'কোনো প্রশ্ন বাদ দিলে সমস্যা নেই। পরে যোগ করতে পারবেন।',
+
+    experienceLabel: 'কত বছর ধরে চাষ করছেন?',
+    experienceHint: 'শুধু সংখ্যা লিখুন। এই বছর শুরু করলে ০ লিখুন।',
+    experienceUnit: 'বছর',
+
+    farmerTypeLabel: 'প্রধানত কী চাষ করেন?',
+
+    landLabel: 'মোট জমি কতটুকু?',
+    landHint: 'নিজের হিসাবে যে এককে বলেন সেটিই বেছে নিন',
+    landUnitLabel: 'একক',
+
+    ownershipLabel: 'জমি কীভাবে পেয়েছেন?',
+
+    irrigationLabel: 'সেচের ব্যবস্থা আছে?',
+    irrigationYes: 'হ্যাঁ, সেচ দিতে পারি',
+    irrigationNo: 'না, বৃষ্টির উপর নির্ভর করি',
+    irrigationMethodLabel: 'কীভাবে সেচ দেন?',
+    waterSourceLabel: 'পানি কোথা থেকে আনেন?',
+
+    methodLabel: 'কীভাবে চাষ করেন?',
+    methodNote: 'এটি আপনার নিজের কথা। কোনো সার্টিফিকেট নয়।',
+
+    save: 'সংরক্ষণ করুন',
+    saved: 'আপনার তথ্য সংরক্ষণ হয়েছে',
+    skip: 'পরে দেব',
+
+    completionTitle: 'প্রোফাইল কতটুকু হয়েছে',
+    completionPercent: '{percent}% সম্পূর্ণ',
+    completionDone: 'আপনার প্রোফাইল সম্পূর্ণ',
+    completionRemaining: 'আরও {count}টি প্রশ্ন বাকি',
+
+    dashboardTitle: 'আমার খামার',
+    dashboardWelcome: 'স্বাগতম, {name}',
+    profileCard: 'চাষের তথ্য',
+    profileCardHint: 'আপনার জমি ও সেচের তথ্য',
+    notAnswered: 'দেননি',
+    editProfile: 'তথ্য বদলান',
+
+    // Vocabularies. Keyed by the enum members in packages/domain/src/farming/catalogue.ts.
+    typeCROP: 'ধান বা দানাশস্য',
+    typeVEGETABLE: 'সবজি',
+    typeFRUIT: 'ফল',
+    typeFISH: 'মাছ',
+    typeLIVESTOCK: 'গবাদি পশু',
+    typePOULTRY: 'হাঁস-মুরগি',
+    typeDAIRY: 'দুধ',
+    typeMIXED: 'মিশ্র চাষ',
+
+    unitDECIMAL: 'শতক',
+    unitKATHA: 'কাঠা',
+    unitBIGHA: 'বিঘা',
+    unitACRE: 'একর',
+    unitHECTARE: 'হেক্টর',
+
+    ownershipOWNED: 'নিজের জমি',
+    ownershipLEASED: 'ভাড়া বা লিজ নেওয়া',
+    ownershipSHARECROPPED: 'বর্গা',
+    ownershipMIXED: 'কিছু নিজের, কিছু বর্গা',
+    ownershipCOMMUNITY: 'সমিতি বা যৌথ জমি',
+
+    irrigationMANUAL: 'হাতে বা বালতিতে',
+    irrigationFLOOD: 'জমি ডুবিয়ে',
+    irrigationFURROW: 'নালা কেটে',
+    irrigationSPRINKLER: 'ঝরনা পদ্ধতিতে',
+    irrigationDRIP: 'ফোঁটা ফোঁটা সেচ',
+
+    waterRAIN: 'বৃষ্টির পানি',
+    waterRIVER: 'নদী',
+    waterCANAL: 'খাল',
+    waterPOND: 'পুকুর',
+    waterSHALLOW_TUBEWELL: 'শ্যালো টিউবওয়েল',
+    waterDEEP_TUBEWELL: 'গভীর নলকূপ',
+    waterSUPPLY: 'সরকারি সেচ প্রকল্প',
+
+    methodCONVENTIONAL: 'সাধারণ পদ্ধতি',
+    methodORGANIC: 'জৈব পদ্ধতি',
+    methodINTEGRATED: 'সমন্বিত বালাই দমন',
+    methodMIXED: 'মিশ্র পদ্ধতি',
   },
 
   empty: {

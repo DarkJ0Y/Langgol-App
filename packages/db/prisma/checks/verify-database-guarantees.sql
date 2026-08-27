@@ -51,7 +51,13 @@ DECLARE
 
     -- P4: consent
     'consent_version_positive',
-    'consent_revoked_after_granted'
+    'consent_revoked_after_granted',
+
+    -- P5: the farmer profile may be incomplete, but never self-contradictory
+    'farmer_experience_plausible',
+    'farmer_land_amount_needs_unit',
+    'farmer_land_amount_positive',
+    'farmer_irrigation_consistent'
   ];
 
   expected_indexes text[] := ARRAY[
@@ -70,7 +76,10 @@ DECLARE
     'farms_boundary_gix',
 
     -- P4: one live decision per user and permission
-    'consent_one_live_per_type'
+    'consent_one_live_per_type',
+
+    -- P5: "farmers near here who grow X"
+    'farmer_profiles_farmer_type_idx'
   ];
 
   expected_triggers text[] := ARRAY[

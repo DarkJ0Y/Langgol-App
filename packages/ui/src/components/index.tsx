@@ -15,6 +15,7 @@
 import type {
   AnchorHTMLAttributes,
   ButtonHTMLAttributes,
+  ChangeEventHandler,
   InputHTMLAttributes,
   ReactNode,
   SelectHTMLAttributes,
@@ -270,6 +271,15 @@ export interface ChoiceProps {
   readonly label: string
   readonly description?: string | undefined
   readonly defaultChecked?: boolean | undefined
+  /**
+   * Optional, and for revealing follow-up questions only.
+   *
+   * The input stays UNCONTROLLED — there is no `checked` prop — so the browser owns the answer
+   * and the server reads what was submitted. A caller that mirrored this into state and drove
+   * `checked` from it would be one stale render away from posting a different answer than the
+   * one on screen.
+   */
+  readonly onChange?: ChangeEventHandler<HTMLInputElement> | undefined
 }
 
 /**
@@ -285,10 +295,16 @@ export interface ChoiceProps {
  * but never unchecked, because the only way to clear a radio is to select a sibling. Use
  * `Checkbox` for anything a user has to be able to turn back off.
  */
-export function Choice({ name, value, label, description, defaultChecked }: ChoiceProps) {
+export function Choice({ name, value, label, description, defaultChecked, onChange }: ChoiceProps) {
   return (
     <label className="lg-choice">
-      <input type="radio" name={name} value={value} defaultChecked={defaultChecked} />
+      <input
+        type="radio"
+        name={name}
+        value={value}
+        defaultChecked={defaultChecked}
+        onChange={onChange}
+      />
       <span>
         <span className="lg-choice__label">{label}</span>
         {description === undefined ? null : (

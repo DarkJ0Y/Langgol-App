@@ -65,6 +65,8 @@ export type Action =
   | 'consent:read-own'
   | 'consent:decide-own'
   | 'consent:read-any'
+  | 'farmer:read-self'
+  | 'farmer:update-self'
   | 'admin:access'
   | 'admin:user-read'
   | 'admin:user-suspend'
@@ -181,6 +183,19 @@ const RULES: Record<Action, Rule> = {
   'consent:read-own': { actor: anyAuthenticated, resource: ownerOnly },
   'consent:decide-own': { actor: anyAuthenticated, resource: ownerOnly },
   'consent:read-any': { actor: requireRole('ADMIN') },
+
+  /*
+   * The farmer profile is the farmer's own, and holding the FARMER role is what makes one exist.
+   *
+   * `requireRole` rather than `anyAuthenticated`: a consumer has no farmer profile to read, and
+   * an endpoint that answered them with an empty one would quietly invite the question of what
+   * happens when they PATCH it. There is deliberately no `farmer:update-any` — an OPS_AGENT
+   * onboards a farmer by sitting beside them, not by editing their answers afterwards, and the
+   * guarantee is the absence of the action rather than a check somewhere that could be forgotten.
+   * docs/07_SECURITY.md §8.4
+   */
+  'farmer:read-self': { actor: requireRole('FARMER') },
+  'farmer:update-self': { actor: requireRole('FARMER') },
 
   'admin:access': { actor: requireRole('ADMIN') },
   'admin:user-read': { actor: requireRole('ADMIN', 'OPS_AGENT') },
