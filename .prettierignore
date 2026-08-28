@@ -6,3 +6,8 @@ coverage
 pnpm-lock.yaml
 packages/db/generated
 packages/db/prisma/migrations
+
+# Vendored agent skills. Installed and overwritten by `npx skills update`, so
+# reformatting them creates a diff that comes back on the next update.
+.agents
+.claude/skills

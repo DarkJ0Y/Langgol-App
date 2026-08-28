@@ -126,10 +126,23 @@ jobs:
       # AFTER the seed: these suites read seeded platform configuration and the development
       # fixture allowlist. They are the only place the CHECK constraints, triggers, partial
       # indexes and PostGIS behaviour are exercised through the real repositories.
+      # Two reporters, deliberately. `--reporter=json` alone REPLACES the default one, so a failing
+      # test wrote its reason into a file nobody printed and the log showed only "exit code 1" —
+      # which cost a full round of guessing to diagnose once. `default` puts the failure in the
+      # log; `json` still writes the file the skip check below reads.
       - name: Integration tests
         env:
           LANGGOL_INTEGRATION: '1'
-        run: pnpm test --reporter=json --outputFile=vitest-results.json
+        run: pnpm test --reporter=default --reporter=json --outputFile=vitest-results.json
+
+      # Kept even when the tests fail, because that is exactly when it is worth reading.
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-results
+          path: vitest-results.json
+          if-no-files-found: warn
 
       # A skipped suite and a passing suite look identical in a green checkmark, and this job
       # exists precisely so the database-backed suites run. If DATABASE_URL ever stopped reaching
