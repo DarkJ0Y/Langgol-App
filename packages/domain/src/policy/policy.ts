@@ -67,6 +67,7 @@ export type Action =
   | 'consent:read-any'
   | 'farmer:read-self'
   | 'farmer:update-self'
+  | 'advisory:use'
   | 'admin:access'
   | 'admin:user-read'
   | 'admin:user-suspend'
@@ -196,6 +197,14 @@ const RULES: Record<Action, Rule> = {
    */
   'farmer:read-self': { actor: requireRole('FARMER') },
   'farmer:update-self': { actor: requireRole('FARMER') },
+
+  /*
+   * Crop diagnosis is for people who grow things, so it is FARMER-gated like the profile it reads
+   * context from. This is the coarse gate only — the real one is the `AI_DATA_PROCESSING` consent
+   * check inside the use case, because holding a role is not the same as agreeing to have your
+   * photograph sent to a third party. Both must pass. docs/07_SECURITY.md §9.2
+   */
+  'advisory:use': { actor: requireRole('FARMER') },
 
   'admin:access': { actor: requireRole('ADMIN') },
   'admin:user-read': { actor: requireRole('ADMIN', 'OPS_AGENT') },

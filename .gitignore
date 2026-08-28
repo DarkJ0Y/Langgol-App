@@ -48,3 +48,9 @@ packages/db/generated/
 tmp/
 scratch/
 .neon
+
+# Credential files kept beside the project. Never committed.
+verceltoken.txt
+pat.txt
+*token*.txt
+*.pat
