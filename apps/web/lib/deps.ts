@@ -20,6 +20,8 @@ import {
   cryptoRandom,
   createOtpDelivery,
   farmerProfileRepository,
+  farmRepository,
+  plotRepository,
   getConfig,
   listingRepository,
   orderNumberGenerator,
@@ -218,6 +220,21 @@ export async function farmerDeps() {
   return {
     clock: systemClock,
     farmers: farmerProfileRepository,
+    audit: auditPort,
+  }
+}
+
+/**
+ * Farms and plots.
+ *
+ * No config: nothing about a holding is a versioned business parameter. The farm and plot caps
+ * are guards against an automated loop, not product decisions somebody tunes.
+ */
+export async function farmDeps() {
+  return {
+    clock: systemClock,
+    farms: farmRepository,
+    plots: plotRepository,
     audit: auditPort,
   }
 }

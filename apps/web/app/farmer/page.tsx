@@ -127,6 +127,12 @@ export default async function FarmerDashboardPage() {
 
         <LinkButton href="/farmer/onboarding">{t.t('farmer.editProfile')}</LinkButton>
       </Card>
+
+      <Card>
+        <h2 className="lg-title">{t.t('farm.myFarms')}</h2>
+        <p className="lg-subtitle">{t.t('farm.myFarmsSubtitle')}</p>
+        <LinkButton href="/farmer/farms">{t.t('farm.myFarms')}</LinkButton>
+      </Card>
     </div>
   )
 }
