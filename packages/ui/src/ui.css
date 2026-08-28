@@ -25,7 +25,12 @@ body {
   font-family: var(--lg-font-sans);
   font-size: var(--lg-text-base);
   color: var(--lg-text-primary);
-  background: var(--lg-surface);
+  /* Flat colour first so the page still has a ground if the gradient fails to resolve, then the
+     gradient over it. Fixed attachment would repaint on every scroll on a low-end Android. */
+  background-color: var(--lg-surface);
+  background-image: var(--lg-gradient-ground);
+  background-repeat: no-repeat;
+  min-height: 100vh;
   line-height: var(--lg-leading-en-normal);
 }
 
@@ -121,7 +126,8 @@ body {
 /* --------------------------------------------------------------------- card */
 
 .lg-card {
-  background: var(--lg-surface-raised);
+  background-color: var(--lg-surface-raised);
+  background-image: var(--lg-gradient-card);
   border: 1px solid var(--lg-border);
   border-radius: var(--lg-radius-lg);
   padding: var(--lg-space-5);
@@ -146,12 +152,16 @@ body {
 }
 
 .lg-button--primary {
-  background: var(--lg-action-primary);
+  /* Gradient over the flat token, so a browser that drops the image still gets a solid, legible
+     button rather than a transparent one. */
+  background-color: var(--lg-action-primary);
+  background-image: var(--lg-gradient-action);
   color: var(--lg-text-on-action);
 }
 
 .lg-button--primary:hover:not(:disabled) {
-  background: var(--lg-action-primary-hover);
+  background-color: var(--lg-action-primary-hover);
+  background-image: var(--lg-gradient-action-hover);
 }
 
 .lg-button--secondary {

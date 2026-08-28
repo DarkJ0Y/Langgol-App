@@ -138,7 +138,7 @@ model UserRoleAssignment {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  /*
+  /**
    * Attribution, not ownership. Cascade would delete an administrator's entire grant history
    * along with their account; SET NULL would breach `role_revocation_attributed`, which requires
    * a revoker whenever `revoked_at` is set. Restrict is the only option that keeps the record.
@@ -274,20 +274,20 @@ model ConsentRecord {
 /// output, so there is no brute-force surface for a slow hash to defend, exactly as with session
 /// tokens. The OTP table uses scrypt because six digits genuinely can be guessed.
 model VerificationToken {
-  id        String              @id @default(uuid()) @db.Uuid
-  userId    String              @map("user_id") @db.Uuid
-  purpose   VerificationPurpose
+  id          String              @id @default(uuid()) @db.Uuid
+  userId      String              @map("user_id") @db.Uuid
+  purpose     VerificationPurpose
   /// The address the token was sent TO. Kept alongside the user so that redeeming a token can
   /// check the address has not changed since — a token proves control of an address, not of
   /// whatever address the account happens to hold when the link is finally clicked.
   destination String
-  tokenHash String              @unique @map("token_hash")
-  expiresAt DateTime            @map("expires_at")
-  consumedAt DateTime?          @map("consumed_at")
+  tokenHash   String              @unique @map("token_hash")
+  expiresAt   DateTime            @map("expires_at")
+  consumedAt  DateTime?           @map("consumed_at")
   /// Superseded by a newer request, or cancelled because the address changed.
-  revokedAt DateTime?           @map("revoked_at")
-  requestIp String?             @map("request_ip")
-  createdAt DateTime            @default(now()) @map("created_at")
+  revokedAt   DateTime?           @map("revoked_at")
+  requestIp   String?             @map("request_ip")
+  createdAt   DateTime            @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -391,8 +391,9 @@ model Address {
   updatedAt      DateTime                               @updatedAt @map("updated_at")
   deletedAt      DateTime?                              @map("deleted_at")
 
-  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  area AdminArea @relation(fields: [adminAreaId], references: [id])
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  area  AdminArea @relation(fields: [adminAreaId], references: [id])
+  farms Farm[]
 
   @@index([userId, isDefault])
   @@index([adminAreaId])
@@ -618,6 +619,22 @@ enum WaterSource {
 /// never be surfaced to a buyer as a certified claim — that would turn an unverified answer into
 /// a marketing assertion the platform cannot stand behind. Certification, if it is ever added,
 /// is a separate field with evidence behind it.
+/// Soil types a Bangladeshi farmer recognises, not a pedological classification.
+///
+/// The list is what an extension officer would ask and a farmer would answer. `SALINE` earns its
+/// place separately from the texture classes because coastal salinity is a distinct problem with
+/// distinct remedies, and it is spreading — a farmer in Khulna needs to be able to say it.
+enum SoilType {
+  LOAM
+  CLAY
+  CLAY_LOAM
+  SANDY
+  SANDY_LOAM
+  SILT
+  PEAT
+  SALINE
+}
+
 enum FarmingMethod {
   CONVENTIONAL
   ORGANIC
@@ -760,34 +777,102 @@ enum QualityGrade {
 }
 
 model Farm {
-  id               String                                 @id @default(uuid()) @db.Uuid
-  farmerProfileId  String                                 @map("farmer_profile_id") @db.Uuid
-  name             String
-  adminAreaId      String                                 @map("admin_area_id") @db.Uuid
-  villageOrArea    String?                                @map("village_or_area")
-  addressLine      String?                                @map("address_line")
-  latitude         Decimal?                               @db.Decimal(9, 6)
-  longitude        Decimal?                               @db.Decimal(9, 6)
-  precision        LocationPrecision                      @default(AREA_CENTROID)
+  id              String                                   @id @default(uuid()) @db.Uuid
+  farmerProfileId String                                   @map("farmer_profile_id") @db.Uuid
+  name            String
+  adminAreaId     String                                   @map("admin_area_id") @db.Uuid
+  villageOrArea   String?                                  @map("village_or_area")
+  addressLine     String?                                  @map("address_line")
+  latitude        Decimal?                                 @db.Decimal(9, 6)
+  longitude       Decimal?                                 @db.Decimal(9, 6)
+  precision       LocationPrecision                        @default(AREA_CENTROID)
   /// Maintained by trigger from latitude/longitude. See the p2_marketplace_core migration.
-  geo              Unsupported("geography(Point, 4326)")?
+  geo             Unsupported("geography(Point, 4326)")?
   /// Field boundary, for a future mapping surface. Nothing writes this yet; the column and its
   /// GIST index exist so that when something does, it is not a schema change on a hot table.
   /// `packages/domain/src/location/boundary.ts` owns ring validation and the lon/lat ordering.
-  boundary         Unsupported("geography(Polygon, 4326)")?
-  /// Bangladeshi "decimal" = 1/100 acre ≈ 40.46 m².
-  landAreaDecimals Int?                                   @map("land_area_decimals")
-  createdAt        DateTime                               @default(now()) @map("created_at")
-  updatedAt        DateTime                               @updatedAt @map("updated_at")
-  deletedAt        DateTime?                              @map("deleted_at")
+  boundary        Unsupported("geography(Polygon, 4326)")?
+  createdAt       DateTime                                 @default(now()) @map("created_at")
+  updatedAt       DateTime                                 @updatedAt @map("updated_at")
+  deletedAt       DateTime?                                @map("deleted_at")
+
+  /// --- This farm's own description (P6) -------------------------------------------------
+  ///
+  /// Deliberately the same shape as the P5 farmer profile, and deliberately separate from it.
+  /// The profile says how somebody farms in general; these say what is true of THIS holding. A
+  /// farmer with an irrigated vegetable plot near the house and a rain-fed rice field an hour
+  /// away is the ordinary case, and one set of answers cannot describe both.
+  ///
+  /// Every field is nullable for the same reason as P5: an incomplete farm is a farm.
+  ///
+  /// Replaces `land_area_decimals`, which was added in P2, never read or written by any code,
+  /// and could not record the unit the farmer actually used. See the p6 migration.
+  areaAmountMilli     Int?               @map("area_amount_milli")
+  areaUnit            LandUnit?          @map("area_unit")
+  ownershipType       LandOwnershipType? @map("ownership_type")
+  soilType            SoilType?          @map("soil_type")
+  irrigationAvailable Boolean?           @map("irrigation_available")
+  irrigationMethod    IrrigationMethod?  @map("irrigation_method")
+  waterSource         WaterSource?       @map("water_source")
+  farmingMethod       FarmingMethod?     @map("farming_method")
+  verificationStatus  VerificationStatus @default(UNVERIFIED) @map("verification_status")
+
+  /// Optional delivery/correspondence address for this farm.
+  ///
+  /// Nullable because a farm is located by its `adminAreaId` and optional pin — an address is a
+  /// convenience, not the location. A trigger checks the address belongs to the same user as the
+  /// farm, because a foreign key alone would happily let one farmer point at another's address.
+  addressId String? @map("address_id") @db.Uuid
 
   farmer   FarmerProfile @relation(fields: [farmerProfileId], references: [id])
   area     AdminArea     @relation(fields: [adminAreaId], references: [id])
+  address  Address?      @relation(fields: [addressId], references: [id], onDelete: SetNull)
   listings Listing[]
+  plots    Plot[]
 
   @@index([farmerProfileId])
   @@index([adminAreaId])
+  @@index([addressId])
   @@map("farms")
+}
+
+/// A named piece of a farm.
+///
+/// One level below `Farm` and no further: a farmer talks about "the north field" or "the pond
+/// side", not about a tree of sub-parcels. Nesting plots inside plots would buy generality nobody
+/// asked for and make every ownership query recursive — which is exactly where IDOR bugs live.
+///
+/// A plot inherits its farm's location and answers unless it overrides them. That is why every
+/// descriptive column here is nullable: `null` means "same as the farm", not "unknown".
+model Plot {
+  id     String @id @default(uuid()) @db.Uuid
+  farmId String @map("farm_id") @db.Uuid
+  name   String
+
+  areaAmountMilli  Int?              @map("area_amount_milli")
+  areaUnit         LandUnit?         @map("area_unit")
+  soilType         SoilType?         @map("soil_type")
+  irrigationMethod IrrigationMethod? @map("irrigation_method")
+
+  /// Optional, like every other pin in Langgol. A plot without coordinates is a complete plot.
+  latitude  Decimal?                                 @db.Decimal(9, 6)
+  longitude Decimal?                                 @db.Decimal(9, 6)
+  /// Maintained by trigger from latitude/longitude, mirroring farms and addresses.
+  geo       Unsupported("geography(Point, 4326)")?
+  /// The boundary a farmer will one day draw on a map. Nothing writes it yet — the column and
+  /// its GIST index exist so that adding the mapping surface is not a schema change on a table
+  /// that by then holds every plot in the pilot.
+  boundary  Unsupported("geography(Polygon, 4326)")?
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  /// Soft, because a plot may be referenced by a harvest or listing record later.
+  deletedAt DateTime? @map("deleted_at")
+
+  farm Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([farmId])
+  @@map("plots")
 }
 
 model ProductCategory {

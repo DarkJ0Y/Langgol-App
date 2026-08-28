@@ -100,6 +100,25 @@ export type WaterSource = (typeof WATER_SOURCES)[number]
 export const FARMING_METHODS = ['CONVENTIONAL', 'ORGANIC', 'INTEGRATED', 'MIXED'] as const
 export type FarmingMethod = (typeof FARMING_METHODS)[number]
 
+/**
+ * Soil types a farmer recognises, not a pedological classification.
+ *
+ * `SALINE` sits beside the texture classes rather than under them: coastal salinity is a distinct
+ * problem with distinct remedies, and it is spreading. A farmer in Khulna needs to be able to say
+ * it, and a texture-only list would force them to describe their field as something it is not.
+ */
+export const SOIL_TYPES = [
+  'LOAM',
+  'CLAY',
+  'CLAY_LOAM',
+  'SANDY',
+  'SANDY_LOAM',
+  'SILT',
+  'PEAT',
+  'SALINE',
+] as const
+export type SoilType = (typeof SOIL_TYPES)[number]
+
 const asSet = <T extends string>(values: readonly T[]): ReadonlySet<string> => new Set(values)
 
 const FARMER_TYPE_SET = asSet(FARMER_TYPES)
@@ -108,6 +127,7 @@ const OWNERSHIP_SET = asSet(LAND_OWNERSHIP_TYPES)
 const IRRIGATION_SET = asSet(IRRIGATION_METHODS)
 const WATER_SET = asSet(WATER_SOURCES)
 const METHOD_SET = asSet(FARMING_METHODS)
+const SOIL_SET = asSet(SOIL_TYPES)
 
 export const isFarmerType = (value: unknown): value is FarmerType =>
   typeof value === 'string' && FARMER_TYPE_SET.has(value)
@@ -126,3 +146,6 @@ export const isWaterSource = (value: unknown): value is WaterSource =>
 
 export const isFarmingMethod = (value: unknown): value is FarmingMethod =>
   typeof value === 'string' && METHOD_SET.has(value)
+
+export const isSoilType = (value: unknown): value is SoilType =>
+  typeof value === 'string' && SOIL_SET.has(value)

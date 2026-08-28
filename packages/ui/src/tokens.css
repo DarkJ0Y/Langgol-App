@@ -69,6 +69,13 @@
   --lg-text-inverse: #ffffff;
   --lg-text-on-action: #ffffff;
   --lg-action-primary: #1e5024;
+  /* Gradient surfaces, adapted from the v0 prototype's green-600 → green-700 buttons on a
+     green-50 → amber-50 ground. Brighter than the flat token above on purpose: the prototype's
+     greens read as alive where a single deep fill reads as institutional. */
+  --lg-gradient-action: linear-gradient(135deg, #1f7a3a 0%, #15803d 55%, #14622f 100%);
+  --lg-gradient-action-hover: linear-gradient(135deg, #24923f 0%, #1a9247 55%, #17703a 100%);
+  --lg-gradient-ground: linear-gradient(160deg, #f2fbf3 0%, #f8f9fa 45%, #fdf8ee 100%);
+  --lg-gradient-card: linear-gradient(160deg, #ffffff 0%, #fbfdfa 100%);
   --lg-action-primary-hover: #193f1e;
   --lg-action-secondary: #483e31;
   --lg-accent: #8a5a17;
@@ -127,6 +134,12 @@
     --lg-action-secondary: #d2c8b6;
     --lg-accent: #e5ac55;
     --lg-focus-ring: #b5d8b6;
+    /* Must mirror the [data-theme='dark'] block below. A gradient defined in only one of the two
+       leaves system-dark viewers with an undefined value and a transparent body. */
+    --lg-gradient-action: linear-gradient(135deg, #2f7a43 0%, #276b3a 55%, #1f5730 100%);
+    --lg-gradient-action-hover: linear-gradient(135deg, #3a8f51 0%, #327d45 55%, #276939 100%);
+    --lg-gradient-ground: linear-gradient(160deg, #12180f 0%, #191612 55%, #1d1710 100%);
+    --lg-gradient-card: linear-gradient(160deg, #232a20 0%, #221e19 100%);
   }
 }
 
@@ -145,4 +158,10 @@
   --lg-action-secondary: #d2c8b6;
   --lg-accent: #e5ac55;
   --lg-focus-ring: #b5d8b6;
+  /* The prototype's dark ground is green-950 → amber-950. Langgol's neutrals are already warm,
+     so the gradient leans into that rather than fighting it. */
+  --lg-gradient-action: linear-gradient(135deg, #2f7a43 0%, #276b3a 55%, #1f5730 100%);
+  --lg-gradient-action-hover: linear-gradient(135deg, #3a8f51 0%, #327d45 55%, #276939 100%);
+  --lg-gradient-ground: linear-gradient(160deg, #12180f 0%, #191612 55%, #1d1710 100%);
+  --lg-gradient-card: linear-gradient(160deg, #232a20 0%, #221e19 100%);
 }

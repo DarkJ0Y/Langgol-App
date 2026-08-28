@@ -68,6 +68,7 @@ export type Action =
   | 'farmer:read-self'
   | 'farmer:update-self'
   | 'advisory:use'
+  | 'farm:manage-own'
   | 'admin:access'
   | 'admin:user-read'
   | 'admin:user-suspend'
@@ -205,6 +206,17 @@ const RULES: Record<Action, Rule> = {
    * photograph sent to a third party. Both must pass. docs/07_SECURITY.md §9.2
    */
   'advisory:use': { actor: requireRole('FARMER') },
+
+  /*
+   * Farms and plots. One action covers read and write on purpose: a farmer who may see a holding
+   * may edit it, and splitting them would imply a sharing model that does not exist.
+   *
+   * No `resource` rule, and that is not an omission. Ownership here is enforced one layer lower,
+   * in the SQL — every farm and plot query carries the owner in its WHERE clause, so a stranger's
+   * id matches no row. A resource rule would need the row fetched first, which is precisely the
+   * fetch-then-compare shape that leaks when somebody forgets the compare.
+   */
+  'farm:manage-own': { actor: requireRole('FARMER') },
 
   'admin:access': { actor: requireRole('ADMIN') },
   'admin:user-read': { actor: requireRole('ADMIN', 'OPS_AGENT') },

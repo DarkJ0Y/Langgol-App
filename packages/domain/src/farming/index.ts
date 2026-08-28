@@ -11,12 +11,15 @@ export {
   isLandOwnershipType,
   isLandUnit,
   isWaterSource,
+  isSoilType,
+  SOIL_TYPES,
   type FarmerType,
   type FarmingMethod,
   type IrrigationMethod,
   type LandOwnershipType,
   type LandUnit,
   type WaterSource,
+  type SoilType,
 } from './catalogue.js'
 
 export {
@@ -42,3 +45,15 @@ export {
   type FarmingFieldsUpdate,
   type OnboardingStep,
 } from './profile.js'
+
+export {
+  MAX_FARMS_PER_FARMER,
+  MAX_NAME_LENGTH,
+  MAX_PLOTS_PER_FARM,
+  HoldingError,
+  resolvePlot,
+  validateHolding,
+  type FarmFields,
+  type HoldingUpdate,
+  type PlotFields,
+} from './holding.js'

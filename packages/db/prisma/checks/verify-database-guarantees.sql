@@ -57,7 +57,17 @@ DECLARE
     'farmer_experience_plausible',
     'farmer_land_amount_needs_unit',
     'farmer_land_amount_positive',
-    'farmer_irrigation_consistent'
+    'farmer_irrigation_consistent',
+
+    -- P6: farms and plots may be incomplete, never self-contradictory
+    'farms_area_needs_unit',
+    'farms_area_positive',
+    'farms_irrigation_consistent',
+    'plots_area_needs_unit',
+    'plots_area_positive',
+    'plots_name_present',
+    'plots_coordinates_valid',
+    'plots_coordinates_in_country'
   ];
 
   expected_indexes text[] := ARRAY[
@@ -79,7 +89,13 @@ DECLARE
     'consent_one_live_per_type',
 
     -- P5: "farmers near here who grow X"
-    'farmer_profiles_farmer_type_idx'
+    'farmer_profiles_farmer_type_idx',
+
+    -- P6: plot lookups and the mapping surface the boundary column is waiting for
+    'plots_farm_id_idx',
+    'plots_boundary_gix',
+    'plots_geo_gix',
+    'farms_address_id_idx'
   ];
 
   expected_triggers text[] := ARRAY[
@@ -94,7 +110,12 @@ DECLARE
     -- because a rule on the child of a foreign key breaks referential integrity — see the
     -- p4_consent_append_only_triggers migration.
     'consent_records_block_direct_delete',
-    'consent_records_block_history_rewrite'
+    'consent_records_block_history_rewrite',
+
+    -- P6: the geography column is derived from the pin, and a farm's address must belong to the
+    -- same user as the farm. The foreign key proves the address exists, not that it is theirs.
+    'plots_sync_geo',
+    'farms_address_same_owner'
   ];
 
   /*
