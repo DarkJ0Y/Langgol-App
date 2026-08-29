@@ -1,0 +1,15 @@
+export {
+  EARLIEST_PRODUCTION_YEAR,
+  SEASONS,
+  ProductionError,
+  computeMarginPoisha,
+  computeRevenuePoisha,
+  computeYieldPerDecimalMilli,
+  isSeason,
+  summarise,
+  validateProduction,
+  type ProductionFields,
+  type ProductionInput,
+  type ProductionSummary,
+  type Season,
+} from './production.js'

@@ -67,7 +67,15 @@ DECLARE
     'plots_area_positive',
     'plots_name_present',
     'plots_coordinates_valid',
-    'plots_coordinates_in_country'
+    'plots_coordinates_in_country',
+
+    -- P8: a production record may be incomplete, never impossible
+    'productions_year_plausible',
+    'productions_amounts_nonneg',
+    'productions_area_needs_unit',
+    'productions_area_positive',
+    'productions_quantity_needs_unit',
+    'productions_sold_not_more_than_grown'
   ];
 
   expected_indexes text[] := ARRAY[
@@ -95,7 +103,12 @@ DECLARE
     'plots_farm_id_idx',
     'plots_boundary_gix',
     'plots_geo_gix',
-    'farms_address_id_idx'
+    'farms_address_id_idx',
+
+    -- P8: the history filters — by year, by crop, by season
+    'productions_farmer_year_idx',
+    'productions_farmer_product_idx',
+    'productions_farmer_season_idx'
   ];
 
   expected_triggers text[] := ARRAY[
@@ -115,7 +128,11 @@ DECLARE
     -- P6: the geography column is derived from the pin, and a farm's address must belong to the
     -- same user as the farm. The foreign key proves the address exists, not that it is theirs.
     'plots_sync_geo',
-    'farms_address_same_owner'
+    'farms_address_same_owner',
+
+    -- P8: revenue is DERIVED. A farmer may say what they sold and what they were paid; the
+    -- product of the two is not theirs to state, and this trigger overwrites whatever is sent.
+    'productions_derive_revenue'
   ];
 
   /*

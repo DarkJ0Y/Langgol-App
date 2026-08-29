@@ -113,6 +113,8 @@ model User {
   verificationTokens VerificationToken[]
   consents           ConsentRecord[]
 
+  productionsBought Production[] @relation("ProductionBuyer")
+
   farmerProfile   FarmerProfile?
   consumerProfile ConsumerProfile?
   retailerProfile RetailerProfile?
@@ -694,9 +696,10 @@ model FarmerProfile {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  farms    Farm[]
-  listings Listing[]
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  farms       Farm[]
+  listings    Listing[]
+  productions Production[]
 
   @@index([verificationStatus])
   @@map("farmer_profiles")
@@ -824,11 +827,12 @@ model Farm {
   /// farm, because a foreign key alone would happily let one farmer point at another's address.
   addressId String? @map("address_id") @db.Uuid
 
-  farmer   FarmerProfile @relation(fields: [farmerProfileId], references: [id])
-  area     AdminArea     @relation(fields: [adminAreaId], references: [id])
-  address  Address?      @relation(fields: [addressId], references: [id], onDelete: SetNull)
-  listings Listing[]
-  plots    Plot[]
+  farmer      FarmerProfile @relation(fields: [farmerProfileId], references: [id])
+  area        AdminArea     @relation(fields: [adminAreaId], references: [id])
+  productions Production[]
+  address     Address?      @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  listings    Listing[]
+  plots       Plot[]
 
   @@index([farmerProfileId])
   @@index([adminAreaId])
@@ -869,10 +873,94 @@ model Plot {
   /// Soft, because a plot may be referenced by a harvest or listing record later.
   deletedAt DateTime? @map("deleted_at")
 
-  farm Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  farm        Farm         @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  productions Production[]
 
   @@index([farmId])
   @@map("plots")
+}
+
+/// The seasons a Bangladeshi farmer names.
+///
+/// Two overlapping vocabularies, both in daily use: BORO/AUS/AMAN are the three rice seasons
+/// everyone names, RABI and KHARIF the general winter and monsoon seasons used for everything
+/// else. Forcing rice into "Kharif-2" would be tidy and would produce a form no farmer
+/// recognises. Mirrored by SEASONS in packages/domain/src/production/production.ts.
+enum Season {
+  BORO
+  AUS
+  AMAN
+  RABI
+  KHARIF
+  YEAR_ROUND
+}
+
+/// What a farmer actually harvested and sold, one record per crop per plot per season.
+///
+/// This is the history yield prediction, forecasting, credit scoring and price prediction will
+/// all read from, which places one obligation above the rest: nothing here may be invented.
+/// Every column is either something the farmer stated or something derived from what they stated
+/// — never a default standing in for an answer they did not give.
+///
+/// `revenue_poisha` is DERIVED and a trigger overwrites whatever is submitted. A farmer may say
+/// what they sold and what they were paid; the product of the two is not theirs to state, because
+/// a stored revenue that disagrees with its own inputs is unfalsifiable later and a credit score
+/// built on it would be scoring a typo. See the p8 migration.
+model Production {
+  id              String  @id @default(uuid()) @db.Uuid
+  farmerProfileId String  @map("farmer_profile_id") @db.Uuid
+  farmId          String  @map("farm_id") @db.Uuid
+  /// Nullable: a farmer may record a harvest for a whole farm without having split it into plots.
+  plotId          String? @map("plot_id") @db.Uuid
+  /// The curated catalogue entry — the same `Product` the marketplace lists, deliberately, so a
+  /// cultivation history and a listing describe the same crop rather than two unjoinable names.
+  productId       String? @map("product_id") @db.Uuid
+  varietyId       String? @map("variety_id") @db.Uuid
+
+  season Season?
+  year   Int?
+
+  /// The farmer's own number and unit, never normalised away. Same pair rule as everywhere else.
+  cultivatedAreaMilli Int?      @map("cultivated_area_milli")
+  cultivatedAreaUnit  LandUnit? @map("cultivated_area_unit")
+
+  /// Base units (milligrams for mass), like every other quantity in the schema.
+  productionQuantityBase BigInt?   @map("production_quantity_base")
+  productionUnit         SaleUnit? @map("production_unit")
+
+  /// Integer poisha throughout. `selling_price_poisha` is per SALE unit — "forty taka a kilo" is
+  /// what a farmer says — not per base unit.
+  productionCostPoisha BigInt? @map("production_cost_poisha")
+  sellingQuantityBase  BigInt? @map("selling_quantity_base")
+  sellingPricePoisha   BigInt? @map("selling_price_poisha")
+
+  /// DERIVED. Written only by `productions_derive_revenue`; anything an application sends is
+  /// discarded. Stored rather than computed on read so analytics can aggregate it in SQL.
+  revenuePoisha BigInt? @map("revenue_poisha")
+
+  /// Who bought it, when the sale happened on Langgol. Null for a sale made at the local market,
+  /// which is most of them today and is a fact worth recording rather than hiding.
+  buyerUserId String? @map("buyer_user_id") @db.Uuid
+
+  harvestDate DateTime? @map("harvest_date") @db.Date
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  farmer  FarmerProfile   @relation(fields: [farmerProfileId], references: [id], onDelete: Cascade)
+  farm    Farm            @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  plot    Plot?           @relation(fields: [plotId], references: [id], onDelete: SetNull)
+  product Product?        @relation(fields: [productId], references: [id])
+  variety ProductVariety? @relation(fields: [varietyId], references: [id])
+  buyer   User?           @relation("ProductionBuyer", fields: [buyerUserId], references: [id], onDelete: SetNull)
+
+  /// The indexes the required filters need: by crop, by year, by season.
+  @@index([farmerProfileId, year])
+  @@index([farmerProfileId, productId])
+  @@index([farmerProfileId, season, year])
+  @@index([farmId])
+  @@index([plotId])
+  @@map("productions")
 }
 
 model ProductCategory {
@@ -906,9 +994,10 @@ model Product {
   imageKey              String?            @map("image_key")
   isActive              Boolean            @default(true) @map("is_active")
 
-  category  ProductCategory  @relation(fields: [categoryId], references: [id])
-  varieties ProductVariety[]
-  listings  Listing[]
+  category    ProductCategory  @relation(fields: [categoryId], references: [id])
+  varieties   ProductVariety[]
+  listings    Listing[]
+  productions Production[]
 
   @@index([categoryId, isActive])
   @@map("products")
@@ -921,7 +1010,8 @@ model ProductVariety {
   nameBn    String  @map("name_bn")
   isActive  Boolean @default(true) @map("is_active")
 
-  product Product @relation(fields: [productId], references: [id])
+  product     Product      @relation(fields: [productId], references: [id])
+  productions Production[]
 
   @@unique([productId, nameEn])
   @@map("product_varieties")

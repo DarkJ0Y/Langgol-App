@@ -16,6 +16,7 @@
     "./consent": "./src/consent/index.ts",
     "./farming": "./src/farming/index.ts",
     "./advisory": "./src/advisory/index.ts",
+    "./production": "./src/production/index.ts",
     "./notifications": "./src/notifications/index.ts",
     "./geo": "./src/geo/index.ts",
     "./location": "./src/location/index.ts",
