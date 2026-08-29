@@ -9,7 +9,8 @@
     ".": "./src/index.ts",
     "./components": "./src/components/index.tsx",
     "./tokens.css": "./src/tokens.css",
-    "./ui.css": "./src/ui.css"
+    "./ui.css": "./src/ui.css",
+    "./home.css": "./src/home.css"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json"

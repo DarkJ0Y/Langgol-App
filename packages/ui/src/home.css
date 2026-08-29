@@ -1,0 +1,941 @@
+/*
+ * Langgol marketing surface.
+ *
+ * Scoped entirely under `.lgh` so nothing here can reach the product screens. The app's own
+ * stylesheet stays the authority on buttons, forms and cards; this file is the one place allowed
+ * a different, more expressive register — because the homepage answers a different question
+ * ("what is this?") to the screens a farmer works in every day ("what do I do now?").
+ *
+ * ## Why there is no JavaScript in it
+ *
+ * The brief asked for animated numbers, drawing charts and streaming text. Every effect below is
+ * CSS — keyframes, transitions, `@property`, scroll-driven reveals where supported. Langgol's
+ * product screens ship almost no client JavaScript because a farmer on 2G cannot afford it, and
+ * importing an animation library for the marketing page would put that bundle in the same app.
+ * CSS costs nothing at runtime and degrades to a static, legible page when it is unsupported.
+ *
+ * Every motion rule is inside `@media (prefers-reduced-motion: no-preference)`. Reduced motion is
+ * therefore the DEFAULT the file is written against rather than an override bolted on afterwards.
+ */
+
+.lgh {
+  /*
+   * Marketing-only tokens. Deliberately derived from the product palette in tokens.css rather
+   * than a second colour system — the greens and warm neutrals are already right, and a homepage
+   * that did not look like the product would be a promise the product breaks.
+   */
+  --lgh-ink: var(--lg-text-primary);
+  --lgh-dim: var(--lg-text-secondary);
+  --lgh-ground: #12100d;
+  --lgh-raised: #1a1713;
+  --lgh-raised-2: #221e18;
+  --lgh-line: #2e2820;
+  --lgh-line-bright: #3d352a;
+  --lgh-green: #7fc98c;
+  --lgh-green-deep: #2f7a43;
+  --lgh-amber: #e5ac55;
+  --lgh-danger: #e08a70;
+
+  /* One measure for running text, one for headings. Headings want to break earlier. */
+  --lgh-measure: 62ch;
+  --lgh-max: 76rem;
+
+  position: relative;
+  color: var(--lgh-ink);
+  background: var(--lgh-ground);
+  font-feature-settings: 'ss01' 1;
+  overflow-x: hidden;
+}
+
+/* The page is committed to one visual world — a lit instrument panel in a dark room. It paints
+   its own ground rather than inheriting the theme, so it holds on either. */
+.lgh * {
+  box-sizing: border-box;
+}
+
+.lgh__inner {
+  width: 100%;
+  max-width: var(--lgh-max);
+  margin: 0 auto;
+  padding-inline: clamp(1.15rem, 4vw, 2.5rem);
+}
+
+/* ------------------------------------------------------------------ typography */
+
+.lgh__eyebrow {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lgh-green);
+  margin: 0;
+}
+
+/* Bangla has no uppercase and its glyphs are taller; letter-spacing on Bangla eyebrows spaces
+   conjuncts apart and looks broken. Both are switched off for Bangla specifically. */
+.lgh[lang='bn'] .lgh__eyebrow,
+[lang='bn'] .lgh__eyebrow {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.lgh__display {
+  font-size: clamp(2.4rem, 7vw, 5.25rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+  margin: 0;
+  text-wrap: balance;
+  /* Wide enough that the statement lands in two or three lines. At 18ch it broke into five,
+     which reads as a list rather than a sentence. */
+  max-width: 26ch;
+}
+
+/* Bangla needs looser leading and no negative tracking — matras collide otherwise. */
+.lgh[lang='bn'] .lgh__display,
+[lang='bn'] .lgh__display {
+  line-height: 1.28;
+  letter-spacing: 0;
+  font-size: clamp(2rem, 5.4vw, 4rem);
+  max-width: 22ch;
+}
+
+.lgh__h2 {
+  font-size: clamp(1.75rem, 4vw, 3rem);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  font-weight: 660;
+  margin: 0;
+  text-wrap: balance;
+  max-width: 20ch;
+}
+
+[lang='bn'] .lgh__h2 {
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+
+.lgh__lede {
+  font-size: clamp(1rem, 1.6vw, 1.1875rem);
+  line-height: 1.6;
+  color: var(--lgh-dim);
+  margin: 0;
+  max-width: var(--lgh-measure);
+}
+
+[lang='bn'] .lgh__lede {
+  line-height: 1.85;
+}
+
+.lgh__note {
+  font-size: 0.8125rem;
+  color: var(--lgh-dim);
+  opacity: 0.75;
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ sections */
+
+.lgh__section {
+  padding-block: clamp(4rem, 9vw, 8rem);
+  border-top: 1px solid var(--lgh-line);
+  position: relative;
+}
+
+.lgh__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-bottom: clamp(2rem, 4vw, 3.25rem);
+}
+
+/* ------------------------------------------------------------------- navbar */
+
+.lgh__nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 1px solid transparent;
+  background: color-mix(in srgb, var(--lgh-ground) 82%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom-color: var(--lgh-line);
+}
+
+.lgh__nav-inner {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  min-height: 4rem;
+}
+
+.lgh__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-size: 1.0625rem;
+  color: var(--lgh-ink);
+  text-decoration: none;
+  margin-right: auto;
+}
+
+/* The mark: a furrow turning into a signal. Drawn in CSS rather than shipped as an asset. */
+.lgh__mark {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 6px;
+  background: linear-gradient(140deg, var(--lgh-green) 0%, var(--lgh-green-deep) 100%);
+  position: relative;
+  flex: none;
+}
+
+.lgh__mark::after {
+  content: '';
+  position: absolute;
+  inset: 0.375rem 0.3125rem;
+  border-left: 2px solid var(--lgh-ground);
+  border-bottom: 2px solid var(--lgh-ground);
+  border-bottom-left-radius: 3px;
+  opacity: 0.85;
+}
+
+.lgh__nav-links {
+  display: none;
+  gap: 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lgh__nav-links a {
+  color: var(--lgh-dim);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  transition: color var(--lg-motion-base) var(--lg-motion-easing);
+}
+
+.lgh__nav-links a:hover {
+  color: var(--lgh-ink);
+}
+
+.lgh__nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (min-width: 62rem) {
+  .lgh__nav-links {
+    display: flex;
+  }
+}
+
+/* --------------------------------------------------------------------- buttons */
+
+.lgh__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.625rem 1.15rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    transform var(--lg-motion-base) var(--lg-motion-easing),
+    background-color var(--lg-motion-base) var(--lg-motion-easing),
+    border-color var(--lg-motion-base) var(--lg-motion-easing);
+}
+
+.lgh__btn--primary {
+  background: var(--lgh-green);
+  color: #0f1a12;
+}
+
+.lgh__btn--primary:hover {
+  background: #96d9a2;
+}
+
+.lgh__btn--ghost {
+  color: var(--lgh-ink);
+  border-color: var(--lgh-line-bright);
+  background: transparent;
+}
+
+.lgh__btn--ghost:hover {
+  border-color: var(--lgh-dim);
+  background: color-mix(in srgb, var(--lgh-raised) 60%, transparent);
+}
+
+.lgh__btn--lg {
+  min-height: 3.125rem;
+  padding-inline: 1.5rem;
+  font-size: 1rem;
+}
+
+.lgh__btn:focus-visible {
+  outline: 3px solid var(--lgh-green);
+  outline-offset: 2px;
+}
+
+/* ----------------------------------------------------------------------- hero */
+
+.lgh__hero {
+  position: relative;
+  padding-block: clamp(3.5rem, 8vw, 7rem) clamp(3rem, 7vw, 6rem);
+  isolation: isolate;
+}
+
+/*
+ * The background: field geometry meeting a data grid.
+ *
+ * Two layered gradients rather than an image — no asset to download, no stock photograph, and it
+ * scales to any viewport without art direction. The horizon line is a wide radial that suggests
+ * a lit field edge without depicting one.
+ */
+.lgh__hero::before {
+  content: '';
+  position: absolute;
+  inset: -20% -10% 0;
+  z-index: -2;
+  background:
+    radial-gradient(
+      60% 45% at 72% 8%,
+      color-mix(in srgb, var(--lgh-green) 16%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      45% 35% at 12% 0%,
+      color-mix(in srgb, var(--lgh-amber) 9%, transparent),
+      transparent 72%
+    );
+  pointer-events: none;
+}
+
+.lgh__hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(var(--lgh-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--lgh-line) 1px, transparent 1px);
+  background-size: 4.5rem 4.5rem;
+  /* Fades out before it reaches the text, so the grid never competes with reading. */
+  mask-image: radial-gradient(90% 60% at 50% 0%, #000 0%, transparent 78%);
+  -webkit-mask-image: radial-gradient(90% 60% at 50% 0%, #000 0%, transparent 78%);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.lgh__hero-grid {
+  display: grid;
+  gap: clamp(2.5rem, 5vw, 4rem);
+  align-items: center;
+}
+
+@media (min-width: 64rem) {
+  .lgh__hero-grid {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  }
+}
+
+.lgh__hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.lgh__cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+}
+
+/* ------------------------------------------------------- the instrument panel */
+
+.lgh__panel {
+  border: 1px solid var(--lgh-line-bright);
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--lgh-raised-2) 0%, var(--lgh-raised) 100%);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.05rem;
+  box-shadow: 0 24px 60px -30px rgb(0 0 0 / 0.9);
+}
+
+.lgh__panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--lgh-line);
+}
+
+.lgh__panel-title {
+  font-size: 0.9375rem;
+  font-weight: 650;
+  margin: 0;
+}
+
+.lgh__panel-meta {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--lgh-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A live indicator that is honest: it marks the panel as a demonstration, not a connection. */
+.lgh__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--lgh-green);
+  flex: none;
+}
+
+.lgh__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lgh__stat-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.lgh__stat-label {
+  font-size: 0.8125rem;
+  color: var(--lgh-dim);
+}
+
+.lgh__stat-value {
+  margin-left: auto;
+  font-size: 1.0625rem;
+  font-weight: 660;
+  font-variant-numeric: tabular-nums;
+}
+
+.lgh__bar {
+  height: 0.4375rem;
+  border-radius: 999px;
+  background: var(--lgh-line);
+  overflow: hidden;
+}
+
+.lgh__bar > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--lgh-green-deep), var(--lgh-green));
+  width: var(--fill, 0%);
+}
+
+.lgh__panel-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.lgh__fact {
+  border: 1px solid var(--lgh-line);
+  border-radius: 9px;
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: color-mix(in srgb, var(--lgh-ground) 45%, transparent);
+}
+
+.lgh__fact dt {
+  font-size: 0.72rem;
+  color: var(--lgh-dim);
+  margin: 0;
+}
+
+.lgh__fact dd {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+}
+
+.lgh__advice {
+  border: 1px solid color-mix(in srgb, var(--lgh-green) 28%, var(--lgh-line));
+  border-radius: 10px;
+  padding: 0.8rem 0.9rem;
+  background: color-mix(in srgb, var(--lgh-green) 7%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.lgh__advice strong {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lgh-green);
+}
+
+[lang='bn'] .lgh__advice strong {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.lgh__advice p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--lgh-ink);
+}
+
+/* ------------------------------------------------------------------ card grid */
+
+.lgh__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(15.5rem, 1fr));
+}
+
+/* Six cards in an auto-fit grid land as four and then two orphans. Three columns divides them
+   evenly into two rows, which is what makes the section read as a set rather than a leftover. */
+@media (min-width: 64rem) {
+  .lgh__grid--three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.lgh__card {
+  border: 1px solid var(--lgh-line);
+  border-radius: 12px;
+  background: var(--lgh-raised);
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  transition:
+    border-color var(--lg-motion-base) var(--lg-motion-easing),
+    transform var(--lg-motion-base) var(--lg-motion-easing),
+    background-color var(--lg-motion-base) var(--lg-motion-easing);
+}
+
+.lgh__card:hover {
+  border-color: var(--lgh-line-bright);
+  background: var(--lgh-raised-2);
+}
+
+.lgh__card-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--lgh-dim);
+  margin: 0;
+}
+
+[lang='bn'] .lgh__card-label {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.lgh__card-value {
+  font-size: 1.875rem;
+  font-weight: 680;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+  line-height: 1;
+}
+
+.lgh__delta {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.lgh__delta--up {
+  color: var(--lgh-green);
+}
+.lgh__delta--warn {
+  color: var(--lgh-amber);
+}
+
+/* A sparkline drawn with a clip-path polygon: no SVG path data to hand-author, no library. */
+.lgh__spark {
+  height: 2.5rem;
+  border-radius: 4px;
+  /* Was 34% and read as a smudge. The fill has to carry the shape on its own, because the
+     clip-path removes any border that might have described it. */
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--lgh-green) 78%, transparent) 0%,
+    color-mix(in srgb, var(--lgh-green) 18%, transparent) 100%
+  );
+  clip-path: var(--spark);
+  margin-top: auto;
+}
+
+/* --------------------------------------------------------------- two-column */
+
+.lgh__split {
+  display: grid;
+  gap: clamp(2rem, 4vw, 3.5rem);
+  align-items: start;
+}
+
+@media (min-width: 60rem) {
+  .lgh__split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  }
+}
+
+/* ------------------------------------------------------------------ AI chat */
+
+.lgh__chat {
+  border: 1px solid var(--lgh-line-bright);
+  border-radius: 14px;
+  background: var(--lgh-raised);
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.lgh__bubble {
+  border-radius: 12px;
+  padding: 0.8rem 0.95rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  max-width: 92%;
+}
+
+.lgh__bubble--ask {
+  align-self: flex-end;
+  background: var(--lgh-raised-2);
+  border: 1px solid var(--lgh-line);
+}
+
+.lgh__bubble--answer {
+  align-self: flex-start;
+  background: color-mix(in srgb, var(--lgh-green) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lgh-green) 24%, var(--lgh-line));
+}
+
+.lgh__caution {
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--lgh-amber);
+  border-left: 2px solid var(--lgh-amber);
+  padding-left: 0.7rem;
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------- market */
+
+.lgh__product {
+  border: 1px solid var(--lgh-line);
+  border-radius: 12px;
+  background: var(--lgh-raised);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color var(--lg-motion-base) var(--lg-motion-easing);
+}
+
+.lgh__product:hover {
+  border-color: var(--lgh-line-bright);
+}
+
+/* Produce is suggested with a colour field rather than a stock photograph. */
+.lgh__product-art {
+  height: 6.5rem;
+  background: linear-gradient(140deg, var(--art-a), var(--art-b));
+  position: relative;
+}
+
+.lgh__product-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(90deg, rgb(0 0 0 / 0.14) 1px, transparent 1px);
+  background-size: 0.9rem 100%;
+  opacity: 0.5;
+}
+
+.lgh__product-body {
+  padding: 0.85rem 0.95rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.lgh__product-name {
+  font-weight: 640;
+  margin: 0;
+}
+
+.lgh__product-meta {
+  font-size: 0.8125rem;
+  color: var(--lgh-dim);
+  margin: 0;
+}
+
+.lgh__price {
+  margin-top: 0.4rem;
+  font-size: 1.125rem;
+  font-weight: 680;
+  font-variant-numeric: tabular-nums;
+}
+
+.lgh__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  align-self: flex-start;
+  font-size: 0.6875rem;
+  font-weight: 640;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  color: var(--lgh-green);
+  background: color-mix(in srgb, var(--lgh-green) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lgh-green) 28%, transparent);
+}
+
+/* ---------------------------------------------------------------- ecosystem */
+
+.lgh__eco {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+}
+
+.lgh__node {
+  border: 1px solid var(--lgh-line);
+  border-radius: 10px;
+  padding: 0.9rem;
+  text-align: center;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  background: var(--lgh-raised);
+  transition:
+    border-color var(--lg-motion-base) var(--lg-motion-easing),
+    color var(--lg-motion-base) var(--lg-motion-easing);
+}
+
+.lgh__node:hover {
+  border-color: var(--lgh-green);
+  color: var(--lgh-green);
+}
+
+.lgh__node--core {
+  border-color: color-mix(in srgb, var(--lgh-green) 45%, transparent);
+  background: color-mix(in srgb, var(--lgh-green) 10%, transparent);
+  color: var(--lgh-green);
+}
+
+/* -------------------------------------------------------------------- trust */
+
+.lgh__trust {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.lgh__trust h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.lgh__trust p {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--lgh-dim);
+}
+
+.lgh__trust > div {
+  border-top: 2px solid var(--lgh-green-deep);
+  padding-top: 0.9rem;
+}
+
+/* ---------------------------------------------------------------------- CTA */
+
+.lgh__cta {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding-block: clamp(4.5rem, 10vw, 9rem);
+}
+
+.lgh__cta .lgh__display {
+  max-width: 16ch;
+}
+
+/* ------------------------------------------------------------------- footer */
+
+.lgh__footer {
+  border-top: 1px solid var(--lgh-line);
+  padding-block: 3rem 2.5rem;
+}
+
+.lgh__footer-grid {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.lgh__footer h4 {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lgh-dim);
+  margin: 0 0 0.75rem;
+}
+
+[lang='bn'] .lgh__footer h4 {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.lgh__footer ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lgh__footer a,
+.lgh__footer li {
+  color: var(--lgh-dim);
+  text-decoration: none;
+  font-size: 0.9375rem;
+}
+
+.lgh__footer a:hover {
+  color: var(--lgh-ink);
+}
+
+.lgh__colophon {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--lgh-line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  align-items: center;
+  font-size: 0.8125rem;
+  color: var(--lgh-dim);
+}
+
+/* ------------------------------------------------------------------- motion
+ *
+ * Everything below is opt-in. A reader who has asked their system for less motion gets the page
+ * fully rendered and completely still — the reveals below only ever animate opacity and a few
+ * pixels of translation, so nothing is lost by skipping them.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .lgh__reveal {
+    animation: lgh-rise 700ms var(--lg-motion-easing) both;
+    animation-delay: var(--delay, 0ms);
+  }
+
+  @keyframes lgh-rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* The bar fills once on load rather than looping — a loop would read as a progress spinner. */
+  .lgh__bar > i {
+    animation: lgh-fill 1200ms var(--lg-motion-easing) both;
+    animation-delay: 300ms;
+  }
+
+  @keyframes lgh-fill {
+    from {
+      width: 0%;
+    }
+    to {
+      width: var(--fill, 0%);
+    }
+  }
+
+  .lgh__dot {
+    animation: lgh-pulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes lgh-pulse {
+    0%,
+    100% {
+      opacity: 1;
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--lgh-green) 55%, transparent);
+    }
+    50% {
+      opacity: 0.75;
+      box-shadow: 0 0 0 5px transparent;
+    }
+  }
+
+  .lgh__card:hover,
+  .lgh__panel:hover {
+    transform: translateY(-2px);
+  }
+
+  .lgh__btn:hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* ------------------------------------------------------------------ mobile */
+
+@media (max-width: 40rem) {
+  .lgh__panel-facts {
+    grid-template-columns: 1fr;
+  }
+
+  .lgh__cta-row .lgh__btn {
+    flex: 1 1 100%;
+  }
+}
+
+/*
+ * Below 30rem the navbar cannot hold the logo, the language switcher and two buttons — "Get
+ * started" was being cut off at the right edge. Sign-in is the one that gives way: it is still
+ * one tap from the register screen, which carries an "already have an account" link, whereas
+ * losing the primary call to action would leave a visitor with nowhere to go.
+ */
+@media (max-width: 30rem) {
+  .lgh__nav-signin {
+    display: none;
+  }
+
+  .lgh__nav-inner {
+    gap: 0.6rem;
+  }
+
+  .lgh__logo {
+    font-size: 1rem;
+  }
+}

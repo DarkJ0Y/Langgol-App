@@ -1,23 +1,23 @@
 import { createTranslator } from '@langgol/i18n'
 import { developmentIdentityLabel, findDevelopmentIdentityByPhone } from '@langgol/domain/identity'
-import { Alert, Button, Card, LinkButton } from '@langgol/ui/components'
+import { Alert, Button, Card } from '@langgol/ui/components'
 import { getLocale } from '@/lib/locale'
 import { getSession } from '@/lib/session'
 import { signOutAction } from './actions/auth'
+import { HomeLanding } from './home-landing'
 
 export default async function HomePage() {
   const locale = await getLocale()
   const t = createTranslator(locale)
   const session = await getSession()
 
+  /*
+   * A visitor who is not signed in gets the marketing page; somebody who is gets their account.
+   * The landing is what answers "what is this?", and a farmer who has already answered that
+   * question should not have to scroll past it to reach their own work.
+   */
   if (session === null) {
-    return (
-      <Card>
-        <h1 className="lg-title">{t.t('common.appName')}</h1>
-        <p className="lg-subtitle">{t.t('auth.signInSubtitle')}</p>
-        <LinkButton href="/auth">{t.t('auth.signInTitle')}</LinkButton>
-      </Card>
-    )
+    return <HomeLanding t={t} locale={locale} />
   }
 
   // A fixture shows its localised label; a real account shows the name it was registered with.

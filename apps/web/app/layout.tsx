@@ -27,6 +27,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // shell picks the width rather than each page fighting the container.
   const isWide = path.startsWith('/market') || path.startsWith('/orders')
 
+  /*
+   * The marketing homepage brings its own navigation, its own width and its own visual register,
+   * so the product shell steps out of its way entirely. Every other route keeps the header and
+   * the reading measure — this is one exception, not a second layout system.
+   */
+  const isLanding = path === '/'
+
   return (
     /*
      * The dark surface is the default. Langgol is used outdoors and after dark, and the
@@ -58,19 +65,26 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             }
           />
         ) : null}
-        <div className="lg-page">
-          <header className="lg-header">
-            <a className="lg-brand" href="/">
-              {t.t('common.appName')}
-            </a>
-            <LanguageSwitcher
-              currentLocale={locale}
-              otherLabel={t.t('common.switchToEnglish')}
-              action="/api/locale"
-              returnTo={path}
-            />
-          </header>
-          <main className={isWide ? 'lg-main lg-main--wide' : 'lg-main'} id="main">
+        <div className={isLanding ? 'lg-page lg-page--bleed' : 'lg-page'}>
+          {isLanding ? null : (
+            <header className="lg-header">
+              <a className="lg-brand" href="/">
+                {t.t('common.appName')}
+              </a>
+              <LanguageSwitcher
+                currentLocale={locale}
+                otherLabel={t.t('common.switchToEnglish')}
+                action="/api/locale"
+                returnTo={path}
+              />
+            </header>
+          )}
+          <main
+            className={
+              isLanding ? 'lg-main lg-main--bleed' : isWide ? 'lg-main lg-main--wide' : 'lg-main'
+            }
+            id="main"
+          >
             {children}
           </main>
         </div>

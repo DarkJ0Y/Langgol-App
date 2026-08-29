@@ -403,6 +403,100 @@ export const en: Catalogue = {
     soilSALINE: 'Saline',
   },
 
+  home: {
+    navPlatform: 'Platform',
+    navAssistant: 'AI Assistant',
+    navFarmers: 'For Farmers',
+    navMarket: 'Marketplace',
+    navEcosystem: 'Ecosystem',
+    signIn: 'Log in',
+    getStarted: 'Get started',
+    menu: 'Menu',
+
+    heroEyebrow: 'Intelligence for every field',
+    heroTitle: 'Turn agricultural data into decisions worth making',
+    heroBody:
+      'Langgol brings Bangladesh\u2019s farmers, buyers, retailers and agronomists onto one surface \u2014 field data, market prices and crop advice in the same place.',
+    heroPrimary: 'Get started',
+    heroSecondary: 'Explore the platform',
+    heroNote: 'The figures below are illustrative, not live data.',
+
+    panelTitle: 'Field intelligence',
+    panelCrop: 'Rice \u00b7 Boro',
+    panelDays: '42 days',
+    panelHealth: 'Crop health',
+    panelMoisture: 'Soil moisture',
+    panelRisk: 'Disease risk',
+    panelRiskLow: 'Low',
+    panelYield: 'Expected yield',
+    panelAdvice: 'Recommendation',
+    panelAdviceText: 'Irrigate within 18 hours. Little rain expected over the next three days.',
+
+    liveTitle: 'What your fields are telling you',
+    liveBody: 'Six signals in one place, every one of them from your own recorded data.',
+    metricHealth: 'Crop health',
+    metricSoil: 'Soil condition',
+    metricWeather: 'Weather risk',
+    metricDisease: 'Disease risk',
+    metricPrice: 'Market price',
+    metricYield: 'Expected yield',
+
+    farmTitle: 'One intelligence layer for every field',
+    farmBody:
+      'Farms, plots, crops, irrigation and yield on one surface. Nothing is shown that you have not recorded.',
+    farmPlots: 'Plots',
+    farmStage: 'Stage',
+    farmArea: 'Area',
+
+    aiTitle: 'Ask in Bangla. Answer in Bangla.',
+    aiBody: 'Send a photograph or type the question. The reply comes back in plain language.',
+    aiQuestion: 'My rice leaves are turning yellow. What should I do?',
+    aiAnswer:
+      'Yellowing that starts on the lower leaves usually points to nitrogen deficiency. Check there is standing water in the field before applying urea.',
+    aiCaution:
+      'This is a suggestion, not a confirmed diagnosis. Speak to your agriculture officer before a costly decision.',
+
+    marketTitle: 'Straight from the farmer',
+    marketBody:
+      'Who grew it, where it grew, and when it was picked \u2014 attached to every listing.',
+    marketVerified: 'Verified',
+    marketFrom: 'From {place}',
+
+    ecoTitle: 'An ecosystem, not an app',
+    ecoBody:
+      'Farmers, consumers, retailers, wholesalers, suppliers, experts and logistics on one platform.',
+    ecoFarmer: 'Farmers',
+    ecoConsumer: 'Consumers',
+    ecoRetailer: 'Retailers',
+    ecoWholesaler: 'Wholesalers',
+    ecoSupplier: 'Suppliers',
+    ecoExpert: 'Experts',
+    ecoLogistics: 'Logistics',
+
+    trustTitle: 'What we do, and what we do not',
+    trustBody: 'Fewer promises, stated plainly.',
+    trust1: 'Verified identity',
+    trust1Body: 'Every mobile number is verified. Farmer identity is verified in stages.',
+    trust2: 'Your data is yours',
+    trust2Body: 'You decide what each kind of data is used for, and can change it at any time.',
+    trust3: 'Nothing hidden in the price',
+    trust3Body: 'Delivery and service costs are shown in full before you order.',
+    trust4: 'Traceable origin',
+    trust4Body: 'The farm a crop came from travels with it.',
+
+    ctaTitle: 'Start today',
+    ctaBody: 'All you need to open an account is a mobile number.',
+
+    footerPlatform: 'Platform',
+    footerUsers: 'For users',
+    footerCompany: 'Company',
+    footerAbout: 'About',
+    footerPrivacy: 'Privacy',
+    footerTerms: 'Terms',
+    footerRights: 'Built for Bangladeshi agriculture',
+    demoNotice: 'Figures and messages on this page are illustrative examples, not real data.',
+  },
+
   empty: {
     nothingYet: 'Nothing here yet',
     noResults: 'No results found',
