@@ -19,6 +19,7 @@ import type {
   InputHTMLAttributes,
   ReactNode,
   SelectHTMLAttributes,
+  TextareaHTMLAttributes,
 } from 'react'
 
 function classNames(...values: (string | false | undefined)[]): string {
@@ -161,6 +162,30 @@ export function Input({ invalid, describedBy, className, ...rest }: InputProps) 
     <input
       {...rest}
       className={classNames('lg-input', className)}
+      aria-invalid={invalid === true || undefined}
+      aria-describedby={describedBy}
+    />
+  )
+}
+
+export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+  readonly invalid?: boolean | undefined
+  readonly describedBy?: string | undefined
+}
+
+/**
+ * Several sentences rather than one line.
+ *
+ * Shares `.lg-input` so it sits in the same control family, with a minimum height instead of the
+ * single-line one — an expert writing about their practice should not be typing into a slot.
+ * `maxLength` is the caller's to set from the domain descriptor, so the browser stops them at the
+ * same limit the server would.
+ */
+export function Textarea({ invalid, describedBy, className, ...rest }: TextareaProps) {
+  return (
+    <textarea
+      {...rest}
+      className={classNames('lg-input', 'lg-textarea', className)}
       aria-invalid={invalid === true || undefined}
       aria-describedby={describedBy}
     />

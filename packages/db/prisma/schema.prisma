@@ -60,11 +60,29 @@ enum Gender {
 
 /// How far through setup an account is — a separate axis from UserStatus. An ACTIVE account can
 /// still be half-onboarded, and a SUSPENDED one can be fully set up.
+/// How far through setup an account is.
+///
+/// Widened from four milestones to eight in P12. These states DESCRIBE progress and never grant
+/// or withhold anything: a user at PHONE_VERIFIED can browse, order, list and be paid exactly as
+/// one at FULLY_ONBOARDED can. Nothing in the platform branches on this value to decide whether an
+/// action is permitted — that is the policy engine's job, and it reads roles and ownership.
+///
+/// The column is a cache of a derivation. `deriveOnboardingState` in
+/// packages/domain/src/onboarding/states.ts computes it from what is true about the account right
+/// now; storing it as well makes "how many users stalled after verifying their phone?" a question
+/// SQL can answer.
+///
+/// FULLY_ONBOARDED includes the OPTIONAL identity check, so most healthy accounts will never
+/// reach it. That is the intended reading, not an oversight.
 enum OnboardingStatus {
   REGISTERED
+  PHONE_VERIFIED
   ROLE_SELECTED
-  PROFILE_COMPLETE
-  READY
+  PROFILE_STARTED
+  PROFILE_COMPLETED
+  KYC_PENDING
+  KYC_VERIFIED
+  FULLY_ONBOARDED
 }
 
 enum Language {
@@ -115,9 +133,23 @@ model User {
 
   productionsBought Production[] @relation("ProductionBuyer")
 
-  farmerProfile   FarmerProfile?
-  consumerProfile ConsumerProfile?
-  retailerProfile RetailerProfile?
+  farmerProfile     FarmerProfile?
+  consumerProfile   ConsumerProfile?
+  retailerProfile   RetailerProfile?
+  wholesalerProfile WholesalerProfile?
+  supplierProfile   SupplierProfile?
+  expertProfile     AgriculturalExpertProfile?
+  logisticsProfile  LogisticsProviderProfile?
+
+  verifications      Verification[]      @relation("VerificationSubject")
+  verificationsGiven Verification[]      @relation("VerificationReviewer")
+  verificationEvents VerificationEvent[] @relation("VerificationEventActor")
+  identityRecord     IdentityRecord?
+  agriIdentity       AgriIdentity?
+
+  adminPermissions        AdminPermissionGrant[] @relation("AdminPermissionHolder")
+  adminPermissionsGranted AdminPermissionGrant[] @relation("AdminPermissionGrantedBy")
+  adminPermissionsRevoked AdminPermissionGrant[] @relation("AdminPermissionRevokedBy")
 
   @@index([status])
   @@index([onboardingStatus])
@@ -352,11 +384,12 @@ model AdminArea {
   isActive    Boolean                                @default(true) @map("is_active")
   createdAt   DateTime                               @default(now()) @map("created_at")
 
-  parent    AdminArea?  @relation("AreaTree", fields: [parentId], references: [id])
-  children  AdminArea[] @relation("AreaTree")
-  addresses Address[]
-  farms     Farm[]
-  listings  Listing[]
+  parent              AdminArea?           @relation("AreaTree", fields: [parentId], references: [id])
+  children            AdminArea[]          @relation("AreaTree")
+  addresses           Address[]
+  farms               Farm[]
+  listings            Listing[]
+  profileServiceAreas ProfileServiceArea[]
 
   @@index([type, parentId])
   @@index([parentId, nameEn])
@@ -393,9 +426,13 @@ model Address {
   updatedAt      DateTime                               @updatedAt @map("updated_at")
   deletedAt      DateTime?                              @map("deleted_at")
 
-  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  area  AdminArea @relation(fields: [adminAreaId], references: [id])
-  farms Farm[]
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  area        AdminArea           @relation(fields: [adminAreaId], references: [id])
+  farms       Farm[]
+  consumers   ConsumerProfile[]
+  retailers   RetailerProfile[]
+  wholesalers WholesalerProfile[]
+  suppliers   SupplierProfile[]
 
   @@index([userId, isDefault])
   @@index([adminAreaId])
@@ -708,14 +745,54 @@ model FarmerProfile {
 model ConsumerProfile {
   id               String   @id @default(uuid()) @db.Uuid
   userId           String   @unique @map("user_id") @db.Uuid
+  /// Where this shopper's orders go by default. A POINTER into the address book, never a copy:
+  /// somebody who moves corrects one address and everything pointing at it follows.
+  ///
+  /// The foreign key proves the address exists; the trigger added alongside it proves the address
+  /// is theirs. docs/07_SECURITY.md §4
   defaultAddressId String?  @map("default_address_id") @db.Uuid
   createdAt        DateTime @default(now()) @map("created_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// --- What this shopper wants (P9) ----------------------------------------------------
+  ///
+  /// Deliberately NOT `preferred_language`: that lives on `users`, where every role has it, and
+  /// a copy here would be a second answer to the same question.
+  ///
+  /// `dietaryPreferences` is about food, not identity. HALAL is recorded because it decides
+  /// which listings are useful and for no other purpose. docs/07_SECURITY.md §7
+  dietaryPreferences String[] @map("dietary_preferences")
+  /// Free text: no curated list covers every crop somebody might ask for.
+  preferredProducts  String[] @map("preferred_products")
+  purchaseFrequency  String?  @map("purchase_frequency")
+  updatedAt          DateTime @updatedAt @map("updated_at")
 
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address Address? @relation(fields: [defaultAddressId], references: [id], onDelete: SetNull)
+
+  @@index([defaultAddressId])
   @@map("consumer_profiles")
 }
 
+/// A retailer: buys from farmers and wholesalers, sells to the public.
+///
+/// ## Inventory, sales and purchases — where they will attach
+///
+/// P9 deliberately creates no table for any of the three. Two of them already have an owner, and
+/// an empty table nobody writes is worse than no table: it invites a second, divergent answer to
+/// a question that is already answered elsewhere.
+///
+///  - **Purchases** are `Order` rows where the retailer is the buyer. They exist today. A
+///    retailer's purchase history is a query, not a new table, and P8 settled the precedent for
+///    the whole codebase: derive it, never re-record it.
+///  - **Sales** to the public are the one genuinely missing piece, because a walk-in customer
+///    leaves no order behind. Whatever records them will hang off `RetailerProfile.id`, which is
+///    why that id is stable and why this profile is a row rather than columns on `users`.
+///  - **Inventory** is the join of the two and must be DERIVED from them, not maintained beside
+///    them. A stock count kept as its own writable number drifts from the movements that produced
+///    it, and once it has drifted there is no way to tell which one was right.
+///
+/// So the preparation here is the stable id, the address the stock sits at, and this note. The
+/// schema change belongs to the phase that has the requirements.
 model RetailerProfile {
   id                 String             @id @default(uuid()) @db.Uuid
   userId             String             @unique @map("user_id") @db.Uuid
@@ -728,9 +805,443 @@ model RetailerProfile {
   verificationStatus VerificationStatus @default(UNVERIFIED) @map("verification_status")
   createdAt          DateTime           @default(now()) @map("created_at")
 
+  /// --- P9 -------------------------------------------------------------------------------
+  /// `tin` joins the `bin` that was already here. The two are constantly confused, so both are
+  /// length-checked by one shared validator — see packages/domain/src/profiles/business.ts.
+  tin             String?  @map("tin")
+  yearsInBusiness Int?     @map("years_in_business")
+  /// The shop's own address, and optionally its pin. Both optional: a street vendor has neither.
+  addressId       String?  @map("address_id") @db.Uuid
+  latitude        Decimal? @db.Decimal(9, 6)
+  longitude       Decimal? @db.Decimal(9, 6)
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
+
+  @@index([addressId])
+  @@map("retailer_profiles")
+}
+
+/// A wholesaler: buys in bulk from farmers, distributes to retailers.
+///
+/// Shares its three business documents with the retailer and supplier profiles, validated by the
+/// same module rather than three copies of the same regular expression.
+model WholesalerProfile {
+  id                      String             @id @default(uuid()) @db.Uuid
+  userId                  String             @unique @map("user_id") @db.Uuid
+  businessName            String             @map("business_name")
+  tradeLicence            String?            @map("trade_licence")
+  tin                     String?
+  bin                     String?
+  /// Tonnes. A wholesaler thinks in tonnes of capacity, not kilograms.
+  warehouseCapacityTonnes Int?               @map("warehouse_capacity_tonnes")
+  /// Administrative reach rather than a radius, because that is how distribution is organised
+  /// here — and the admin-area tree already models it.
+  distributionReach       String?            @map("distribution_reach")
+  ownsTransport           Boolean?           @map("owns_transport")
+  addressId               String?            @map("address_id") @db.Uuid
+  verificationStatus      VerificationStatus @default(UNVERIFIED) @map("verification_status")
+  createdAt               DateTime           @default(now()) @map("created_at")
+  updatedAt               DateTime           @updatedAt @map("updated_at")
+
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address     Address?             @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  serviceArea ProfileServiceArea[]
+
+  @@map("wholesaler_profiles")
+}
+
+/// A supplier: sells INTO farming — seed, fertiliser, equipment. Not produce.
+model SupplierProfile {
+  id                   String             @id @default(uuid()) @db.Uuid
+  userId               String             @unique @map("user_id") @db.Uuid
+  companyName          String             @map("company_name")
+  businessRegistration String?            @map("business_registration")
+  tradeLicence         String?            @map("trade_licence")
+  tin                  String?
+  bin                  String?
+  hasWarehouse         Boolean?           @map("has_warehouse")
+  /// SEED | FERTILISER | PESTICIDE | EQUIPMENT | IRRIGATION | FEED | VETERINARY
+  productCategories    String[]           @map("product_categories")
+  addressId            String?            @map("address_id") @db.Uuid
+  verificationStatus   VerificationStatus @default(UNVERIFIED) @map("verification_status")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address     Address?             @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  serviceArea ProfileServiceArea[]
+
+  @@map("supplier_profiles")
+}
+
+/// An agricultural expert: the human an AI diagnosis defers to.
+///
+/// `verificationStatus` matters more here than anywhere else on this list. An unverified
+/// "expert" advising on pesticide dosage is the failure mode this whole role has to guard, which
+/// is why the status is never settable from the profile form.
+model AgriculturalExpertProfile {
+  id                    String   @id @default(uuid()) @db.Uuid
+  userId                String   @unique @map("user_id") @db.Uuid
+  /// AGRONOMY | PLANT_PATHOLOGY | ENTOMOLOGY | SOIL_SCIENCE | ...
+  specialisations       String[]
+  qualification         String?
+  institution           String?
+  yearsOfExperience     Int?     @map("years_of_experience")
+  /// Free text: a certification is whatever the issuing body called it.
+  certifications        String[]
+  /// Integer poisha, like every other amount in the schema. Null means "not stated", which is
+  /// different from a free consultation — that is zero.
+  consultationFeePoisha BigInt?  @map("consultation_fee_poisha")
+  offersOnline          Boolean? @map("offers_online")
+  offersOffline         Boolean? @map("offers_offline")
+  bio                   String?
+
+  verificationStatus VerificationStatus @default(UNVERIFIED) @map("verification_status")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceArea ProfileServiceArea[]
+
+  @@index([verificationStatus])
+  @@map("agricultural_expert_profiles")
+}
+
+/// A logistics provider: moves produce between the other roles.
+model LogisticsProviderProfile {
+  id                 String             @id @default(uuid()) @db.Uuid
+  userId             String             @unique @map("user_id") @db.Uuid
+  companyName        String             @map("company_name")
+  /// VAN | PICKUP | TRUCK | COVERED_VAN | REFRIGERATED_TRUCK | THREE_WHEELER | BOAT
+  vehicleTypes       String[]           @map("vehicle_types")
+  coldChainAvailable Boolean?           @map("cold_chain_available")
+  warehouseAvailable Boolean?           @map("warehouse_available")
+  verificationStatus VerificationStatus @default(UNVERIFIED) @map("verification_status")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceArea ProfileServiceArea[]
+
+  @@map("logistics_provider_profiles")
+}
+
+/// Where a business operates.
+///
+/// A join onto the admin-area tree rather than a text column, because "where do you serve?" is
+/// answered with a list of upazilas and districts — which the tree already models, and which a
+/// free-text field could never be searched against.
+///
+/// One table for four roles rather than four join tables. Exactly one of the four foreign keys is
+/// set on any row, enforced by a CHECK in the p9 migration: a service area belongs to one profile
+/// or it belongs to nothing.
+model ProfileServiceArea {
+  id          String @id @default(uuid()) @db.Uuid
+  adminAreaId String @map("admin_area_id") @db.Uuid
+
+  wholesalerProfileId String? @map("wholesaler_profile_id") @db.Uuid
+  supplierProfileId   String? @map("supplier_profile_id") @db.Uuid
+  expertProfileId     String? @map("expert_profile_id") @db.Uuid
+  logisticsProfileId  String? @map("logistics_profile_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  area       AdminArea                  @relation(fields: [adminAreaId], references: [id])
+  wholesaler WholesalerProfile?         @relation(fields: [wholesalerProfileId], references: [id], onDelete: Cascade)
+  supplier   SupplierProfile?           @relation(fields: [supplierProfileId], references: [id], onDelete: Cascade)
+  expert     AgriculturalExpertProfile? @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
+  logistics  LogisticsProviderProfile?  @relation(fields: [logisticsProfileId], references: [id], onDelete: Cascade)
+
+  @@index([adminAreaId])
+  @@index([wholesalerProfileId])
+  @@index([supplierProfileId])
+  @@index([expertProfileId])
+  @@index([logisticsProfileId])
+  @@map("profile_service_areas")
+}
+
+// ------------------------------------------------------------ admin permissions
+
+/// What an administrator may actually do.
+///
+/// The ADMIN role is a door; this is the key. Before P13, holding the role meant holding
+/// everything — reading any user, granting any role, decrypting any national identity number — so
+/// one compromised session was total loss. Now the role admits somebody to the back office and
+/// grants nothing inside it.
+///
+/// There is deliberately no wildcard value and no super-permission. An administrator with no rows
+/// here can open the dashboard and do nothing from it, which is the correct state for an account
+/// created five minutes ago.
+enum AdminPermission {
+  USER_VIEW
+  USER_EDIT
+  ROLE_MANAGE
+  KYC_VIEW
+  KYC_REVIEW
+  BUSINESS_REVIEW
+  FARM_REVIEW
+  EXPERT_REVIEW
+  AUDIT_VIEW
+  ACCOUNT_SUSPEND
+}
+
+/// One permission held by one administrator.
+///
+/// Shaped like `UserRoleAssignment` rather than as an array column on `users`, and for the same
+/// reasons: a grant has a granter, a moment and a reason, and taking one away is an event worth
+/// recording rather than an array element quietly disappearing.
+///
+/// Revocation is a timestamp, not a delete. "Who could decrypt identity numbers last March?" is a
+/// question an incident review will ask, and a row that was removed cannot answer it.
+model AdminPermissionGrant {
+  id         String          @id @default(uuid()) @db.Uuid
+  userId     String          @map("user_id") @db.Uuid
+  permission AdminPermission
+
+  grantedAt   DateTime @default(now()) @map("granted_at")
+  grantedById String   @map("granted_by_id") @db.Uuid
+
+  /// Null while the grant is live. Set, never deleted.
+  revokedAt    DateTime? @map("revoked_at")
+  revokedById  String?   @map("revoked_by_id") @db.Uuid
+  /// Why it was taken away. An unattributed revocation of a permission somebody needed to do their
+  /// job is the kind of thing nobody can explain a month later.
+  revokeReason String?   @map("revoke_reason")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User  @relation("AdminPermissionHolder", fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy User  @relation("AdminPermissionGrantedBy", fields: [grantedById], references: [id])
+  revokedBy User? @relation("AdminPermissionRevokedBy", fields: [revokedById], references: [id])
+
+  @@index([userId, revokedAt])
+  @@map("admin_permission_grants")
+}
+
+// --------------------------------------------------- digital agricultural identity
+
+/// The public name a person carries in the agricultural economy.
+///
+/// `AGRI-BD-7K4M2QX9`. It goes on a certificate, a delivery note, a cooperative register and,
+/// later, a loan application, so it is designed to be printed, spoken and typed back.
+///
+/// ## The value is random and derived from nothing
+///
+/// Not a hash of the user id, the NID or the phone number. A national ID has few enough plausible
+/// values that a hashed one could be enumerated offline by anybody holding the identifier, which
+/// would turn a public name into a disclosure of the most private field in the system. The body is
+/// CSPRNG output; there is nothing to invert because there is no function.
+/// See packages/domain/src/agri-identity/agri-id.ts.
+///
+/// ## It is an identifier, never a credential
+///
+/// Knowing somebody AGRI-ID must grant no access, exactly as knowing their name does not. There is
+/// no lookup-by-AGRI-ID in the policy vocabulary, so the guarantee is an absent capability rather
+/// than a check somebody could forget.
+///
+/// ## Why its own table
+///
+/// A column on `users` would work today and would be the wrong shape tomorrow. Credit,
+/// traceability, insurance, government programmes and certificates all attach to the AGRI-ID
+/// rather than to a user id, and they attach to a row that has its own lifecycle, its own issue
+/// date and its own future columns.
+model AgriIdentity {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @map("user_id") @db.Uuid
+
+  /// UNIQUE, and enforced by the database rather than by a read-then-write check: two people
+  /// sharing an AGRI-ID is not a state this system could recover from once either has printed it.
+  agriId String @unique @map("agri_id")
+
+  /// Present from the first identifier rather than retrofitted. A country cannot be added later to
+  /// something already printed on paper.
+  countryCode String @default("BD") @map("country_code")
+
+  /// When the name came into existence. A dispute or a support conversation may need to establish
+  /// it, and `created_at` alone would be overwritten by any future re-issue mechanism.
+  issuedAt DateTime @default(now()) @map("issued_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("retailer_profiles")
+  @@map("agri_identities")
+}
+
+// ------------------------------------------------------- identity, KYC and verification
+
+/// What is being verified.
+///
+/// PHONE and EMAIL are here even though they are proven automatically, because "what is proven
+/// about this account?" should have one answer rather than two places to look.
+enum KycVerificationType {
+  PHONE
+  EMAIL
+  IDENTITY
+  FARM
+  BUSINESS
+  EXPERT
+  PAYMENT
+}
+
+/// Where a verification stands.
+///
+/// Distinct from `VerificationStatus`, which is the coarse UNVERIFIED/PENDING/VERIFIED/REJECTED
+/// flag carried by the role profiles. This one is the workflow: PENDING and UNDER_REVIEW are
+/// separate so an ageing queue can be told apart from a busy one, and EXPIRED is separate from
+/// REJECTED because a lapsed document was never judged false.
+enum KycStatus {
+  PENDING
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+/// How the evidence was checked. Recorded so a decision can be understood a year later.
+enum KycMethod {
+  MANUAL_REVIEW
+  AUTOMATED_CHALLENGE
+  GOVERNMENT_REGISTRY
+  FIELD_AGENT
+}
+
+/// Which document. Only NID is submittable today; the rest are named so that widening support is
+/// a change to an application allowlist rather than a migration that rewrites stored values.
+enum IdentityDocumentType {
+  NID
+  BIRTH_CERTIFICATE
+  PASSPORT
+  DRIVING_LICENCE
+}
+
+/// One verification, of one kind, for one user.
+///
+/// The hub of the whole feature. Seven types share this row rather than growing seven tables,
+/// because "somebody submitted evidence, somebody qualified looked at it, and here is what they
+/// decided and when" is one problem — and solving it seven times is how the seventh ends up with
+/// no audit trail.
+///
+/// `status` is never writable by the subject. The transition table in
+/// packages/domain/src/kyc/verification.ts has no edge reaching VERIFIED with a SUBJECT actor,
+/// and the policy vocabulary has no action that would let one. docs/07_SECURITY.md 4
+model Verification {
+  id     String              @id @default(uuid()) @db.Uuid
+  userId String              @map("user_id") @db.Uuid
+  type   KycVerificationType
+  status KycStatus           @default(PENDING)
+  method KycMethod?
+
+  submittedAt    DateTime? @map("submitted_at")
+  reviewedAt     DateTime? @map("reviewed_at")
+  reviewerUserId String?   @map("reviewer_user_id") @db.Uuid
+
+  /// Why it was refused, in words the submitter can act on. Never null on a REJECTED row  a
+  /// CHECK in the migration enforces that, because "rejected" with no reason means the person
+  /// re-submits the same thing and occupies the queue twice.
+  rejectionReason String? @map("rejection_reason")
+
+  /// When a VERIFIED record stops counting. Null means it does not lapse.
+  expiresAt DateTime? @map("expires_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User                @relation("VerificationSubject", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer User?               @relation("VerificationReviewer", fields: [reviewerUserId], references: [id], onDelete: SetNull)
+  identity IdentityRecord?
+  events   VerificationEvent[]
+
+  /// One verification of each kind per user. Two taps on a slow connection must produce one row
+  /// in the reviewer queue, and the database is the only participant that can guarantee that.
+  @@unique([userId, type])
+  /// The queue: pending work, oldest first.
+  @@index([status, submittedAt])
+  @@index([userId])
+  @@index([reviewerUserId])
+  @@map("verifications")
+}
+
+/// The identity document behind an IDENTITY verification.
+///
+/// Split from `Verification` because these columns are the sensitive ones and nothing else needs
+/// them. A join is required to reach a ciphertext, which means the ordinary queue and status
+/// reads  which do not join  cannot leak one by accident.
+///
+/// ## Why the number is encrypted rather than hashed
+///
+/// A reviewer has to READ it to compare against the card. And an NID has too little entropy for
+/// a hash to protect it: the whole space is enumerable, so a hashed column would be reversible
+/// by anyone who obtained it. AES-256-GCM under a key held outside the database, bound to the
+/// owning user so a ciphertext cannot be moved between rows.
+/// See packages/infrastructure/src/crypto/encryption.ts.
+model IdentityRecord {
+  id             String @id @default(uuid()) @db.Uuid
+  userId         String @unique @map("user_id") @db.Uuid
+  verificationId String @unique @map("verification_id") @db.Uuid
+
+  identityType IdentityDocumentType @map("identity_type")
+
+  /// AES-256-GCM. Never selected by any ordinary read path  see the repository, where reaching
+  /// it requires calling a method named `revealCiphertext`.
+  identityNumberCiphertext String @map("identity_number_ciphertext")
+
+  /// A keyed HMAC of the number, so "is this document already registered?" is answerable without
+  /// decrypting the table. Unique across users: one card must not verify several accounts.
+  identityNumberBlindIndex String @unique @map("identity_number_blind_index")
+
+  /// What a screen shows. Stored already masked so that rendering never needs a decryption, and
+  /// a read path that never decrypts is a read path that cannot leak.
+  identityNumberMasked String @map("identity_number_masked")
+
+  /// The trailing digits, kept in clear so a mask can be rebuilt. Four digits identifies nobody.
+  identityNumberLast4 String @map("identity_number_last4")
+
+  /// Object storage keys, never URLs. These objects have no public path; they are streamed by an
+  /// authorized route against a short-lived signed grant. docs/07_SECURITY.md 7
+  documentFrontKey String  @map("document_front_key")
+  documentBackKey  String? @map("document_back_key")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verification Verification @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+
+  @@map("identity_records")
+}
+
+/// Every state change, append-only.
+///
+/// "See verification history" in the requirements, and the evidence an auditor needs: who
+/// decided, when, from what to what, and why. Append-only by trigger rather than by convention
+/// a history a reviewer can edit is not a history.
+///
+/// `reason` may hold a rejection reason, which is written by a reviewer about a document. It must
+/// never hold an identity number, and the use case that writes these rows passes only the
+/// reviewer own words. docs/07_SECURITY.md 11
+model VerificationEvent {
+  id             String @id @default(uuid()) @db.Uuid
+  verificationId String @map("verification_id") @db.Uuid
+
+  /// Null for a system transition such as expiry, which no person caused.
+  actorUserId String? @map("actor_user_id") @db.Uuid
+
+  action     String
+  fromStatus KycStatus? @map("from_status")
+  toStatus   KycStatus  @map("to_status")
+  reason     String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  verification Verification @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+  actor        User?        @relation("VerificationEventActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([verificationId, createdAt])
+  @@map("verification_events")
 }
 
 // ------------------------------------------------------------- farms & curated catalogue

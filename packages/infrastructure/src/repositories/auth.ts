@@ -7,6 +7,7 @@
  * Refs: docs/07_SECURITY.md §4.3
  */
 
+import { sanitiseAuditEntry, shouldRecordIp } from '@langgol/domain/audit'
 import { prisma } from '@langgol/db'
 import type { E164Phone } from '@langgol/domain/identity'
 import type {
@@ -303,18 +304,58 @@ export const sessionRepository: SessionRepository = {
   },
 }
 
+/**
+ * The audit log.
+ *
+ * ## Two guarantees applied here, because here is the only way in
+ *
+ * **Nothing forbidden is stored.** `sanitiseAuditEntry` scrubs a password, an OTP, a raw identity
+ * number, a document key, an authentication token or a financial figure out of the reason and the
+ * metadata before either reaches the table. It scrubs rather than refuses: losing the audit line
+ * is worse than storing a redacted one, and failing the user's action because of an audit
+ * formatting problem is worse still. What was removed is recorded on the row, so a cleaned entry
+ * is distinguishable from one that never carried anything.
+ *
+ * **An IP address is kept only where it answers a security question.** An address is personal
+ * data, so it is dropped for the ordinary business events even when a caller passes one — which
+ * makes over-collection impossible rather than merely discouraged.
+ *
+ * Refs: docs/07_SECURITY.md §5, §9, §11
+ */
 export const auditPort: AuditPort = {
   async record(input) {
+    const safe = sanitiseAuditEntry({
+      action: input.action,
+      ...(input.reason === undefined ? {} : { reason: input.reason }),
+      ...(input.meta === undefined ? {} : { meta: input.meta }),
+    })
+
+    /*
+     * The metadata, plus a note of anything removed.
+     *
+     * `after` is the column that already existed for structured payloads. The redaction list joins
+     * it rather than getting a column of its own, so an investigator reading one row sees the
+     * substitution beside the data it replaced.
+     */
+    const after =
+      safe.meta === null && safe.redactions.length === 0
+        ? undefined
+        : {
+            ...(safe.meta ?? {}),
+            ...(safe.redactions.length === 0 ? {} : { _redacted: safe.redactions.join(',') }),
+          }
+
     await prisma.auditLog.create({
       data: {
         actorUserId: input.actorUserId,
         action: input.action,
         entityType: input.entityType,
         entityId: input.entityId,
-        reason: input.reason ?? null,
-        ...(input.meta === undefined ? {} : { after: input.meta }),
-        ipAddress: input.ipAddress ?? null,
-        userAgent: input.userAgent ?? null,
+        reason: safe.reason,
+        ...(after === undefined ? {} : { after }),
+        // Dropped for an action that has no security reason to carry one, whatever was passed.
+        ipAddress: shouldRecordIp(input.action) ? (input.ipAddress ?? null) : null,
+        userAgent: shouldRecordIp(input.action) ? (input.userAgent ?? null) : null,
       },
     })
   },

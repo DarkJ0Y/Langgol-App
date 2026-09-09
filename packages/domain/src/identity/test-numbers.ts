@@ -29,10 +29,13 @@
  *  3. **The env schema.** Production already refuses `SMS_PROVIDER=console`, so a production
  *     deployment cannot silently fall back to log-only delivery either.
  *
- * Deliberately separate from the development fixtures in `auth-mode.ts`. Those nine accounts
- * exist to be signed into WITHOUT a code, through `/auth/development`; these two exist to be
- * signed into WITH one, through the real OTP flow. Different mechanisms, different guarantees,
- * and the reserved block for fixtures is full at nine besides.
+ * Deliberately separate from the development fixtures in `auth-mode.ts`. Those accounts exist to
+ * be signed into WITHOUT a code, through `/auth/development`; these two exist to be signed into
+ * WITH one, through the real OTP flow. Different mechanisms, different guarantees.
+ *
+ * The two numbers below sit in the gap the fixture block leaves. It runs on endings 01-09 and
+ * then 20-29; these end 11 and 12. The gap is load-bearing rather than incidental: an account
+ * reachable both with a code and without one would be secured by whichever path is weaker.
  *
  * Refs: docs/07_SECURITY.md §3.1; docs/03_ARCHITECTURE.md ADR-22
  */

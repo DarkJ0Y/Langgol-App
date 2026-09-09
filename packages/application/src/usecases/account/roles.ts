@@ -154,7 +154,7 @@ export async function assignRole(
   if (result.added) {
     await deps.audit.record({
       actorUserId: actor.userId,
-      action: 'ROLE_ASSIGNED',
+      action: 'ROLE_ADDED',
       entityType: 'user',
       entityId: command.targetUserId,
       reason: command.role,
@@ -235,7 +235,7 @@ export async function removeRole(
   if (result.removed) {
     await deps.audit.record({
       actorUserId: actor.userId,
-      action: 'ROLE_REVOKED',
+      action: 'ROLE_REMOVED',
       entityType: 'user',
       entityId: command.targetUserId,
       reason: `${command.role}: ${reason.slice(0, 120)}`,

@@ -77,6 +77,22 @@ const schema = z.object({
   FIREBASE_MEASUREMENT_ID: z.string().optional(),
 
   JOB_TRIGGER_SECRET: z.string().min(16, 'JOB_TRIGGER_SECRET must be at least 16 characters'),
+
+  /*
+   * The master secret protecting identity numbers at rest.
+   *
+   * Base64, decoding to at least 32 bytes. Two independent subkeys are derived from it — one to
+   * encrypt, one to build the lookup index — so that the cipher and the index never share key
+   * material. See packages/infrastructure/src/crypto/encryption.ts.
+   *
+   * `optional`, and that is a deliberate trade rather than laxity. Requiring it would stop the
+   * whole application booting for a developer working on the marketplace, who has no business
+   * holding a production KYC key on their laptop. What it must never do is fail OPEN: with no
+   * key configured the cipher reports itself unconfigured and every identity submission is
+   * REFUSED. An unencrypted NID is never written. The production check below makes the same
+   * point louder.
+   */
+  KYC_ENCRYPTION_KEY: z.string().optional(),
 })
 
 export type Env = z.infer<typeof schema> & {
@@ -158,6 +174,32 @@ export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
       `SMS_PROVIDER="${env.SMS_PROVIDER}" cannot be used in production: no user would receive ` +
         'an OTP, and every login would fail.',
     )
+  }
+
+  /*
+   * A production deployment must hold the KYC key.
+   *
+   * Without it every identity submission is refused, which is the correct failure but a silent
+   * one: the feature simply never works, and the first report comes from a user who cannot
+   * verify. Better to refuse to boot and say why.
+   *
+   * The length is checked here rather than only in the cipher so that a key which is present but
+   * too short fails at deploy time, not at the first submission.
+   */
+  if (isProduction) {
+    const key = env.KYC_ENCRYPTION_KEY
+    if (key === undefined || key.trim() === '') {
+      throw new EnvironmentError(
+        'KYC_ENCRYPTION_KEY is required in production: without it identity numbers cannot be ' +
+          'encrypted, and every KYC submission would be refused.',
+      )
+    }
+    if (Buffer.from(key, 'base64').byteLength < 32) {
+      throw new EnvironmentError(
+        'KYC_ENCRYPTION_KEY must be at least 32 bytes of base64-encoded material. Generate one ' +
+          'with: openssl rand -base64 32',
+      )
+    }
   }
 
   if (isProduction && NON_PRODUCTION.has(env.NODE_ENV)) {

@@ -33,7 +33,18 @@ function actor(overrides: Partial<Actor> = {}): Actor {
   return { userId: FARMER_ID, roles: ['FARMER'], status: 'ACTIVE', ...overrides }
 }
 
-const admin = actor({ userId: ADMIN_ID, roles: ['ADMIN'] })
+/*
+ * An administrator holding the permissions these tests exercise.
+ *
+ * P13 made the ADMIN role a door rather than a key, so an actor carrying only the role now proves
+ * the opposite of what it used to. The permissions are listed explicitly rather than granted
+ * wholesale, so a test that starts needing a new one has to say so.
+ */
+const admin = actor({
+  userId: ADMIN_ID,
+  roles: ['ADMIN'],
+  permissions: ['ROLE_MANAGE', 'USER_VIEW'],
+})
 
 /* ------------------------------------------------------------------- fakes */
 
@@ -60,7 +71,7 @@ class FakeAccounts implements AccountRepository {
       fullName: 'Rahim Uddin',
       preferredLanguage: 'BN',
       status: 'ACTIVE',
-      onboardingStatus: 'ROLE_SELECTED',
+      onboardingStatus: 'REGISTERED',
       profilePhotoKey: null,
       dateOfBirth: null,
       gender: null,
@@ -309,7 +320,7 @@ describe('role assignment', () => {
   it('audits the grant', async () => {
     const { deps, audit } = harness()
     await assignRole(admin, { targetUserId: FARMER_ID, role: 'WHOLESALER' }, deps)
-    expect(audit.entries.map((e) => e.action)).toContain('ROLE_ASSIGNED')
+    expect(audit.entries.map((e) => e.action)).toContain('ROLE_ADDED')
   })
 
   it('refuses a role the platform does not recognise', async () => {
@@ -542,11 +553,18 @@ describe('profile', () => {
   })
 
   it('advances onboarding status when the profile is confirmed', async () => {
+    /*
+     * Confirming a name raises a user who already holds a role to ROLE_SELECTED, and no further.
+     *
+     * P12 widened this vocabulary and gave PROFILE_COMPLETED its literal meaning — the profile is
+     * complete, role questionnaire and all. This screen knows about names and roles and nothing
+     * about the rest, so this is exactly as far as it may honestly carry somebody.
+     */
     const { deps } = harness()
     const result = await updateCurrentUser(actor(), { fullName: 'Rahim Uddin' }, deps)
 
     if (!result.ok) return
-    expect(result.value.onboardingStatus).toBe('PROFILE_COMPLETE')
+    expect(result.value.onboardingStatus).toBe('ROLE_SELECTED')
   })
 
   it('audits WHICH fields changed, never their values', async () => {

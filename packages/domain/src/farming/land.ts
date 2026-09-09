@@ -24,6 +24,8 @@
 import type { LandUnit } from './catalogue.js'
 
 /** The scale applied to the farmer's number before storing it. 2.5 bigha → 2500. */
+import { toAsciiDigits } from '../intl/numerals.js'
+
 export const LAND_AMOUNT_SCALE = 1000
 
 /**
@@ -110,9 +112,15 @@ export function parseLandAmount(input: string): number | null {
   return amountMilli
 }
 
-/** Bangla-Indic digits (০–৯) to ASCII, plus the Bangla decimal separator. */
+/**
+ * Bangla-Indic digits (০–৯) to ASCII.
+ *
+ * Delegates to `intl/numerals.ts`, which is where this transliteration lives for the whole domain.
+ * The P15 audit found four hand-rolled copies of the same character arithmetic; identical copies of
+ * a pure function are harmless right up until one of them is fixed.
+ */
 export function normalizeDigits(input: string): string {
-  return input.replace(/[\u09E6-\u09EF]/g, (digit) => String(digit.charCodeAt(0) - 0x09e6))
+  return toAsciiDigits(input)
 }
 
 /** Render a stored amount back as the farmer would read it: `2500` → `"2.5"`. */

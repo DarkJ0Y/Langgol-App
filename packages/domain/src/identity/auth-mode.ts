@@ -75,13 +75,29 @@ export function assertModePermitted(environment: AppEnvironment, mode: AuthMode)
 /* --------------------------------------------------------- development identities */
 
 /**
- * Reserved phone block for development fixtures.
+ * Reserved phone area for development fixtures.
  *
- * `+8801700000001` … `+8801700000009`. Structurally valid Bangladeshi numbers so they satisfy
- * the same normalisation and database constraints as real ones, but a block that is never
- * allocated to a person — and the database CHECK forbids the fixture flag outside it.
+ * Structurally valid Bangladeshi numbers, so fixtures satisfy the same normalisation and database
+ * constraints as real users — in an area no operator allocates to a person, and which the
+ * database CHECK forbids the fixture flag outside of.
+ *
+ * Two runs of two-digit endings sit inside it: `01`–`09`, holding the accounts that came first,
+ * and `20`–`29`, opened for the role-specific ones added later. The second run starts at 20
+ * rather than immediately after the first because `+8801700000011` and `+8801700000012` are the
+ * fixed-code OTP test numbers in `test-numbers.ts`. Those sign in WITH a code and a fixture signs
+ * in WITHOUT one; a number reachable both ways would be secured by whichever path is weaker, so
+ * the runs are kept disjoint and the endings 10-19 stay out of both.
  */
-export const DEVELOPMENT_PHONE_PREFIX = '+880170000000'
+export const DEVELOPMENT_PHONE_PREFIX = '+88017000000'
+
+/**
+ * The reserved block, written exactly as the database states it.
+ *
+ * Kept in step with the `users_dev_fixture_reserved_block` CHECK constraint, so a number this
+ * accepts is a number the database will accept the fixture flag on. A test asserts that every
+ * declared identity falls inside it, which is what stops the two drifting apart.
+ */
+const DEVELOPMENT_PHONE_BLOCK = /^\+88017000000(?:0[1-9]|2[0-9])$/
 
 export interface DevelopmentIdentity {
   readonly key: string
@@ -121,7 +137,7 @@ export function findDevelopmentIdentityByPhone(phone: string): DevelopmentIdenti
 export const DEVELOPMENT_IDENTITIES: readonly DevelopmentIdentity[] = [
   {
     key: 'farmer',
-    phone: `${DEVELOPMENT_PHONE_PREFIX}1`,
+    phone: `${DEVELOPMENT_PHONE_PREFIX}01`,
     fullName: 'Dev Farmer',
     nameBn: 'ডেভ কৃষক',
     nameEn: 'Dev Farmer',
@@ -132,7 +148,7 @@ export const DEVELOPMENT_IDENTITIES: readonly DevelopmentIdentity[] = [
   },
   {
     key: 'consumer',
-    phone: `${DEVELOPMENT_PHONE_PREFIX}2`,
+    phone: `${DEVELOPMENT_PHONE_PREFIX}02`,
     fullName: 'Dev Consumer',
     nameBn: 'ডেভ ক্রেতা',
     nameEn: 'Dev Consumer',
@@ -143,7 +159,7 @@ export const DEVELOPMENT_IDENTITIES: readonly DevelopmentIdentity[] = [
   },
   {
     key: 'retailer',
-    phone: `${DEVELOPMENT_PHONE_PREFIX}3`,
+    phone: `${DEVELOPMENT_PHONE_PREFIX}03`,
     fullName: 'Dev Retailer',
     nameBn: 'ডেভ রিটেইলার',
     nameEn: 'Dev Retailer',
@@ -154,7 +170,7 @@ export const DEVELOPMENT_IDENTITIES: readonly DevelopmentIdentity[] = [
   },
   {
     key: 'ops',
-    phone: `${DEVELOPMENT_PHONE_PREFIX}4`,
+    phone: `${DEVELOPMENT_PHONE_PREFIX}04`,
     fullName: 'Dev Ops Agent',
     nameBn: 'ডেভ মাঠকর্মী',
     nameEn: 'Dev Ops Agent',
@@ -165,7 +181,7 @@ export const DEVELOPMENT_IDENTITIES: readonly DevelopmentIdentity[] = [
   },
   {
     key: 'admin',
-    phone: `${DEVELOPMENT_PHONE_PREFIX}5`,
+    phone: `${DEVELOPMENT_PHONE_PREFIX}05`,
     fullName: 'Dev Admin',
     nameBn: 'ডেভ অ্যাডমিন',
     nameEn: 'Dev Admin',
@@ -176,7 +192,7 @@ export const DEVELOPMENT_IDENTITIES: readonly DevelopmentIdentity[] = [
   },
   {
     key: 'farmer-consumer',
-    phone: `${DEVELOPMENT_PHONE_PREFIX}6`,
+    phone: `${DEVELOPMENT_PHONE_PREFIX}06`,
     fullName: 'Dev Farmer & Buyer',
     nameBn: 'ডেভ কৃষক ও ক্রেতা',
     nameEn: 'Dev Farmer & Buyer',
@@ -189,14 +205,10 @@ export const DEVELOPMENT_IDENTITIES: readonly DevelopmentIdentity[] = [
    * The three below exist so the marketplace can be exercised with more than one of each party.
    * A single farmer cannot demonstrate ranking, and a single buyer cannot demonstrate ownership
    * scoping or two buyers racing for the last of a crop — the tests that actually matter.
-   *
-   * The reserved phone block is +880170000000[1-9], so nine is the hard ceiling. All nine are now
-   * used; adding a tenth requires widening the CHECK constraint in the
-   * development_auth_fixtures migration, deliberately.
    */
   {
     key: 'farmer-distant',
-    phone: `${DEVELOPMENT_PHONE_PREFIX}7`,
+    phone: `${DEVELOPMENT_PHONE_PREFIX}07`,
     fullName: 'Dev Farmer (distant)',
     nameBn: 'ডেভ কৃষক (দূরের)',
     nameEn: 'Dev Farmer (distant)',
@@ -207,7 +219,7 @@ export const DEVELOPMENT_IDENTITIES: readonly DevelopmentIdentity[] = [
   },
   {
     key: 'consumer-second',
-    phone: `${DEVELOPMENT_PHONE_PREFIX}8`,
+    phone: `${DEVELOPMENT_PHONE_PREFIX}08`,
     fullName: 'Dev Consumer (second)',
     nameBn: 'ডেভ ক্রেতা (দ্বিতীয়)',
     nameEn: 'Dev Consumer (second)',
@@ -218,7 +230,7 @@ export const DEVELOPMENT_IDENTITIES: readonly DevelopmentIdentity[] = [
   },
   {
     key: 'ops-second',
-    phone: `${DEVELOPMENT_PHONE_PREFIX}9`,
+    phone: `${DEVELOPMENT_PHONE_PREFIX}09`,
     fullName: 'Dev Ops (second)',
     nameBn: 'ডেভ অপারেশনস (দ্বিতীয়)',
     nameEn: 'Dev Ops (second)',
@@ -228,6 +240,58 @@ export const DEVELOPMENT_IDENTITIES: readonly DevelopmentIdentity[] = [
     roles: ['OPS_AGENT'],
     preferredLanguage: 'BN',
   },
+  /*
+   * The four below hold the roles P9 wrote profiles for. Every one of them is CONTROLLED — no
+   * account may self-select a wholesaler, supplier, expert or logistics role at registration —
+   * so without a fixture apiece there is no way to open those screens at all, and the profile
+   * forms built for them could only ever be reviewed as code.
+   *
+   * They open the second run of the reserved block, at ending 21.
+   */
+  {
+    key: 'wholesaler',
+    phone: `${DEVELOPMENT_PHONE_PREFIX}21`,
+    fullName: 'Dev Wholesaler',
+    nameBn: 'ডেভ পাইকার',
+    nameEn: 'Dev Wholesaler',
+    descriptionBn: 'আড়তদার — কৃষকের কাছ থেকে বড় পরিমাণে কেনেন',
+    descriptionEn: 'Wholesale buyer taking large volumes at the farm gate',
+    roles: ['WHOLESALER'],
+    preferredLanguage: 'BN',
+  },
+  {
+    key: 'supplier',
+    phone: `${DEVELOPMENT_PHONE_PREFIX}22`,
+    fullName: 'Dev Supplier',
+    nameBn: 'ডেভ সরবরাহকারী',
+    nameEn: 'Dev Supplier',
+    descriptionBn: 'কৃষি উপকরণ সরবরাহকারী — বীজ, সার ও কীটনাশক',
+    descriptionEn: 'Agricultural input supplier — seed, fertiliser and crop protection',
+    roles: ['SUPPLIER'],
+    preferredLanguage: 'BN',
+  },
+  {
+    key: 'expert',
+    phone: `${DEVELOPMENT_PHONE_PREFIX}23`,
+    fullName: 'Dev Agricultural Expert',
+    nameBn: 'ডেভ কৃষি বিশেষজ্ঞ',
+    nameEn: 'Dev Agricultural Expert',
+    descriptionBn: 'কৃষি পরামর্শদাতা — রোগ ও ফলন নিয়ে কৃষককে পরামর্শ দেন',
+    descriptionEn: 'Agronomist advising farmers on disease, inputs and yield',
+    roles: ['AGRICULTURAL_EXPERT'],
+    preferredLanguage: 'BN',
+  },
+  {
+    key: 'logistics',
+    phone: `${DEVELOPMENT_PHONE_PREFIX}24`,
+    fullName: 'Dev Logistics Provider',
+    nameBn: 'ডেভ পরিবহনকারী',
+    nameEn: 'Dev Logistics Provider',
+    descriptionBn: 'পরিবহন সেবা — খামার থেকে বাজারে ফসল পৌঁছে দেন',
+    descriptionEn: 'Transport provider moving crops from farm to market',
+    roles: ['LOGISTICS_PROVIDER'],
+    preferredLanguage: 'EN',
+  },
 ] as const
 
 export function findDevelopmentIdentity(key: string): DevelopmentIdentity | undefined {
@@ -235,5 +299,5 @@ export function findDevelopmentIdentity(key: string): DevelopmentIdentity | unde
 }
 
 export function isDevelopmentPhone(phone: string): boolean {
-  return phone.startsWith(DEVELOPMENT_PHONE_PREFIX)
+  return DEVELOPMENT_PHONE_BLOCK.test(phone)
 }

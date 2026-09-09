@@ -13,6 +13,7 @@
  */
 
 import 'server-only'
+import type { AdminPermission } from '@langgol/domain/admin'
 import { cookies } from 'next/headers'
 import { prisma } from '@langgol/db'
 import { hashToken } from '@langgol/infrastructure'
@@ -37,6 +38,15 @@ export interface SessionUser {
   readonly roles: readonly Role[]
   readonly status: 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED'
   readonly preferredLanguage: 'BN' | 'EN'
+  /**
+   * Administrative permissions held right now.
+   *
+   * Read from the database on every request alongside the roles, deliberately not cached in the
+   * session row or the cookie. A permission revoked at 09:00 must be gone at 09:00, not whenever
+   * the operator next signs in — and a cookie carrying a permission list would be a claim the
+   * holder could try to edit.
+   */
+  readonly permissions: readonly AdminPermission[]
   readonly isDevelopmentFixture: boolean
   /** Server-side only. Never rendered; used to resolve a fixture’s localised label. */
   readonly phone: string
@@ -72,6 +82,9 @@ export async function getSession(): Promise<SessionUser | null> {
           isDevelopmentFixture: true,
           deletedAt: true,
           roles: { where: { revokedAt: null }, select: { role: true } },
+          // Live grants only. A revoked permission is gone on the next request, not on the next
+          // sign-in.
+          adminPermissions: { where: { revokedAt: null }, select: { permission: true } },
         },
       },
     },
@@ -84,6 +97,7 @@ export async function getSession(): Promise<SessionUser | null> {
     fullName: row.user.fullName,
     phone: row.user.phone,
     roles: row.user.roles.map((assignment) => assignment.role),
+    permissions: row.user.adminPermissions.map((grant) => grant.permission as AdminPermission),
     status: row.user.status,
     preferredLanguage: row.user.preferredLanguage,
     isDevelopmentFixture: row.user.isDevelopmentFixture,
@@ -105,6 +119,13 @@ export async function getActor(): Promise<MaybeActor> {
     userId: session.userId,
     roles: session.roles,
     status: session.status,
+    /*
+     * Carried onto the actor so the policy engine can see them.
+     *
+     * Without this line every permission check refuses, which is the correct failure direction —
+     * a forgotten wiring locks administrators out rather than letting everybody in.
+     */
+    permissions: session.permissions,
   } satisfies Actor
 }
 

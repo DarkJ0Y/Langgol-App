@@ -15,11 +15,14 @@ import { describe, expect, it } from 'vitest'
 import {
   HANDOFF_GRACE_SECONDS,
   MAX_FULL_NAME_LENGTH,
+  REGISTERABLE_ROLES,
   decodeHandoff,
+  destinationAfterRoleSelection,
   destinationAfterSignIn,
   encodeHandoff,
   handoffExpiry,
 } from './otp-handoff-policy'
+import { SELF_SELECTABLE_ROLES, isPrivilegedRole } from '@langgol/domain/identity'
 
 const NOW = new Date('2026-08-22T09:00:00.000Z')
 
@@ -133,6 +136,35 @@ describe('carrying the signup intent', () => {
   })
 })
 
+describe('which roles somebody may give themselves', () => {
+  /*
+   * The P14 audit found this list defined three times — here, in the verify-OTP use case, and in
+   * the domain — all agreeing, which is exactly why nobody had noticed that widening one would
+   * leave the others behind. There is now one definition, and this pins that the web app is still
+   * reading it rather than having quietly grown a copy again.
+   */
+  it('is the domain list, not a copy of it', () => {
+    expect([...REGISTERABLE_ROLES]).toEqual([...SELF_SELECTABLE_ROLES])
+  })
+
+  it('never includes a privileged role', () => {
+    // The escalation this allowlist exists to prevent: choosing ADMIN at signup.
+    for (const role of REGISTERABLE_ROLES) {
+      expect(isPrivilegedRole(role), role).toBe(false)
+    }
+  })
+
+  it('refuses a privileged role in a handoff cookie', () => {
+    // The cookie is the outer of two gates. A handoff naming ADMIN fails to decode at all rather
+    // than reaching the use case that would refuse it.
+    const forged = JSON.stringify({
+      phone: '+8801712345678',
+      signup: { fullName: 'Someone', role: 'ADMIN' },
+    })
+    expect(decodeHandoff(forged)).toBeNull()
+  })
+})
+
 describe('where somebody lands after signing in', () => {
   it('sends a farmer to the questions that make their account useful', () => {
     expect(destinationAfterSignIn(['FARMER'])).toBe('/farmer/onboarding')
@@ -147,5 +179,43 @@ describe('where somebody lands after signing in', () => {
   it('treats somebody who farms and buys as a farmer', () => {
     // One account, several roles. The farmer half is the one with setup left to do.
     expect(destinationAfterSignIn(['CONSUMER', 'FARMER'])).toBe('/farmer/onboarding')
+  })
+})
+
+describe('where somebody lands having just chosen their role', () => {
+  /*
+   * A different question from signing in, and it has a different answer. Onboarding happens once;
+   * signing in happens every day, and sending a returning retailer to a form they filled in
+   * months ago would be a small insult repeated daily.
+   */
+
+  it('sends a farmer to their own questionnaire', () => {
+    expect(destinationAfterRoleSelection('FARMER')).toBe('/farmer/onboarding')
+  })
+
+  it('sends a retailer to their business details', () => {
+    // A shop that has not said what it is called or where it trades cannot usefully appear to
+    // anybody, so this is the one screen worth interrupting for.
+    expect(destinationAfterRoleSelection('RETAILER')).toBe('/account/profile')
+  })
+
+  it('sends a consumer to the market rather than to a questionnaire', () => {
+    /*
+     * Every consumer question is genuinely optional — dietary preferences and a default address.
+     * Putting a form between somebody and the market they came for is how the market loses them;
+     * the same form is a link away on their account page whenever they want it.
+     */
+    expect(destinationAfterRoleSelection('CONSUMER')).toBe('/')
+  })
+
+  it('sends an unrecognised role somewhere that exists', () => {
+    // The role is checked against an allowlist before it reaches here. If that ever changes, the
+    // failure should be a harmless redirect rather than a route that 404s.
+    expect(destinationAfterRoleSelection('SOMETHING_ELSE')).toBe('/')
+  })
+
+  it('does not change where a returning user lands', () => {
+    // The two functions answer two questions. This pins that they stayed separate.
+    expect(destinationAfterSignIn(['RETAILER'])).toBe('/')
   })
 })

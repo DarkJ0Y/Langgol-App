@@ -18,7 +18,14 @@ import { NextResponse, type NextRequest } from 'next/server'
 const SESSION_COOKIES = ['__Host-langgol_session', 'langgol_session']
 
 /** Pages that require a session. Everything else is public. */
-const PROTECTED_PREFIXES = ['/auth/role', '/account', '/farmer']
+const PROTECTED_PREFIXES = [
+  '/auth/role',
+  '/account',
+  '/farmer',
+  '/admin',
+  '/agri-profile',
+  '/onboarding',
+]
 
 /** Pages that make no sense once signed in. */
 const ANONYMOUS_ONLY_PREFIXES = [

@@ -34,6 +34,7 @@ import {
 
 export {
   HANDOFF_GRACE_SECONDS,
+  destinationAfterRoleSelection,
   destinationAfterSignIn,
   handoffExpiry,
   type OtpHandoff,

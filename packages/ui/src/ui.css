@@ -818,3 +818,30 @@ a.lg-button--secondary {
 .lg-page--bleed {
   display: block;
 }
+
+/*
+ * A textarea in the same family as .lg-input.
+ *
+ * Vertical resize only: a horizontally resizable box can be dragged wider than its column and
+ * push the page into a sideways scroll, which on a phone reads as the layout being broken.
+ */
+.lg-textarea {
+  min-height: 6rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+/*
+ * A long list of checkboxes — the service areas a wholesaler or a transporter covers.
+ *
+ * Capped and scrolled rather than shown whole: sixty-four districts is a page a person has to
+ * scroll past to reach the save button, and the button is what they came for. The cap is in `rem`
+ * so it grows with the reader's text size instead of clipping it.
+ */
+.lg-scroll-list {
+  max-height: 18rem;
+  overflow-y: auto;
+  padding-right: var(--lg-space-2);
+  border: 1px solid var(--lg-border);
+  border-radius: var(--lg-radius-md);
+}

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { emailVerificationStatus, getCurrentUser, getUserRoles } from '@langgol/application'
 import { GENDERS, LANGUAGES, isRole, maskEmail, roleLabel } from '@langgol/domain/identity'
+import { PROFILE_ROLES } from '@langgol/domain/profiles'
 import { createTranslator } from '@langgol/i18n'
 import { Card, LinkButton } from '@langgol/ui/components'
 import { accountDeps, emailVerificationDeps } from '@/lib/deps'
@@ -122,11 +123,64 @@ export default async function AccountPage() {
         />
       </Card>
 
+      {/*
+       * The way in to the role questionnaire.
+       *
+       * Shown only to somebody who holds a role that has one — a farmer's questions live on
+       * their own richer screen, and offering an empty one to an account with no such role
+       * would be a door onto nothing.
+       */}
+      {held.some((assignment) => (PROFILE_ROLES as readonly string[]).includes(assignment.role)) ? (
+        <Card>
+          <h2 className="lg-title">{t.t('profile.title')}</h2>
+          <p className="lg-subtitle">{t.t('profile.subtitle')}</p>
+          <LinkButton href="/account/profile" variant="secondary">
+            {t.t('profile.open')}
+          </LinkButton>
+        </Card>
+      ) : null}
+
       <Card>
         <h2 className="lg-title">{t.t('address.title')}</h2>
         <p className="lg-subtitle">{t.t('address.locationHelp')}</p>
         <LinkButton href="/account/addresses" variant="secondary">
           {t.t('address.addNew')}
+        </LinkButton>
+      </Card>
+
+      {/*
+       * Setup, first. A person arriving at their account with things left to do should see what
+       * they are before anything else — and see, in the same glance, that none of it is blocking.
+       */}
+      <Card>
+        <h2 className="lg-title">{t.t('onboarding.title')}</h2>
+        <p className="lg-subtitle">{t.t('onboarding.subtitle')}</p>
+        <LinkButton href="/onboarding" variant="secondary">
+          {t.t('onboarding.open')}
+        </LinkButton>
+      </Card>
+
+      {/*
+       * The agricultural identity card, because the AGRI-ID is what a person is most likely to
+       * have come here to read out to somebody.
+       */}
+      <Card>
+        <h2 className="lg-title">{t.t('agri.title')}</h2>
+        <p className="lg-subtitle">{t.t('agri.subtitle')}</p>
+        <LinkButton href="/agri-profile" variant="secondary">
+          {t.t('agri.open')}
+        </LinkButton>
+      </Card>
+
+      {/*
+       * Verification is offered to everybody, not only to roles that require it. A consumer who
+       * wants a verified badge should not have to discover that the page exists.
+       */}
+      <Card>
+        <h2 className="lg-title">{t.t('kyc.title')}</h2>
+        <p className="lg-subtitle">{t.t('kyc.subtitle')}</p>
+        <LinkButton href="/account/verification" variant="secondary">
+          {t.t('kyc.open')}
         </LinkButton>
       </Card>
 
@@ -166,6 +220,16 @@ export default async function AccountPage() {
           </ul>
         )}
       </Card>
+
+      {/* The reviewer queue, shown only to somebody who may actually work it. */}
+      {(await authorize('kyc:review')).ok ? (
+        <Card>
+          <h2 className="lg-title">{t.t('kyc.queueTitle')}</h2>
+          <LinkButton href="/admin/kyc" variant="secondary">
+            {t.t('kyc.queueTitle')}
+          </LinkButton>
+        </Card>
+      ) : null}
 
       {mayAdminister.ok ? (
         <Card>

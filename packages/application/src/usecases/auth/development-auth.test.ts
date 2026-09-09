@@ -295,7 +295,7 @@ describe('development sign-in', () => {
 
   it('audits every sign-in as a development session, with a masked number', async () => {
     await developmentSignIn({ identityKey: 'ops', ipAddress: null, userAgent: null }, h.deps)
-    const entry = h.audit.entries.find((candidate) => candidate.action === 'DEV_SIGN_IN')
+    const entry = h.audit.entries.find((candidate) => candidate.action === 'DEV_SIGNED_IN')
     expect(entry).toBeDefined()
     expect(entry?.reason).toBe('identity=ops')
   })
@@ -328,7 +328,7 @@ describe('production safety', () => {
     // The database CHECK enforces this too; asserting it here keeps the allowlist honest when
     // someone adds an identity.
     for (const identity of DEVELOPMENT_IDENTITIES) {
-      expect(identity.phone).toMatch(/^\+880170000000[1-9]$/)
+      expect(identity.phone).toMatch(/^\+88017000000(?:0[1-9]|2[0-9])$/)
     }
     const phones = DEVELOPMENT_IDENTITIES.map((identity) => identity.phone)
     expect(new Set(phones).size).toBe(phones.length)
@@ -372,6 +372,6 @@ describe('sign out', () => {
     if (!isOk(result)) return
     expect(result.value.revoked).toBe(2)
     expect(h.sessions.rows.every((row) => row.revokedAt !== null)).toBe(true)
-    expect(h.audit.entries.some((entry) => entry.action === 'SIGN_OUT_ALL')).toBe(true)
+    expect(h.audit.entries.some((entry) => entry.action === 'SIGNED_OUT_ALL')).toBe(true)
   })
 })

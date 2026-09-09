@@ -43,6 +43,50 @@ describe('redaction by key', () => {
   })
 })
 
+describe('redaction of identity data', () => {
+  /*
+   * "No raw NID in logs" is a P10 requirement, and a rule enforced only by developer discipline
+   * is a rule that fails at 02:00 when somebody is debugging a failed submission. These pin that
+   * the redactor catches it whatever the key is called.
+   */
+
+  it('removes a national identity number however it is labelled', () => {
+    const result = redact({
+      nid: '1234567890',
+      identityNumber: '1234567890',
+      identity_number: '1234567890',
+    }) as Record<string, unknown>
+
+    expect(result['nid']).toBe(REDACTED)
+    expect(result['identityNumber']).toBe(REDACTED)
+    expect(result['identity_number']).toBe(REDACTED)
+  })
+
+  it('removes it from a nested payload, which is how it would actually arrive', () => {
+    const result = redact({
+      submission: { userId: 'u-1', identityNumber: '1234567890' },
+    }) as { submission: Record<string, unknown> }
+
+    expect(result.submission['identityNumber']).toBe(REDACTED)
+    // The surrounding diagnostic context survives, or the log stops being useful.
+    expect(result.submission['userId']).toBe('u-1')
+  })
+
+  it('removes a ciphertext too', () => {
+    // Not secret in the way the number is, but it is the encrypted form of it and has no business
+    // in a log line that will outlive the request.
+    const result = redact({ identityNumberCiphertext: 'v1$a$b$c' }) as Record<string, unknown>
+    expect(result['identityNumberCiphertext']).toBe(REDACTED)
+  })
+
+  it('leaves an already-masked value alone, so a log stays diagnosable', () => {
+    // The mask is what the audit trail deliberately records. Redacting it would remove the one
+    // thing that tells two submissions apart.
+    const result = redact({ maskedDocument: '••••••7890' }) as Record<string, unknown>
+    expect(result['maskedDocument']).toBe('••••••7890')
+  })
+})
+
 describe('redaction by value shape', () => {
   it('catches a phone number that arrived under an innocent key', () => {
     // The realistic failure: someone logs { note: '+8801712345678' } while debugging.

@@ -22,6 +22,7 @@ import { authMode, developmentDeps, otpDeps, authDeps } from '@/lib/deps'
 import { getLocale } from '@/lib/locale'
 import { clearSessionCookie, getSession, readSessionToken, setSessionCookie } from '@/lib/session'
 import {
+  destinationAfterRoleSelection,
   destinationAfterSignIn,
   forgetOtpHandoff,
   handoffExpiry,
@@ -300,7 +301,8 @@ export async function selectRoleAction(
   if (isErr(result)) return toActionState(result.error.code, result.error.meta)
 
   // Somebody who has just said they want to sell has setup left to do; anybody else came to buy.
-  redirect(destinationAfterSignIn([parsed.data.role]))
+  // Role selection is the one moment onboarding is the right next screen.
+  redirect(destinationAfterRoleSelection(parsed.data.role))
 }
 
 /* --------------------------------------------------------------------- exit */

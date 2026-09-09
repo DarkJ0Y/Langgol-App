@@ -42,6 +42,9 @@ describe('production must never fall back to development authentication', () => 
     SMS_PROVIDER: 'http',
     SMS_API_URL: 'https://sms.example',
     SMS_API_KEY: 'key',
+    // 32 bytes of base64. Required in production since P10: without it every identity submission
+    // is refused, which is the correct failure but a silent one.
+    KYC_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
   }
 
   it('FAILS STARTUP rather than allowing login', () => {
@@ -53,6 +56,28 @@ describe('production must never fall back to development authentication', () => 
     const env = parseEnv({ ...production, AUTH_MODE: 'otp' })
     expect(env.AUTH_MODE).toBe('otp')
     expect(env.isDevelopmentAuth).toBe(false)
+  })
+
+  it('refuses to boot in production with no KYC key', () => {
+    /*
+     * The alternative failure is silent: the application starts, and identity verification simply
+     * never works, with the first report coming from a user who cannot verify. Refusing at deploy
+     * time says so out loud.
+     */
+    const { KYC_ENCRYPTION_KEY: _omitted, ...withoutKey } = production
+    expect(() => parseEnv({ ...withoutKey, AUTH_MODE: 'otp' })).toThrow(EnvironmentError)
+  })
+
+  it('refuses a KYC key too short to be a 256-bit key', () => {
+    // Caught at deploy time rather than at the first submission. Padding a short key would
+    // produce something that looks like a 256-bit key and carries whatever entropy was supplied.
+    expect(() =>
+      parseEnv({
+        ...production,
+        AUTH_MODE: 'otp',
+        KYC_ENCRYPTION_KEY: Buffer.alloc(16, 7).toString('base64'),
+      }),
+    ).toThrow(EnvironmentError)
   })
 
   it('still refuses a fake SMS provider in production', () => {

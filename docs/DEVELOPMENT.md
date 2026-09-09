@@ -157,8 +157,14 @@ AUTH_MODE=otp            # staging while trialling OTP, and production (enforced
 
 ### Development mode
 
-Sign in as one of a **fixed set of fixture identities**: `farmer`, `consumer`, `retailer`,
-`ops`, `admin`, `farmer-consumer`. They are created by `pnpm db:seed` outside production.
+Sign in as one of a **fixed set of fixture identities**, one for every role the platform has:
+`farmer`, `consumer`, `retailer`, `ops`, `admin`, `farmer-consumer`, `farmer-distant`,
+`consumer-second`, `ops-second`, `wholesaler`, `supplier`, `expert` and `logistics`. They are
+created by `pnpm db:seed` outside production.
+
+The last four matter because wholesaler, supplier, agricultural expert and logistics provider are
+**controlled** roles — no account may self-select them at registration — so a fixture is the only
+way to open the screens P9 built for them.
 
 ```text
 Development authentication → select test identity → session → role selection
@@ -166,12 +172,12 @@ Development authentication → select test identity → session → role selecti
 
 It is deliberately **not** an impersonation tool:
 
-| Property                   | How                                                                                                                                           |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| No arbitrary user access   | The only input is a key from a closed allowlist. A user id, phone number or search term is meaningless                                        |
-| No role escalation         | Each fixture's roles are declared in the domain and are not selectable by the caller                                                          |
-| No real accounts reachable | The lookup is scoped in SQL to `is_development_fixture`, and a CHECK constraint confines that flag to the reserved block `+880170000000[1-9]` |
-| Auditable                  | Every sign-in and every rejected attempt writes an `AuditLog` row marked as a development session                                             |
+| Property                   | How                                                                                                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| No arbitrary user access   | The only input is a key from a closed allowlist. A user id, phone number or search term is meaningless                                                                   |
+| No role escalation         | Each fixture's roles are declared in the domain and are not selectable by the caller                                                                                     |
+| No real accounts reachable | The lookup is scoped in SQL to `is_development_fixture`, and a CHECK constraint confines that flag to the reserved block `+8801700000001`-`09` and `+8801700000020`-`29` |
+| Auditable                  | Every sign-in and every rejected attempt writes an `AuditLog` row marked as a development session                                                                        |
 
 ### OTP mode
 

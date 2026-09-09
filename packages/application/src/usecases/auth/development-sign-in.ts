@@ -134,7 +134,7 @@ export async function developmentSignIn(
   // mistaken for a real one when reading the log later.
   await deps.audit.record({
     actorUserId: user.id,
-    action: 'DEV_SIGN_IN',
+    action: 'DEV_SIGNED_IN',
     entityType: 'user',
     entityId: user.id,
     reason: `identity=${identity.key}`,

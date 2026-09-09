@@ -50,22 +50,27 @@ export function isGender(value: string): value is Gender {
  * A separate axis from `UserStatus`: an ACTIVE account can still be half-onboarded, and a
  * SUSPENDED one can be fully set up. Collapsing them into one column is how "why can this user
  * not list anything?" becomes unanswerable.
+ *
+ * The vocabulary itself moved to `domain/onboarding/states.ts` in P12, which widened it from four
+ * milestones to eight and made it derivable from facts rather than accumulated by whichever screen
+ * remembered to advance it. Re-exported here so the existing imports keep working and so identity
+ * remains the one place a caller has to look for what a user *is*.
  */
-export const ONBOARDING_STATUSES = [
-  /** Phone verified, nothing else done. */
-  'REGISTERED',
-  /** At least one role held. */
-  'ROLE_SELECTED',
-  /** Name and language confirmed by the user rather than defaulted. */
-  'PROFILE_COMPLETE',
-  /** Role-specific setup finished — a farm for a farmer, a business for a retailer. */
-  'READY',
-] as const
-export type OnboardingStatus = (typeof ONBOARDING_STATUSES)[number]
+import {
+  NO_PROGRESS,
+  advanceOnboardingState,
+  deriveOnboardingState,
+  type OnboardingState,
+} from '../onboarding/index.js'
 
-export function isOnboardingStatus(value: string): value is OnboardingStatus {
-  return (ONBOARDING_STATUSES as readonly string[]).includes(value)
-}
+export {
+  ONBOARDING_STATES as ONBOARDING_STATUSES,
+  isOnboardingState as isOnboardingStatus,
+  type OnboardingState as OnboardingStatus,
+} from '../onboarding/states.js'
+
+/** Local alias for the re-exported type, so signatures below read naturally. */
+type OnboardingStatus = OnboardingState
 
 export const LANGUAGES = ['BN', 'EN'] as const
 export type LanguageCode = (typeof LANGUAGES)[number]
@@ -242,13 +247,29 @@ export function nextOnboardingStatus(input: {
   readonly roleCount: number
   readonly hasConfirmedProfile: boolean
   readonly hasRoleSetup: boolean
+  /** Absent for a caller that does not know. See the note about partial knowledge below. */
+  readonly phoneVerified?: boolean
+  readonly kycStatus?: 'NONE' | 'PENDING' | 'VERIFIED' | 'REJECTED'
 }): OnboardingStatus {
-  const order: readonly OnboardingStatus[] = ONBOARDING_STATUSES
+  /*
+   * A caller that knows only part of the picture advances a user only as far as that part
+   * justifies, and never past it.
+   *
+   * The account use case, for instance, knows about names and roles and nothing about identity
+   * documents. Defaulting the unknown facts to "not done" means it can raise somebody to
+   * PROFILE_COMPLETED and stop, which is correct — and because the result is combined with the
+   * stored value monotonically, it can never pull back a user whom the KYC flow had already
+   * carried further.
+   */
+  const earned = deriveOnboardingState({
+    ...NO_PROGRESS,
+    hasConfirmedName: input.hasConfirmedProfile,
+    phoneVerified: input.phoneVerified ?? true,
+    roles: Array.from({ length: input.roleCount }, () => 'ROLE'),
+    roleProfileStarted: input.hasRoleSetup,
+    roleProfileComplete: input.hasRoleSetup,
+    kycStatus: input.kycStatus ?? 'NONE',
+  })
 
-  let earned: OnboardingStatus = 'REGISTERED'
-  if (input.roleCount > 0) earned = 'ROLE_SELECTED'
-  if (input.roleCount > 0 && input.hasConfirmedProfile) earned = 'PROFILE_COMPLETE'
-  if (input.roleCount > 0 && input.hasConfirmedProfile && input.hasRoleSetup) earned = 'READY'
-
-  return order.indexOf(earned) > order.indexOf(input.current) ? earned : input.current
+  return advanceOnboardingState(input.current, earned)
 }

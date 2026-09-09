@@ -28,9 +28,21 @@ import type {
   UserRepository,
 } from '../../ports/index.js'
 
-/** Roles a user may self-select at signup. Privileged roles are granted by an admin, never chosen. */
-export const SELF_SELECTABLE_ROLES = ['FARMER', 'CONSUMER', 'RETAILER'] as const
-export type SelfSelectableRole = (typeof SELF_SELECTABLE_ROLES)[number]
+/**
+ * Roles a user may self-select at signup. Privileged roles are granted by an admin, never chosen.
+ *
+ * Re-exported from the domain rather than restated. This list was defined here in full until the
+ * P14 audit, alongside identical copies in `domain/identity/roles.ts` and the web app's OTP
+ * handoff policy — three allowlists deciding which roles somebody may give themselves.
+ *
+ * They agreed, so nothing was exploitable. What made it worth fixing is the failure mode: widening
+ * one for a new signup flow leaves the others unchanged, and which list actually guards then
+ * depends on which check happens to run first. There is now one, and a test asserts the web app's
+ * own list still matches it.
+ */
+import { SELF_SELECTABLE_ROLES, type SelfSelectableRole } from '@langgol/domain/identity'
+
+export { SELF_SELECTABLE_ROLES, type SelfSelectableRole }
 
 export interface VerifyOtpCommand {
   readonly phone: string

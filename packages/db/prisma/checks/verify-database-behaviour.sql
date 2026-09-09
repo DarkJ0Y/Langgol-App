@@ -14,6 +14,8 @@ DECLARE
   v_user_id uuid;
   v_geo_present boolean;
   v_created_area boolean := false;
+  v_stranger_id uuid;
+  v_stranger_address_id uuid;
 BEGIN
   IF (SELECT count(*) FROM users) > 0 THEN
     RAISE EXCEPTION
@@ -167,9 +169,71 @@ BEGIN
     NULL;
   END;
 
+  ----------------------------------------------------------------------------
+  -- A profile may only point at an address belonging to the SAME user.
+  --
+  -- The foreign key proves the address exists, not that it is theirs. Without the trigger a
+  -- retailer or a shopper could attach any address id they guessed and read a stranger's
+  -- recipient name and phone number back out of their own profile screen.
+  --
+  -- Both column names are exercised. One function serves four tables and takes the column name
+  -- as a trigger argument, so a check that only covered `address_id` would leave the consumer's
+  -- `default_address_id` — the newer and less obvious of the two — entirely unproven.
+  ----------------------------------------------------------------------------
+  INSERT INTO users (id, phone, full_name, updated_at)
+  VALUES (gen_random_uuid(), '+8801711000003', 'Stranger', now())
+  RETURNING id INTO v_stranger_id;
+
+  INSERT INTO addresses (
+    id, user_id, recipient_name, recipient_phone, admin_area_id,
+    address_line, updated_at
+  ) VALUES (
+    gen_random_uuid(), v_stranger_id, 'Stranger', '+8801711000003', v_area_id,
+    'Somebody else''s house', now()
+  ) RETURNING id INTO v_stranger_address_id;
+
+  BEGIN
+    INSERT INTO consumer_profiles (id, user_id, default_address_id, updated_at)
+    VALUES (gen_random_uuid(), v_user_id, v_stranger_address_id, now());
+    RAISE EXCEPTION
+      'consumer_profile_address_same_owner accepted an address belonging to another user';
+  EXCEPTION WHEN check_violation THEN
+    NULL;
+  END;
+
+  BEGIN
+    INSERT INTO retailer_profiles (id, user_id, business_name, address_id, updated_at)
+    VALUES (gen_random_uuid(), v_user_id, 'Test Shop', v_stranger_address_id, now());
+    RAISE EXCEPTION
+      'retailer_profile_address_same_owner accepted an address belonging to another user';
+  EXCEPTION WHEN check_violation THEN
+    NULL;
+  END;
+
+  -- And the owner's OWN address is still accepted, so the rule refuses the right rows only.
+  INSERT INTO consumer_profiles (id, user_id, default_address_id, updated_at)
+  VALUES (
+    gen_random_uuid(), v_user_id,
+    (SELECT id FROM addresses WHERE user_id = v_user_id LIMIT 1),
+    now()
+  );
+
+  ----------------------------------------------------------------------------
+  -- A shop pin is a pair, or it is nothing.
+  ----------------------------------------------------------------------------
+  BEGIN
+    INSERT INTO retailer_profiles (id, user_id, business_name, latitude, updated_at)
+    VALUES (gen_random_uuid(), v_stranger_id, 'Half A Pin', 23.8103, now());
+    RAISE EXCEPTION 'retailer_shop_location_paired accepted a latitude with no longitude';
+  EXCEPTION WHEN check_violation THEN
+    NULL;
+  END;
+
   -- Clean up everything this script created, in dependency order.
-  DELETE FROM addresses WHERE user_id = v_user_id;
-  DELETE FROM users WHERE id = v_user_id;
+  DELETE FROM consumer_profiles WHERE user_id IN (v_user_id, v_stranger_id);
+  DELETE FROM retailer_profiles WHERE user_id IN (v_user_id, v_stranger_id);
+  DELETE FROM addresses WHERE user_id IN (v_user_id, v_stranger_id);
+  DELETE FROM users WHERE id IN (v_user_id, v_stranger_id);
   IF v_created_area THEN
     DELETE FROM admin_areas WHERE id = v_area_id;
   END IF;

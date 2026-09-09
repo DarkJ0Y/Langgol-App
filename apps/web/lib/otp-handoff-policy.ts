@@ -13,6 +13,8 @@
  * or overwrite it. The prefix only works over HTTPS, so plain-HTTP local development falls back.
  * Mirrors the session cookie deliberately: two cookie-naming schemes is one too many.
  */
+import { SELF_SELECTABLE_ROLES, type SelfSelectableRole } from '@langgol/domain/identity'
+
 export const OTP_HANDOFF_COOKIE = '__Host-langgol_otp'
 export const OTP_HANDOFF_COOKIE_DEV = 'langgol_otp'
 
@@ -28,9 +30,18 @@ export function handoffExpiry(now: Date, otpTtlSeconds: number): Date {
   return new Date(now.getTime() + (otpTtlSeconds + HANDOFF_GRACE_SECONDS) * 1000)
 }
 
-/** Roles somebody may choose for themselves while registering. Mirrors the use case's allowlist. */
-export const REGISTERABLE_ROLES = ['FARMER', 'CONSUMER', 'RETAILER'] as const
-export type RegisterableRole = (typeof REGISTERABLE_ROLES)[number]
+/**
+ * Roles somebody may choose for themselves while registering.
+ *
+ * Taken from the domain rather than mirrored. It was a hand-written copy until the P14 audit found
+ * three separate definitions of the same allowlist; the others agreed with it, which is precisely
+ * why nobody had noticed that widening one would not widen the rest.
+ *
+ * The `satisfies` is doing real work: it makes this a compile error if the domain list ever holds a
+ * role this module's own type cannot express, rather than a silent narrowing at runtime.
+ */
+export const REGISTERABLE_ROLES = SELF_SELECTABLE_ROLES
+export type RegisterableRole = SelfSelectableRole
 
 export const MAX_FULL_NAME_LENGTH = 120
 
@@ -128,4 +139,23 @@ export function destinationAfterSignIn(roles: readonly string[]): string {
   // A farmer goes straight to the questions that make their account useful. Everybody else goes
   // to the market, which is what they came for.
   return roles.includes('FARMER') ? '/farmer/onboarding' : '/'
+}
+
+/**
+ * Where somebody lands the FIRST time, having just chosen their role.
+ *
+ * Separate from `destinationAfterSignIn` because onboarding happens once and signing in happens
+ * every day. Sending a returning retailer to a form they filled in months ago would be a small
+ * insult repeated daily, which is why the two questions have two functions rather than one with
+ * a flag.
+ *
+ * A retailer is sent to their profile because a shop that has not said what it is called or where
+ * it trades cannot usefully appear to anybody. A consumer is not: their profile is dietary
+ * preferences and a default address, all of it genuinely optional, and putting a questionnaire
+ * between somebody and the market they came for is how the market loses them.
+ */
+export function destinationAfterRoleSelection(role: string): string {
+  if (role === 'FARMER') return '/farmer/onboarding'
+  if (role === 'RETAILER') return '/account/profile'
+  return '/'
 }

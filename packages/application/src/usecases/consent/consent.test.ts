@@ -35,7 +35,9 @@ function actor(overrides: Partial<Actor> = {}): Actor {
   return { userId: USER, roles: ['FARMER'], status: 'ACTIVE', ...overrides }
 }
 
-const admin = actor({ userId: STRANGER, roles: ['ADMIN'] })
+// Reading somebody else's consent record is under USER_VIEW since P13: the role admits an
+// operator to the back office and grants nothing inside it.
+const admin = actor({ userId: STRANGER, roles: ['ADMIN'], permissions: ['USER_VIEW'] })
 
 /* ------------------------------------------------------------------- doubles */
 
@@ -248,7 +250,7 @@ describe('optional consent is never bundled', () => {
     )
 
     expect(h.audit.entries).toHaveLength(2)
-    expect(h.audit.actions()).toEqual(['CONSENT_GRANTED', 'CONSENT_WITHDRAWN'])
+    expect(h.audit.actions()).toEqual(['CONSENT_GRANTED', 'CONSENT_REVOKED'])
     expect(h.audit.entries[0]?.entityId).toBe('MARKETING')
     expect(h.audit.entries[0]?.meta?.['version']).toBe(1)
   })

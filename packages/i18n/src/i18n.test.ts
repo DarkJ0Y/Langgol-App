@@ -188,10 +188,10 @@ describe('development fixture labels', () => {
     /*
      * This list is pinned on purpose: the identities are a closed allowlist, and an accidental
      * addition is a new way to sign in. Changing it should require editing this assertion, which
-     * is exactly what happened when the last three were added to give the marketplace more than
-     * one farmer and more than one buyer to test with.
+     * is exactly what happened when the marketplace needed more than one farmer and more than
+     * one buyer to test with, and again when P9's four controlled roles needed an account each.
      *
-     * The reserved phone block +880170000000[1-9] caps this at nine.
+     * The reserved phone block caps this at nineteen.
      */
     expect(DEVELOPMENT_IDENTITIES.map((identity) => identity.key)).toEqual([
       'farmer',
@@ -203,6 +203,10 @@ describe('development fixture labels', () => {
       'farmer-distant',
       'consumer-second',
       'ops-second',
+      'wholesaler',
+      'supplier',
+      'expert',
+      'logistics',
     ])
   })
 })

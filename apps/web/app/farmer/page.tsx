@@ -4,7 +4,9 @@ import { formatLandAmount } from '@langgol/domain/farming'
 import { createTranslator } from '@langgol/i18n'
 import { Alert, Card, LinkButton } from '@langgol/ui/components'
 import { isErr } from '@langgol/shared'
-import { farmerDeps } from '@/lib/deps'
+import { myOnboarding } from '@langgol/application'
+import { farmerDeps, onboardingDeps } from '@/lib/deps'
+import { OnboardingChecklist } from '../onboarding/checklist'
 import { currentActor } from '@/lib/guard'
 import { getLocale } from '@/lib/locale'
 import { labelFor } from './labels'
@@ -30,6 +32,13 @@ export default async function FarmerDashboardPage() {
 
   const { profile, completion } = result.value
   const t = createTranslator(await getLocale())
+
+  /*
+   * Best-effort. A dashboard that failed to render because a progress checklist could not be built
+   * would be a worse outcome than a dashboard without one.
+   */
+  const onboardingResult = await myOnboarding(actor, await onboardingDeps())
+  const onboarding = isErr(onboardingResult) ? null : onboardingResult.value
   const unanswered = t.t('farmer.notAnswered')
 
   /*
@@ -92,16 +101,31 @@ export default async function FarmerDashboardPage() {
         </p>
 
         {/*
-          Progress, not a gate. `<progress>` rather than a styled div so screen readers and the
-          browser's own zoom behaviour work without any help from us.
-        */}
-        <div className="lg-stack-tight">
-          <strong>{t.t('farmer.completionTitle')}</strong>
-          <progress value={completion.percent} max={100} className="lg-progress" />
-          <span className="lg-subtitle">
-            {t.t('farmer.completionPercent', { percent: completion.percent })}
-          </span>
-        </div>
+         * The canonical setup progress, and the contextual prompts that go with it.
+         *
+         * One calculation, shared with the account page, the setup screen and the agricultural
+         * identity card. A farmer seeing 60% here and 75% there would have found a bug whichever
+         * number was right, so there is only one.
+         *
+         * Progress, never a gate. Nothing on this page or anywhere else refuses an action because
+         * of what this says.
+         */}
+        {onboarding === null ? null : (
+          <OnboardingChecklist view={onboarding} t={t} showCompleted={false} />
+        )}
+      </Card>
+
+      <Card>
+        {/*
+         * The farming questionnaire's own progress, which answers a narrower question: how many of
+         * the farming questions have been answered. Kept separate from the figure above, and
+         * labelled so the two cannot be read as the same claim.
+         */}
+        <h2 className="lg-title">{t.t('farmer.completionTitle')}</h2>
+        <progress value={completion.percent} max={100} className="lg-progress" />
+        <span className="lg-subtitle">
+          {t.t('farmer.completionPercent', { percent: completion.percent })}
+        </span>
 
         {completion.isComplete ? (
           <Alert tone="success">{t.t('farmer.completionDone')}</Alert>

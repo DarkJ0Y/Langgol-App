@@ -51,7 +51,7 @@ export async function signOut(
 
   await deps.audit.record({
     actorUserId: command.userId,
-    action: command.everywhere === true ? 'SIGN_OUT_ALL' : 'SIGN_OUT',
+    action: command.everywhere === true ? 'SIGNED_OUT_ALL' : 'SIGNED_OUT',
     entityType: 'user',
     entityId: command.userId,
     reason,

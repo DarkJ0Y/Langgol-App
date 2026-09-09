@@ -142,7 +142,10 @@ describe('gender', () => {
     expect(isGender('female')).toBe(false)
     expect(isLanguageCode('BN')).toBe(true)
     expect(isLanguageCode('FR')).toBe(false)
-    expect(isOnboardingStatus('READY')).toBe(true)
+    // `READY` was the old spelling of the final milestone. P12 widened the vocabulary and renamed
+    // it FULLY_ONBOARDED; `migrateLegacyState` is what reads a row written under the old one.
+    expect(isOnboardingStatus('FULLY_ONBOARDED')).toBe(true)
+    expect(isOnboardingStatus('READY')).toBe(false)
     expect(isOnboardingStatus('DONE')).toBe(false)
   })
 })
@@ -164,6 +167,15 @@ describe('onboarding status only moves forward', () => {
       }),
     ).toBe('ROLE_SELECTED')
 
+    /*
+     * A confirmed name and a role, with the role-specific questionnaire untouched, is
+     * ROLE_SELECTED and not more.
+     *
+     * P12 widened this vocabulary from four milestones to eight, and in doing so gave
+     * PROFILE_COMPLETED its literal meaning: the profile is complete. Under the old four-state
+     * scheme the same name-and-role combination was called PROFILE_COMPLETE, which claimed rather
+     * more than it had been told.
+     */
     expect(
       nextOnboardingStatus({
         current: 'ROLE_SELECTED',
@@ -171,27 +183,53 @@ describe('onboarding status only moves forward', () => {
         hasConfirmedProfile: true,
         hasRoleSetup: false,
       }),
-    ).toBe('PROFILE_COMPLETE')
+    ).toBe('ROLE_SELECTED')
 
     expect(
       nextOnboardingStatus({
-        current: 'PROFILE_COMPLETE',
+        current: 'ROLE_SELECTED',
         roleCount: 1,
         hasConfirmedProfile: true,
         hasRoleSetup: true,
       }),
-    ).toBe('READY')
+    ).toBe('PROFILE_COMPLETED')
+  })
+
+  it('does not advance past what the caller actually knows', () => {
+    /*
+     * The account use case knows about names and roles and nothing about identity documents, so
+     * it can raise somebody to PROFILE_COMPLETED and must stop there. Reaching further would be
+     * asserting a fact it was never given.
+     */
+    expect(
+      nextOnboardingStatus({
+        current: 'REGISTERED',
+        roleCount: 1,
+        hasConfirmedProfile: true,
+        hasRoleSetup: true,
+      }),
+    ).toBe('PROFILE_COMPLETED')
   })
 
   it('never demotes someone who already finished', () => {
-    // Clearing an optional field later must not re-trigger a setup flow they completed.
+    // Clearing an optional field later must not re-trigger a setup flow they completed. This also
+    // protects a user whom the KYC flow carried further than the account screen can see.
     expect(
       nextOnboardingStatus({
-        current: 'READY',
+        current: 'FULLY_ONBOARDED',
         roleCount: 0,
         hasConfirmedProfile: false,
         hasRoleSetup: false,
       }),
-    ).toBe('READY')
+    ).toBe('FULLY_ONBOARDED')
+
+    expect(
+      nextOnboardingStatus({
+        current: 'KYC_VERIFIED',
+        roleCount: 1,
+        hasConfirmedProfile: true,
+        hasRoleSetup: true,
+      }),
+    ).toBe('KYC_VERIFIED')
   })
 })

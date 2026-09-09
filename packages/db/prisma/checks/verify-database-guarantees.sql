@@ -75,7 +75,46 @@ DECLARE
     'productions_area_needs_unit',
     'productions_area_positive',
     'productions_quantity_needs_unit',
-    'productions_sold_not_more_than_grown'
+    'productions_sold_not_more_than_grown',
+
+    -- P9: role profiles may be incomplete, never impossible or ambiguously owned
+    'profile_service_area_exactly_one_owner',
+    'retailer_years_plausible',
+    'expert_years_plausible',
+    'wholesaler_capacity_plausible',
+    'expert_fee_nonneg',
+
+    -- P9: a shop pin is a pair inside Bangladesh, or it is nothing at all
+    'retailer_shop_location_paired',
+    'retailer_shop_location_plausible',
+
+    -- P10: a KYC decision is attributable, reasoned, and never made by its own subject
+    'verification_rejection_has_reason',
+    'verification_decision_attributed',
+    'verification_reviewer_is_not_subject',
+    'verification_event_reason_has_no_identity_number',
+    'verification_rejection_reason_has_no_identity_number',
+    'identity_masked_is_masked',
+    'identity_last4_is_four_digits',
+    'identity_ciphertext_is_enveloped',
+    'identity_documents_are_storage_keys',
+
+    -- P11: a public agricultural identifier that is random, shaped, and not a number
+    'agri_id_has_published_shape',
+    'agri_id_is_not_a_number',
+    'agri_identity_country_known',
+    'agri_id_country_matches_row',
+
+    -- P13: a permission grant is attributable and never self-awarded
+    'admin_permission_revocation_attributed',
+    'admin_permission_granted_by_another',
+
+    -- P14: nothing forbidden reaches the audit log, and every row names its subject
+    'audit_reason_has_no_identity_number',
+    'audit_reason_has_no_phone_number',
+    'audit_reason_has_no_credential',
+    'audit_entity_is_named',
+    'audit_action_is_a_constant'
   ];
 
   expected_indexes text[] := ARRAY[
@@ -108,7 +147,27 @@ DECLARE
     -- P8: the history filters — by year, by crop, by season
     'productions_farmer_year_idx',
     'productions_farmer_product_idx',
-    'productions_farmer_season_idx'
+    'productions_farmer_season_idx',
+
+    -- P9: finding a verified expert must be a lookup, not a scan
+    'agricultural_expert_profiles_verification_status_idx',
+    'profile_service_areas_area_idx',
+    'consumer_profiles_address_id_idx',
+
+    -- P10: the review queue is a lookup, and one document verifies one person
+    'verifications_status_submitted_idx',
+    'verifications_user_type_key',
+    'identity_records_blind_index_key',
+
+    -- P11: one identifier, one person, in both directions
+    'agri_identities_agri_id_key',
+    'agri_identities_user_id_key',
+
+    -- P13: one live grant of each permission per administrator
+    'admin_permission_grants_one_live',
+
+    -- P14: filtering the audit log by action is how it is actually read
+    'audit_logs_action_created_idx'
   ];
 
   expected_triggers text[] := ARRAY[
@@ -132,7 +191,18 @@ DECLARE
 
     -- P8: revenue is DERIVED. A farmer may say what they sold and what they were paid; the
     -- product of the two is not theirs to state, and this trigger overwrites whatever is sent.
-    'productions_derive_revenue'
+    'productions_derive_revenue',
+
+    -- P9: a profile's address must belong to the same user. The foreign key proves the address
+    -- exists, not that it is theirs — the same IDOR the farms table closed in P6.
+    'retailer_profile_address_same_owner',
+    'wholesaler_profile_address_same_owner',
+    'supplier_profile_address_same_owner',
+    'consumer_profile_address_same_owner',
+
+    -- P10: a record of who approved what, which the approver can edit, is not evidence.
+    'verification_events_no_update',
+    'verification_events_no_delete'
   ];
 
   /*

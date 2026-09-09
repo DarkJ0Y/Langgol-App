@@ -33,6 +33,19 @@ const SENSITIVE_KEYS = new Set([
   'credential',
   'signature',
   'nid',
+  /*
+   * Anything whose key names an identity.
+   *
+   * `nid` alone was not enough once P10 arrived: `identityNumber` splits to ['identity','number']
+   * and matched neither entry, so a well-meaning `logger.info({ identityNumber })` would have
+   * printed a national identity number in full.
+   *
+   * This also redacts `identityType`, which is harmless and not sensitive. That is the intended
+   * failure direction, stated at the top of this file: a `[redacted]` costs a few minutes, a
+   * leaked NID costs a person.
+   */
+  'identity',
+  'ciphertext',
   'pin',
   'cvv',
   'payout',

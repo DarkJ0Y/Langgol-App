@@ -341,14 +341,35 @@ export interface SessionRepository {
   }): Promise<number>
 }
 
+import type { AuditAction, AuditEntityType } from '@langgol/domain/audit'
+
+/**
+ * The audit log.
+ *
+ * `action` and `entityType` are closed vocabularies rather than strings. Before P14 they were
+ * free, which had two consequences: a typo produced a row no query would find again, and the KYC
+ * decision wrote the bare words `APPROVE` and `REJECT` into a table shared by the whole platform.
+ *
+ * What must NEVER appear here — a password, an OTP, a raw identity number, a document key, an
+ * authentication token, a financial figure — is enforced by the adapter rather than by the caller.
+ * `sanitiseAuditEntry` runs on every write, and no caller reaches the table directly, so the rule
+ * cannot be forgotten at the point where it is easiest to forget.
+ *
+ * Refs: docs/07_SECURITY.md §5, §11
+ */
 export interface AuditPort {
   record(input: {
     readonly actorUserId: string | null
-    readonly action: string
-    readonly entityType: string
+    readonly action: AuditAction
+    readonly entityType: AuditEntityType
     readonly entityId: string
+    /** Free text a person typed. Scrubbed wholesale if it carries a forbidden shape. */
     readonly reason?: string
     readonly meta?: Record<string, string | number | boolean>
+    /**
+     * Recorded only for the actions that answer a security question — see `IP_BEARING_ACTIONS`.
+     * An IP address is personal data, so it is not collected on ordinary business events.
+     */
     readonly ipAddress?: string | null
     readonly userAgent?: string | null
   }): Promise<void>
@@ -360,3 +381,9 @@ export * from './farming.js'
 export * from './advisory.js'
 export * from './diagnosis.js'
 export * from './farm.js'
+export * from './role-profile.js'
+export * from './storage.js'
+export * from './kyc.js'
+export * from './agri-identity.js'
+export * from './onboarding.js'
+export * from './admin.js'

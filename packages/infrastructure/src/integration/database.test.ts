@@ -62,7 +62,7 @@ suite('development fixtures', () => {
     })
     expect(fixtures).toHaveLength(DEVELOPMENT_IDENTITIES.length)
     for (const fixture of fixtures) {
-      expect(fixture.phone).toMatch(/^\+880170000000[1-9]$/)
+      expect(fixture.phone).toMatch(/^\+88017000000(?:0[1-9]|2[0-9])$/)
     }
   })
 

@@ -79,12 +79,14 @@ describe('the published pair', () => {
 
   it('does not sit in the block the fixture CHECK constraint reserves', () => {
     /*
-     * `users_dev_fixture_reserved_block` allows `is_development_fixture` only on
-     * +880170000000[1-9]. These numbers are outside it, so a test account can never be marked a
-     * fixture and pick up the code-free sign-in path as well.
+     * `users_dev_fixture_reserved_block` allows `is_development_fixture` only on two runs of
+     * endings: 01-09 and 20-29. These numbers end 11 and 12, in the gap between them, so a test
+     * account can never be marked a fixture and pick up the code-free sign-in path as well.
+     *
+     * That gap is why the second run begins at 20 rather than immediately after the first.
      */
     for (const entry of TEST_OTP_NUMBERS) {
-      expect(entry.phone).not.toMatch(/^\+880170000000[1-9]$/)
+      expect(entry.phone).not.toMatch(/^\+88017000000(?:0[1-9]|2[0-9])$/)
     }
   })
 })

@@ -292,7 +292,7 @@ export async function recordConsentDecisions(
   for (const input of inputs) {
     await deps.audit.record({
       actorUserId: actor.userId,
-      action: input.granted ? 'CONSENT_GRANTED' : 'CONSENT_WITHDRAWN',
+      action: input.granted ? 'CONSENT_GRANTED' : 'CONSENT_REVOKED',
       entityType: 'consent',
       entityId: input.consentType,
       meta: { version: input.version, source: input.source },

@@ -13,8 +13,7 @@
   },
   "dependencies": {
     "@langgol/domain": "workspace:*",
-    "@langgol/shared": "workspace:*",
-    "zod": "^3.24.1"
+    "@langgol/shared": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

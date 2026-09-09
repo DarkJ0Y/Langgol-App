@@ -23,7 +23,5 @@
   "peerDependencies": {
     "react": "^19.0.0"
   },
-  "dependencies": {
-    "@langgol/i18n": "workspace:*"
-  }
+  "dependencies": {}
 }

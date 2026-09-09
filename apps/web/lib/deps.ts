@@ -21,7 +21,17 @@ import {
   createOtpDelivery,
   farmerProfileRepository,
   farmRepository,
+  firebaseStorage,
   plotRepository,
+  roleProfileRepository,
+  verificationRepository,
+  agriIdentityRepository,
+  agriIdRandom,
+  onboardingRepository,
+  adminRepository,
+  identityCipher,
+  documentGrantSigner,
+  memoryStorage,
   getConfig,
   listingRepository,
   orderNumberGenerator,
@@ -235,6 +245,81 @@ export async function farmDeps() {
     clock: systemClock,
     farms: farmRepository,
     plots: plotRepository,
+    audit: auditPort,
+  }
+}
+
+/**
+ * The role profiles for the six non-farmer roles.
+ *
+ * One set of dependencies for all six, not six sets. The repository dispatches on the role
+ * internally, so a seventh profile is a table entry rather than another wiring function here.
+ */
+export async function roleProfileDeps() {
+  return {
+    clock: systemClock,
+    profiles: roleProfileRepository,
+    audit: auditPort,
+  }
+}
+
+/**
+ * Identity, KYC and verification.
+ *
+ * `storage` falls back to the in-memory adapter when Firebase is not configured, so KYC can be
+ * exercised locally without a cloud account. It is not a silent downgrade in production: the
+ * memory adapter loses its contents on restart, and the environment check refuses a production
+ * deployment with no KYC key at all, so a deployment that reaches this line has been configured
+ * deliberately.
+ */
+export async function kycDeps() {
+  return {
+    clock: systemClock,
+    verifications: verificationRepository,
+    cipher: identityCipher,
+    storage: firebaseStorage.isAvailable ? firebaseStorage : memoryStorage,
+    grants: documentGrantSigner,
+    audit: auditPort,
+  }
+}
+
+/**
+ * The digital agricultural identity.
+ *
+ * `random` is its own port rather than the general `RandomSource`, so that an AGRI-ID coming from
+ * a CSPRNG is a wiring decision somebody has to make deliberately. Deriving one from a hash of an
+ * NID or a phone number would make the identifier invertible, which is the failure the whole
+ * design exists to prevent.
+ */
+export async function agriProfileDeps() {
+  return {
+    clock: systemClock,
+    identities: agriIdentityRepository,
+    random: agriIdRandom,
+    audit: auditPort,
+  }
+}
+
+/**
+ * Progressive onboarding.
+ *
+ * One repository and nothing else. The calculation is pure and lives in the domain, so there is no
+ * clock, no config and no audit port here — a progress checklist has nothing to record.
+ */
+export async function onboardingDeps() {
+  return { onboarding: onboardingRepository }
+}
+
+/**
+ * The back office.
+ *
+ * One repository, the clock and the audit port. Every capability behind these deps names its own
+ * permission in the policy table, so there is nothing here that decides who may do what.
+ */
+export async function adminDeps() {
+  return {
+    clock: systemClock,
+    admin: adminRepository,
     audit: auditPort,
   }
 }

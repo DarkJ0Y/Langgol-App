@@ -59,7 +59,8 @@ describe('ownership', () => {
   })
 
   it('lets an admin read another user\u2019s address but not silently edit it', () => {
-    const admin = actor({ userId: 'admin-1', roles: ['ADMIN'] })
+    // Reading somebody else's address needs USER_VIEW since P13, not merely the role.
+    const admin = actor({ userId: 'admin-1', roles: ['ADMIN'], permissions: ['USER_VIEW'] })
     expect(allowed(admin, 'address:read', ownedBy('user-2'))).toBe(true)
     expect(allowed(admin, 'address:update', ownedBy('user-2'))).toBe(false)
   })
@@ -74,6 +75,16 @@ describe('ownership', () => {
 })
 
 describe('roles', () => {
+  it('does not let a bare administrator read somebody else’s address', () => {
+    /*
+     * The one hole the permission scheme could have left: reading personal data through a resource
+     * rule rather than through an admin action, reachable without ever opening an admin page.
+     */
+    const bare = actor({ userId: 'admin-1', roles: ['ADMIN'] })
+    expect(allowed(bare, 'address:read', ownedBy('user-2'))).toBe(false)
+    expect(allowed(bare, 'address:read', ownedBy('admin-1'))).toBe(true)
+  })
+
   it('gates the admin surface', () => {
     expect(allowed(actor({ roles: ['ADMIN'] }), 'admin:access')).toBe(true)
     expect(allowed(actor({ roles: ['OPS_AGENT'] }), 'admin:access')).toBe(false)
@@ -119,7 +130,12 @@ describe('actor discrimination', () => {
 })
 
 describe('role administration', () => {
-  const admin = actor({ roles: ['ADMIN'] })
+  /*
+   * An administrator who actually holds the permission. P13 made the ADMIN role a door rather than
+   * a key: it admits somebody to the back office and grants nothing inside it, so a test actor
+   * that only carries the role now proves the opposite of what it used to.
+   */
+  const admin = actor({ roles: ['ADMIN'], permissions: ['ROLE_MANAGE'] })
   const ops = actor({ roles: ['OPS_AGENT'] })
 
   it('lets anyone signed in read the catalogue', () => {
@@ -134,11 +150,54 @@ describe('role administration', () => {
     expect(allowed(actor(), 'role:self-select', ownedBy('user-2'))).toBe(false)
   })
 
-  it('restricts assignment and revocation to administrators', () => {
+  it('restricts assignment and revocation to administrators who hold the permission', () => {
     expect(allowed(admin, 'role:assign')).toBe(true)
     expect(allowed(admin, 'role:revoke')).toBe(true)
     expect(allowed(actor(), 'role:assign')).toBe(false)
     expect(allowed(actor({ roles: ['FARMER'] }), 'role:revoke')).toBe(false)
+  })
+
+  it('refuses an administrator who holds the role and not the permission', () => {
+    /*
+     * The property the whole phase turns on. Before P13 the role was the key, so a compromised
+     * administrator session was total loss; now an account with the role and an empty permission
+     * set can reach the dashboard and do nothing whatsoever from it.
+     */
+    const bare = actor({ roles: ['ADMIN'] })
+
+    expect(allowed(bare, 'admin:access')).toBe(true)
+    expect(allowed(bare, 'role:assign')).toBe(false)
+    expect(allowed(bare, 'role:revoke')).toBe(false)
+    expect(allowed(bare, 'admin:user-suspend')).toBe(false)
+    expect(allowed(bare, 'admin:audit-read')).toBe(false)
+    expect(allowed(bare, 'kyc:review')).toBe(false)
+  })
+
+  it('says which of the two is missing, so the right thing gets granted', () => {
+    // A farmer is missing the role; an administrator is missing the permission. Telling them apart
+    // is what stops somebody being handed ADMIN when they needed one checkbox.
+    expect(can(actor({ roles: ['FARMER'] }), 'role:assign').allowed).toBe(false)
+    expect(can(actor({ roles: ['ADMIN'] }), 'role:assign')).toEqual({
+      allowed: false,
+      reason: 'MISSING_PERMISSION',
+    })
+  })
+
+  it('grants one permission and not the next', () => {
+    // Each permission is its own grant. Holding the one that reads the KYC queue must not carry
+    // the one that decrypts a national identity number.
+    const viewer = actor({ roles: ['ADMIN'], permissions: ['KYC_VIEW'] })
+    expect(allowed(viewer, 'kyc:read-any')).toBe(true)
+    expect(allowed(viewer, 'kyc:review')).toBe(false)
+  })
+
+  it('keeps the three review queues apart', () => {
+    // The person who checks a trade licence is not the person who checks an agronomist's degree.
+    const business = actor({ roles: ['ADMIN'], permissions: ['BUSINESS_REVIEW'] })
+    expect(allowed(business, 'verification:review-business')).toBe(true)
+    expect(allowed(business, 'verification:review-farm')).toBe(false)
+    expect(allowed(business, 'verification:review-expert')).toBe(false)
+    expect(allowed(business, 'kyc:review')).toBe(false)
   })
 
   it('does not let a field agent grant roles', () => {
