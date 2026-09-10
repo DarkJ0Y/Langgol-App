@@ -1,10 +1,44 @@
 import './globals.css'
 import type { ReactNode } from 'react'
 import { headers } from 'next/headers'
+import { Hind_Siliguri, Poppins } from 'next/font/google'
 import { DevelopmentBanner, LanguageSwitcher, SkipLink } from '@langgol/ui/components'
 import { createTranslator } from '@langgol/i18n'
 import { getLocale } from '@/lib/locale'
 import { isDevelopmentAuth } from '@/lib/deps'
+
+/*
+ * The two faces, downloaded at build time and served from our own origin.
+ *
+ * `next/font` is not a convenience here. The Content-Security-Policy in middleware.ts sets
+ * `font-src 'self'`, so a stylesheet link to Google Fonts is blocked with no error and no visible
+ * text — self-hosting is the only way these load at all. It also removes the third-party request
+ * on the critical path, which matters more on a 2G connection than it does on a laptop.
+ *
+ * `display: 'swap'` so text is readable in a fallback face while the real one arrives, rather
+ * than the page showing nothing for the first second. On a slow connection the alternative is a
+ * farmer looking at a blank screen.
+ */
+const poppins = Poppins({
+  subsets: ['latin'],
+  // 800 carries the display headlines; 400 and 500 carry running text. Loading five weights of
+  // one family costs less than a second family would, and every one of them is used.
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--lg-font-latin',
+  display: 'swap',
+})
+
+/*
+ * Bengali only. Poppins has no Bengali glyphs, so the browser falls through to this face for
+ * exactly those codepoints and for nothing else — the split is per glyph, not per element, and
+ * needs no `:lang()` rule. Hind Siliguri stops at 700; there is no 800 to ask for.
+ */
+const hindSiliguri = Hind_Siliguri({
+  subsets: ['bengali'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--lg-font-bangla',
+  display: 'swap',
+})
 
 export const metadata = {
   title: 'Langgol',
@@ -42,7 +76,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
      * setting in both directions; the stylesheet honours `prefers-color-scheme` when no
      * explicit choice is present.
      */
-    <html lang={locale} data-theme="dark">
+    <html
+      lang={locale}
+      data-theme="dark"
+      className={`${poppins.variable} ${hindSiliguri.variable}`}
+    >
       {/*
        * `suppressHydrationWarning` covers ONE thing: browser extensions that write attributes
        * onto <body> before React hydrates. Grammarly is the usual culprit — it adds

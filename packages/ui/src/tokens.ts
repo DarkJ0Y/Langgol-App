@@ -152,16 +152,35 @@ export const semanticDark = {
 /**
  * Type.
  *
- * Bangla and Latin need one family that carries both scripts well, self-hosted and subset —
- * a font that falls back per script produces mismatched heights mid-sentence.
- *
  * Bangla glyphs are taller and carry more vertical detail than Latin, so the Bangla line-height
  * is deliberately looser at every step: at Latin's line-height, conjuncts and matras collide.
+ *
+ * ## Two families, and why the order is the mechanism
+ *
+ * Poppins sets Latin, Hind Siliguri sets Bangla. This note previously asked for ONE family
+ * covering both scripts, on the grounds that per-script fallback produces mismatched heights
+ * mid-sentence. That concern is real and the pairing answers it directly rather than by avoiding
+ * it: the two were chosen to agree on x-height and stroke weight, and the Bangla line-height
+ * tokens below already carry the rest of the difference. No geometric sans covers Bengali at
+ * Poppins' quality, so a single family would have meant giving up one script or the other.
+ *
+ * The ORDER does the work. Poppins contains no Bengali glyphs at all, so the browser falls
+ * through per glyph to Hind Siliguri for Bengali codepoints and keeps Poppins for Latin. A
+ * sentence mixing both sets each script in its own face with no `:lang()` rule anywhere, which
+ * matters because language is not the same thing as script — an English product name inside a
+ * Bangla sentence should still be Poppins.
+ *
+ * Both are self-hosted by `next/font` in `apps/web/app/layout.tsx`, which is what defines the two
+ * variables. That indirection is why each `var()` carries a literal fallback: if the stylesheet
+ * is ever loaded without that layout, an unresolved custom property would invalidate the whole
+ * declaration and drop the page to a serif default.
+ *
+ * Self-hosting is not a preference here. The Content-Security-Policy sets `font-src 'self'`, so
+ * a Google Fonts URL is blocked outright — silently, with no error and no text.
  */
 export const typography = {
   fontFamily: {
-    // Concrete font selection is a P0 design deliverable; the stack degrades sanely meanwhile.
-    sans: "'Noto Sans Bengali', 'Noto Sans', system-ui, -apple-system, 'Segoe UI', sans-serif",
+    sans: "var(--lg-font-latin, 'Poppins'), var(--lg-font-bangla, 'Hind Siliguri'), system-ui, -apple-system, 'Segoe UI', sans-serif",
     mono: "'Noto Sans Mono', ui-monospace, 'Cascadia Mono', monospace",
   },
 

@@ -112,7 +112,8 @@
   --lg-leading-en-normal: 1.5;
   --lg-leading-en-relaxed: 1.65;
   --lg-font-sans:
-    'Noto Sans Bengali', 'Noto Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    var(--lg-font-latin, 'Poppins'), var(--lg-font-bangla, 'Hind Siliguri'), system-ui,
+    -apple-system, 'Segoe UI', sans-serif;
   --lg-touch-min: 48px;
   --lg-motion-base: 200ms;
   --lg-motion-easing: cubic-bezier(0.2, 0, 0.2, 1);

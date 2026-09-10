@@ -83,7 +83,9 @@
   font-size: clamp(2.4rem, 7vw, 5.25rem);
   line-height: 1.02;
   letter-spacing: -0.035em;
-  font-weight: 700;
+  /* Poppins ExtraBold. The heaviest face we load, and the reason the page reads as a statement
+     rather than a paragraph that happens to be large. */
+  font-weight: 800;
   margin: 0;
   text-wrap: balance;
   /* Wide enough that the statement lands in two or three lines. At 18ch it broke into five,
@@ -91,11 +93,19 @@
   max-width: 26ch;
 }
 
-/* Bangla needs looser leading and no negative tracking — matras collide otherwise. */
+/*
+ * Bangla needs looser leading and no negative tracking — matras collide otherwise.
+ *
+ * The weight drops to 700 because Hind Siliguri has no 800. Left at 800 the browser would
+ * synthesise one by smearing the outline, which thickens matras until they merge into the letter
+ * above. A real 700 is heavier-looking than Poppins 800 at the same size anyway, so the two
+ * scripts land at a similar visual weight.
+ */
 .lgh[lang='bn'] .lgh__display,
 [lang='bn'] .lgh__display {
   line-height: 1.28;
   letter-spacing: 0;
+  font-weight: 700;
   font-size: clamp(2rem, 5.4vw, 4rem);
   max-width: 22ch;
 }
@@ -104,7 +114,10 @@
   font-size: clamp(1.75rem, 4vw, 3rem);
   line-height: 1.12;
   letter-spacing: -0.025em;
-  font-weight: 660;
+  /* 700, not the 660 this asked for before. We now load discrete weights rather than a variable
+     face, so 660 had no outline to resolve to and snapped to 700 regardless — naming it is
+     honest about what actually renders. */
+  font-weight: 700;
   margin: 0;
   text-wrap: balance;
   max-width: 20ch;
@@ -384,7 +397,7 @@
 
 .lgh__panel-title {
   font-size: 0.9375rem;
-  font-weight: 650;
+  font-weight: 700;
   margin: 0;
 }
 
@@ -424,7 +437,7 @@
 .lgh__stat-value {
   margin-left: auto;
   font-size: 1.0625rem;
-  font-weight: 660;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
@@ -468,7 +481,7 @@
 .lgh__fact dd {
   margin: 0;
   font-size: 0.9375rem;
-  font-weight: 620;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
@@ -551,7 +564,7 @@
 
 .lgh__card-value {
   font-size: 1.875rem;
-  font-weight: 680;
+  font-weight: 700;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   margin: 0;
@@ -681,7 +694,7 @@
 }
 
 .lgh__product-name {
-  font-weight: 640;
+  font-weight: 700;
   margin: 0;
 }
 
@@ -694,7 +707,7 @@
 .lgh__price {
   margin-top: 0.4rem;
   font-size: 1.125rem;
-  font-weight: 680;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
@@ -704,7 +717,7 @@
   gap: 0.3rem;
   align-self: flex-start;
   font-size: 0.6875rem;
-  font-weight: 640;
+  font-weight: 700;
   letter-spacing: 0.05em;
   padding: 0.2rem 0.5rem;
   border-radius: 999px;
@@ -756,7 +769,7 @@
 .lgh__trust h3 {
   margin: 0 0 0.35rem;
   font-size: 1rem;
-  font-weight: 650;
+  font-weight: 700;
 }
 
 .lgh__trust p {
