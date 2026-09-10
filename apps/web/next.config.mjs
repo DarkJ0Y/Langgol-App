@@ -1,4 +1,61 @@
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+// Imported rather than assumed: this file is ESM, where `process` is not a global the linter will
+// accept, and the explicit import says which `process` is meant.
+import process from 'node:process'
+
+/**
+ * Load the repository-root `.env` before anything reads the environment.
+ *
+ * Next reads `.env` from the application directory only. Langgol keeps ONE `.env` at the monorepo
+ * root, because the web app, Prisma, the migration runner, the seed and the scripts all have to
+ * agree on the same DATABASE_URL — and a second copy under apps/web would be a secret duplicated
+ * into a second file that drifts.
+ *
+ * Without this, `next dev` starts with no DATABASE_URL, no AUTH_SECRET and no JOB_TRIGGER_SECRET,
+ * and every page fails with EnvironmentError while `/health` keeps returning 200 because it does
+ * not touch the database. That failure is confusing enough on its own; the workaround was to
+ * remember `set -a && . ../../.env && set +a` before every single command, which is not something
+ * a person should have to remember, and forgetting it looks like a broken application.
+ *
+ * ## Rules this deliberately keeps
+ *
+ * A variable already present in the environment WINS. So `FOO=bar next dev` still overrides the
+ * file, and a deployment that injects real secrets as environment variables — CI, Vercel, a
+ * container — is completely unaffected by whatever happens to sit in a developer's `.env`.
+ *
+ * This is a loader, not a parser with a specification. It handles `KEY=value`, comments, blank
+ * lines and one pair of surrounding quotes. It does not handle multi-line values or interpolation,
+ * because `.env.example` does not use them and a half-correct implementation of either would be
+ * worse than not having it.
+ */
+function loadRepositoryRootEnv() {
+  const rootEnv = path.join(import.meta.dirname, '../../.env')
+  if (!existsSync(rootEnv)) return
+
+  for (const rawLine of readFileSync(rootEnv, 'utf8').split(/\r?\n/)) {
+    const line = rawLine.trim()
+    if (line === '' || line.startsWith('#')) continue
+
+    const separator = line.indexOf('=')
+    if (separator === -1) continue
+
+    const key = line.slice(0, separator).trim()
+    // Already set means someone meant it. Never overwrite.
+    if (key === '' || key in process.env) continue
+
+    let value = line.slice(separator + 1).trim()
+    const quoted =
+      value.length >= 2 &&
+      ((value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'")))
+    if (quoted) value = value.slice(1, -1)
+
+    process.env[key] = value
+  }
+}
+
+loadRepositoryRootEnv()
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

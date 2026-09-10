@@ -25,8 +25,14 @@ CREATE TABLE "agri_identities" (
 -- The application generates a candidate and asks the database whether it is free. A read-then-write
 -- check loses the race with itself, and two people sharing an AGRI-ID is not a state this system
 -- could recover from once either of them has printed it on a delivery note.
-CREATE UNIQUE INDEX "agri_identities_agri_id_key" ON "agri_identities" ("agri_id");
-CREATE UNIQUE INDEX "agri_identities_user_id_key" ON "agri_identities" ("user_id");
+--
+-- The two unique indexes that enforce this are created by the inline UNIQUE on `user_id` and
+-- `agri_id` above. Postgres names an implicit index `<table>_<column>_key`, which is the same name
+-- Prisma expects for an `@unique` field — so declaring them again here as explicit CREATE UNIQUE
+-- INDEX statements failed with "relation already exists" and took the whole migration down.
+--
+-- Stated rather than deleted, because the constraint is the point and the next person reading this
+-- file needs to know where it lives.
 
 -- The identifier must have the published shape.
 --
