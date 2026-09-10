@@ -57,6 +57,10 @@ const AUTH_ACTIONS = [
   'SMS_BUDGET_EXHAUSTED',
   'DEV_SIGNED_IN',
   'DEV_SIGN_IN_REJECTED',
+  // Distinct from LOGIN_SUCCEEDED and OTP_VERIFY_FAILED, because which party verified the number
+  // changes what the line means: under Firebase the attempt cap and spend limit are Google's.
+  'FIREBASE_SIGNED_IN',
+  'FIREBASE_SIGN_IN_REJECTED',
 ] as const
 
 /** Roles. */
@@ -173,6 +177,14 @@ export const AUDIT_ENTITY_TYPES = [
   'ip',
   'sms_budget',
   'development_identity',
+  /*
+   * A Firebase ID token that failed verification.
+   *
+   * It is its own type because there is nothing else to file it under: the token established
+   * nothing, so there is no user, and its claimed phone number is attacker-controlled text that
+   * must not be written into an operator's table as though it meant something.
+   */
+  'firebase_token',
   'address',
   'farm',
   'plot',
@@ -208,6 +220,10 @@ export const IP_BEARING_ACTIONS: readonly AuditAction[] = [
   'LOGIN_BLOCKED',
   'DEV_SIGNED_IN',
   'DEV_SIGN_IN_REJECTED',
+  // A rejected token is exactly the shape of abuse an address is worth keeping for: a stranger
+  // presenting tokens is not a user having trouble, and there is no account to attribute it to.
+  'FIREBASE_SIGNED_IN',
+  'FIREBASE_SIGN_IN_REJECTED',
   'PHONE_VERIFY_FAILED',
   'PHONE_VERIFY_RATE_LIMITED',
   'EMAIL_VERIFY_FAILED',

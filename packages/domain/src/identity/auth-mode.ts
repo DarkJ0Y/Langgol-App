@@ -1,13 +1,33 @@
 /**
  * Authentication modes.
  *
- * OTP is the production authentication mechanism and is unchanged. `development` exists only so
- * engineering can proceed before SMS infrastructure is contracted — it is a scaffold, and it is
- * built so that it cannot survive contact with production.
+ * Two of the three actually verify that somebody controls a phone number, and one does not:
  *
- * Three independent guards, because one is a convention and three is a control:
+ *  - `otp`       — Langgol sends the code itself through a Bangladeshi SMS aggregator and checks
+ *                  it. Every control around it is ours: the attempt cap, the expiry, the resend
+ *                  cooldown, the per-phone and per-IP rate limits, the SMS spend circuit breaker.
+ *  - `firebase`  — Firebase Authentication sends and checks the code, and hands back a signed ID
+ *                  token asserting the phone number. Those same controls become Google's.
+ *  - `development` — no verification at all. Sign-in as one of a fixed set of fixture identities,
+ *                  so engineering can proceed before SMS infrastructure is contracted. A
+ *                  scaffold, built so it cannot survive contact with production.
  *
- *  1. **Startup** — `production` with any mode other than `otp` refuses to boot.
+ * ## Why `firebase` is permitted in production and `development` is not
+ *
+ * The rule is not "which modes do we like". It is whether the mode proves control of the phone
+ * number it claims. `otp` and `firebase` both do, by different parties. `development` proves
+ * nothing — its accounts have no credential of any kind — so in production it is not a weaker
+ * login, it is an open door.
+ *
+ * Trading our own controls for Google's is a real trade and not a free one, and it is recorded in
+ * docs/DEPLOYMENT.md rather than hidden here: with `firebase` the spend cap, the attempt limits
+ * and the abuse response are configured in the Firebase console, not in this codebase.
+ *
+ * ## The three guards on development mode
+ *
+ * One is a convention and three is a control:
+ *
+ *  1. **Startup** — `production` with `development` refuses to boot.
  *  2. **Use case** — development sign-in refuses when the environment is production, even if
  *     something upstream lied about the mode.
  *  3. **Database** — development sign-in can only authenticate a row flagged
@@ -21,12 +41,22 @@
  * Refs: docs/03_ARCHITECTURE.md ADR-22; docs/07_SECURITY.md §3
  */
 
-export type AuthMode = 'development' | 'otp'
+export type AuthMode = 'development' | 'otp' | 'firebase'
 
-export const AUTH_MODES: readonly AuthMode[] = ['development', 'otp']
+export const AUTH_MODES: readonly AuthMode[] = ['development', 'otp', 'firebase']
 
 export function isAuthMode(value: string): value is AuthMode {
-  return value === 'development' || value === 'otp'
+  return value === 'development' || value === 'otp' || value === 'firebase'
+}
+
+/**
+ * Does this mode actually establish that the caller controls the phone number?
+ *
+ * Named as a question about the mode rather than as a list of what production allows, so that
+ * adding a mode forces an answer here instead of silently inheriting one.
+ */
+export function verifiesPhoneOwnership(mode: AuthMode): boolean {
+  return mode === 'otp' || mode === 'firebase'
 }
 
 export type AppEnvironment = 'development' | 'test' | 'staging' | 'production'
@@ -51,7 +81,10 @@ export class AuthModeError extends Error {
  * without duplicating the rule.
  */
 export function isModePermitted(environment: AppEnvironment, mode: AuthMode): boolean {
-  if (environment === 'production') return mode === 'otp'
+  // Production admits any mode that proves control of the phone number, and no others. Expressed
+  // through the predicate rather than by listing modes, so a mode added later cannot be permitted
+  // here by accident — it has to declare what it verifies first.
+  if (environment === 'production') return verifiesPhoneOwnership(mode)
   return true
 }
 
@@ -67,7 +100,7 @@ export function assertModePermitted(environment: AppEnvironment, mode: AuthMode)
     throw new AuthModeError(
       'FORBIDDEN_IN_PRODUCTION',
       `AUTH_MODE="${mode}" is not permitted when APP_ENV="${environment}". ` +
-        'Production must use OTP authentication.',
+        'Production must use a mode that verifies the phone number: "otp" or "firebase".',
     )
   }
 }

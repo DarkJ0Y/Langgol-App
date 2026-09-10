@@ -33,9 +33,39 @@ const ANONYMOUS_ONLY_PREFIXES = [
   '/auth/register',
   '/auth/verify',
   '/auth/development',
+  '/auth/firebase',
 ]
 
-function securityHeaders(nonce: string, isDevelopment: boolean): Record<string, string> {
+/**
+ * The origins Firebase phone sign-in needs, and nothing more.
+ *
+ * Phone authentication runs a reCAPTCHA challenge in an iframe and talks to two Google endpoints:
+ * Identity Toolkit to start the sign-in, Secure Token to exchange and refresh. Under the policy
+ * below every one of those is blocked by `default-src 'self'`, silently — the widget simply never
+ * appears and no error explains why.
+ *
+ * Added ONLY when Firebase is the active mode. A policy is worth exactly what it refuses, and
+ * permanently admitting four Google origins to buy a feature that is switched off would weaken
+ * every deployment that never turns it on.
+ *
+ * `auth-domain` is the deployment's own Firebase domain, which serves the sign-in helper frame.
+ */
+const FIREBASE_SCRIPT_SRC = ['https://www.google.com', 'https://www.gstatic.com'] as const
+const FIREBASE_CONNECT_SRC = [
+  'https://identitytoolkit.googleapis.com',
+  'https://securetoken.googleapis.com',
+] as const
+const FIREBASE_FRAME_SRC = ['https://www.google.com'] as const
+
+interface CspOptions {
+  readonly nonce: string
+  readonly isDevelopment: boolean
+  /** The Firebase auth domain, when and only when `AUTH_MODE=firebase`. */
+  readonly firebaseAuthDomain: string | null
+}
+
+function securityHeaders(options: CspOptions): Record<string, string> {
+  const { nonce, isDevelopment, firebaseAuthDomain } = options
   /*
    * Content-Security-Policy.
    *
@@ -48,12 +78,39 @@ function securityHeaders(nonce: string, isDevelopment: boolean): Record<string, 
    *    script injection, and this is revisited if that changes.
    *  - `connect-src`/`script-src` relax in development only, for the dev server's websocket and
    *    eval-based fast refresh. Never in staging or production.
+   *  - Four Google origins are admitted when, and only when, Firebase is the active sign-in mode.
    */
-  const scriptSrc = isDevelopment
-    ? `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`
-    : `'self' 'nonce-${nonce}' 'strict-dynamic'`
+  const firebase = firebaseAuthDomain !== null
 
-  const connectSrc = isDevelopment ? "'self' ws: wss:" : "'self'"
+  /*
+   * reCAPTCHA loads its own script from these, and `strict-dynamic` does NOT cover them.
+   *
+   * That is worth stating because it looks like it should: `strict-dynamic` lets a nonced script
+   * load further scripts, but the reCAPTCHA bootstrap is injected as a plain tag by Firebase's
+   * bundle rather than created by a nonced one, so the host has to be named.
+   */
+  const scriptSrc = [
+    "'self'",
+    `'nonce-${nonce}'`,
+    "'strict-dynamic'",
+    ...(isDevelopment ? ["'unsafe-eval'"] : []),
+    ...(firebase ? FIREBASE_SCRIPT_SRC : []),
+  ].join(' ')
+
+  const connectSrc = [
+    "'self'",
+    ...(isDevelopment ? ['ws:', 'wss:'] : []),
+    ...(firebase ? FIREBASE_CONNECT_SRC : []),
+  ].join(' ')
+
+  /*
+   * `frame-src` is absent entirely unless Firebase is active, so it falls back to `default-src
+   * 'self'` and no cross-origin frame can be embedded. This is the direction that matters: the
+   * app never needs to embed anything, right up until the reCAPTCHA challenge does.
+   */
+  const frameSrc = firebase
+    ? [`frame-src 'self' ${[...FIREBASE_FRAME_SRC, `https://${firebaseAuthDomain}`].join(' ')}`]
+    : []
 
   const csp = [
     "default-src 'self'",
@@ -62,7 +119,10 @@ function securityHeaders(nonce: string, isDevelopment: boolean): Record<string, 
     "img-src 'self' data: blob:",
     "font-src 'self' data:",
     `connect-src ${connectSrc}`,
+    ...frameSrc,
     "form-action 'self'",
+    // Unchanged by any of the above. Langgol is never embedded in somebody else's page, whichever
+    // sign-in mode is active — this is the clickjacking control, not a Firebase concern.
     "frame-ancestors 'none'",
     "base-uri 'none'",
     "object-src 'none'",
@@ -118,7 +178,21 @@ export function middleware(request: NextRequest): NextResponse {
     response = NextResponse.next({ request: { headers: requestHeaders } })
   }
 
-  for (const [name, value] of Object.entries(securityHeaders(nonce, isDevelopment))) {
+  /*
+   * Read straight from `process.env`, as NODE_ENV above already is.
+   *
+   * Middleware runs in the edge runtime, where the full parsed environment is deliberately not
+   * loaded. Both values are used only to decide whether to widen the policy, and either one
+   * missing simply leaves it narrow — which is the safe direction to fail in.
+   */
+  const firebaseAuthDomain =
+    process.env['AUTH_MODE'] === 'firebase'
+      ? (process.env['FIREBASE_AUTH_DOMAIN'] ?? '').trim() || null
+      : null
+
+  for (const [name, value] of Object.entries(
+    securityHeaders({ nonce, isDevelopment, firebaseAuthDomain }),
+  )) {
     response.headers.set(name, value)
   }
 

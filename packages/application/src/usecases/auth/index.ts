@@ -25,3 +25,9 @@ export {
   type SelectRoleResult,
   type SelectRoleDeps,
 } from './select-role.js'
+export {
+  firebaseSignIn,
+  type FirebaseSignInCommand,
+  type FirebaseSignInResult,
+  type FirebaseSignInDeps,
+} from './firebase-sign-in.js'

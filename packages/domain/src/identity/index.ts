@@ -5,6 +5,7 @@ export {
   isAuthMode,
   isModePermitted,
   assertModePermitted,
+  verifiesPhoneOwnership,
   findDevelopmentIdentity,
   findDevelopmentIdentityByPhone,
   developmentIdentityLabel,

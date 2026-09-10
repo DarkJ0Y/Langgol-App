@@ -16,9 +16,16 @@
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { z } from 'zod'
-import { developmentSignIn, requestOtp, selectRole, signOut, verifyOtp } from '@langgol/application'
+import {
+  developmentSignIn,
+  firebaseSignIn,
+  requestOtp,
+  selectRole,
+  signOut,
+  verifyOtp,
+} from '@langgol/application'
 import { isErr } from '@langgol/shared'
-import { authMode, developmentDeps, otpDeps, authDeps } from '@/lib/deps'
+import { authMode, developmentDeps, firebaseDeps, otpDeps, authDeps } from '@/lib/deps'
 import { getLocale } from '@/lib/locale'
 import { clearSessionCookie, getSession, readSessionToken, setSessionCookie } from '@/lib/session'
 import {
@@ -250,6 +257,67 @@ export async function verifyOtpAction(
    * a second role.
    */
   redirect(destinationAfterSignIn(result.value.roles))
+}
+
+/* -------------------------------------------------------------- firebase mode */
+
+/*
+ * The token is bounded before it is looked at.
+ *
+ * A Firebase ID token is a JWT of a few hundred characters. The cap is generous enough for any
+ * real one and small enough that a caller cannot make the server verify a megabyte of text, which
+ * is free work for them and paid work for us.
+ */
+const FirebaseSchema = z.object({
+  idToken: z.string().min(1).max(4096),
+  fullName: z.string().trim().min(1).max(MAX_FULL_NAME_LENGTH).optional(),
+  role: z.enum(REGISTERABLE_ROLES).optional(),
+})
+
+export async function firebaseSignInAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  if (authMode() !== 'firebase') return { status: 'error', errorKey: 'errors.unexpected' }
+
+  const parsed = FirebaseSchema.safeParse({
+    idToken: formData.get('idToken'),
+    fullName: formData.get('fullName') ?? undefined,
+    role: formData.get('role') ?? undefined,
+  })
+  if (!parsed.success) return { status: 'error', errorKey: 'errors.unexpected' }
+
+  const meta = await requestMeta()
+  const locale = await getLocale()
+
+  /*
+   * A name and role are only meaningful for an account that does not exist yet, and the use case
+   * ignores them entirely when it finds one. Sending them regardless would be harmless, but
+   * omitting them keeps the shape honest: this is a signup only if both were supplied.
+   */
+  const signup =
+    parsed.data.fullName !== undefined && parsed.data.role !== undefined
+      ? {
+          signup: {
+            fullName: parsed.data.fullName,
+            // Re-checked inside the use case against the domain allowlist. This is the outer of
+            // two gates, never the boundary.
+            role: parsed.data.role,
+            preferredLanguage: locale === 'bn' ? ('BN' as const) : ('EN' as const),
+          },
+        }
+      : {}
+
+  const result = await firebaseSignIn(
+    { idToken: parsed.data.idToken, ...signup, ...meta },
+    await firebaseDeps(),
+  )
+
+  if (isErr(result)) return toActionState(result.error.code, result.error.meta)
+
+  await setSessionCookie(result.value.sessionToken, result.value.expiresAt)
+
+  return redirect(destinationAfterSignIn(result.value.roles))
 }
 
 /* ---------------------------------------------------------- development mode */

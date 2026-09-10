@@ -27,11 +27,15 @@ const schema = z.object({
   /**
    * How users authenticate.
    *
-   * `otp` is the production mechanism. `development` allows sign-in as one of a fixed set of
-   * fixture identities so engineering can proceed before SMS infrastructure exists — and is
-   * refused outright in production, below. docs/03_ARCHITECTURE.md ADR-22
+   * `otp` sends and checks the code itself. `firebase` delegates both to Firebase Authentication
+   * and trusts the signed ID token it returns. Either is permitted in production, because either
+   * proves control of the phone number.
+   *
+   * `development` allows sign-in as one of a fixed set of fixture identities so engineering can
+   * proceed before SMS infrastructure exists, and is refused outright in production below.
+   * docs/03_ARCHITECTURE.md ADR-22
    */
-  AUTH_MODE: z.enum(['development', 'otp']).default('development'),
+  AUTH_MODE: z.enum(['development', 'otp', 'firebase']).default('development'),
 
   SMS_PROVIDER: z.enum(['console', 'memory', 'http']).default('console'),
   SMS_API_URL: z.string().optional(),
@@ -146,6 +150,39 @@ export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
     )
   }
 
+  /*
+   * Firebase sign-in needs the project it verifies against, and the client config to start.
+   *
+   * An ID token is only meaningful relative to an audience: verification establishes that Google
+   * issued this token FOR this project, and without the project id there is nothing to check the
+   * audience against. A verifier that skips that check accepts a valid token issued for somebody
+   * else's Firebase project, which is a complete authentication bypass — so the id is not
+   * optional the moment this mode is selected.
+   *
+   * The API key and auth domain are the browser's half. They are not secrets; without them the
+   * sign-in widget cannot reach Firebase at all, and the failure would land on the user rather
+   * than at boot.
+   */
+  if (env.AUTH_MODE === 'firebase') {
+    const missing = (
+      [
+        ['FIREBASE_PROJECT_ID', env.FIREBASE_PROJECT_ID],
+        ['FIREBASE_API_KEY', env.FIREBASE_API_KEY],
+        ['FIREBASE_AUTH_DOMAIN', env.FIREBASE_AUTH_DOMAIN],
+      ] as const
+    )
+      .filter(([, value]) => value === undefined || value.trim() === '')
+      .map(([name]) => name)
+
+    if (missing.length > 0) {
+      throw new EnvironmentError(
+        `AUTH_MODE=firebase requires ${missing.join(', ')}. An ID token can only be verified ` +
+          'against the project it was issued for, and the browser cannot begin sign-in without ' +
+          'the client configuration.',
+      )
+    }
+  }
+
   // Same reasoning as the SMS check: credentials missing at boot beat a silent failure at send
   // time, when the user is staring at "we've emailed you" and nothing arrives.
   if (env.EMAIL_PROVIDER === 'http' && (!env.EMAIL_API_URL || !env.EMAIL_API_KEY)) {
@@ -169,10 +206,21 @@ export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
     )
   }
 
-  if (isProduction && env.SMS_PROVIDER !== 'http') {
+  /*
+   * Scoped to `otp`, because that is the only mode in which WE send the message.
+   *
+   * Under `firebase` the code is sent and checked by Google, and this application never calls an
+   * SMS provider on the sign-in path. Demanding an aggregator contract there would refuse to boot
+   * a deployment that works perfectly — which is the same class of mistake this check exists to
+   * prevent, pointed the other way.
+   *
+   * Notifications still use the provider, but a missing one degrades a notification rather than
+   * locking every user out, so it is not a boot failure.
+   */
+  if (isProduction && env.AUTH_MODE === 'otp' && env.SMS_PROVIDER !== 'http') {
     throw new EnvironmentError(
-      `SMS_PROVIDER="${env.SMS_PROVIDER}" cannot be used in production: no user would receive ` +
-        'an OTP, and every login would fail.',
+      `SMS_PROVIDER="${env.SMS_PROVIDER}" cannot be used in production with AUTH_MODE=otp: no ` +
+        'user would receive an OTP, and every login would fail.',
     )
   }
 

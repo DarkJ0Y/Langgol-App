@@ -58,6 +58,62 @@ describe('production must never fall back to development authentication', () => 
     expect(env.isDevelopmentAuth).toBe(false)
   })
 
+  const firebaseClient = {
+    FIREBASE_PROJECT_ID: 'langgol-test',
+    FIREBASE_API_KEY: 'client-api-key',
+    FIREBASE_AUTH_DOMAIN: 'langgol-test.firebaseapp.com',
+  }
+
+  it('boots when production uses Firebase, which also verifies the number', () => {
+    /*
+     * The production rule is about whether the mode proves control of the phone, not about which
+     * party sends the message. Firebase does prove it, so it is permitted.
+     */
+    const env = parseEnv({ ...production, AUTH_MODE: 'firebase', ...firebaseClient })
+    expect(env.AUTH_MODE).toBe('firebase')
+    expect(env.isDevelopmentAuth).toBe(false)
+  })
+
+  it('does not demand an SMS aggregator when Firebase is sending the codes', () => {
+    /*
+     * The SMS check exists because a console provider under OTP means nobody receives a code and
+     * every login fails. Under Firebase this application never calls an SMS provider on the
+     * sign-in path, so the same check would refuse to boot a deployment that works.
+     */
+    const env = parseEnv({
+      ...production,
+      AUTH_MODE: 'firebase',
+      ...firebaseClient,
+      SMS_PROVIDER: 'console',
+      SMS_API_URL: undefined,
+      SMS_API_KEY: undefined,
+    })
+    expect(env.AUTH_MODE).toBe('firebase')
+  })
+
+  it('refuses Firebase mode without the project it would verify against', () => {
+    /*
+     * Verification establishes that Google issued this token FOR this project. With no project id
+     * there is no audience to check, and a verifier that skips that check accepts a valid token
+     * minted for somebody else's Firebase project — a complete authentication bypass.
+     */
+    for (const absent of ['FIREBASE_PROJECT_ID', 'FIREBASE_API_KEY', 'FIREBASE_AUTH_DOMAIN']) {
+      const config: Record<string, string | undefined> = {
+        ...production,
+        AUTH_MODE: 'firebase',
+        ...firebaseClient,
+      }
+      config[absent] = undefined
+
+      expect(() => parseEnv(config)).toThrow(EnvironmentError)
+      try {
+        parseEnv(config)
+      } catch (error) {
+        expect((error as Error).message).toContain(absent)
+      }
+    }
+  })
+
   it('refuses to boot in production with no KYC key', () => {
     /*
      * The alternative failure is silent: the application starts, and identity verification simply

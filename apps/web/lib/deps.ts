@@ -18,6 +18,7 @@ import {
   configPort,
   consentRepository,
   cryptoRandom,
+  createFirebaseIdentityVerifier,
   createOtpDelivery,
   farmerProfileRepository,
   farmRepository,
@@ -88,6 +89,48 @@ export async function developmentDeps() {
     ...(await authDeps()),
     environment: configuration.APP_ENV as AppEnvironment,
     authMode: configuration.AUTH_MODE as AuthMode,
+  }
+}
+
+/**
+ * The Firebase ID token verifier, built once for the process.
+ *
+ * Held at module scope because it owns a cache of Google's signing keys. Rebuilding it per request
+ * would refetch that key set on every sign-in, turning a local signature check into a network round
+ * trip on the login path — and on a serverless platform, on the coldest path there is.
+ */
+let firebaseVerifier: ReturnType<typeof createFirebaseIdentityVerifier> | null = null
+
+/**
+ * Firebase sign-in dependencies.
+ *
+ * The verifier is only constructed when Firebase is the active mode. `parseEnv` already refuses to
+ * boot in that mode without a project id, so reaching here means the id is present — but it is
+ * checked rather than asserted, because the alternative to a thrown error is a verifier configured
+ * with `undefined` as its audience, and an audience that matches nothing is one bad refactor away
+ * from an audience that matches everything.
+ */
+export async function firebaseDeps() {
+  const configuration = env()
+  const projectId = configuration.FIREBASE_PROJECT_ID
+
+  if (configuration.AUTH_MODE !== 'firebase' || projectId === undefined || projectId === '') {
+    throw new Error('Firebase sign-in requested but AUTH_MODE is not firebase, or no project id.')
+  }
+
+  firebaseVerifier ??= createFirebaseIdentityVerifier({
+    projectId,
+    // Refusals reach the server log for whoever is diagnosing them, and never the caller.
+    onRefusal: (reason) => {
+      console.warn(`[firebase] id token refused: ${reason}`)
+    },
+  })
+
+  return {
+    ...(await authDeps()),
+    environment: configuration.APP_ENV as AppEnvironment,
+    authMode: configuration.AUTH_MODE as AuthMode,
+    firebase: firebaseVerifier,
   }
 }
 
