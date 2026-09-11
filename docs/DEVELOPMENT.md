@@ -75,6 +75,39 @@ in SQL cannot use an index and degenerates to a full scan.
 `DATABASE_URL` may point at a connection pooler; `DIRECT_URL` must not, because migrations
 cannot run over a transaction pooler.
 
+### A local database without Docker
+
+Docker is the easy path and not the only one. PostgreSQL and PostGIS both publish plain ZIPs, so a
+working local cluster can be assembled without an installer, without administrator rights, and
+without touching anything already on the machine. Useful when Docker Desktop is absent, broken, or
+refuses to start.
+
+1. Download the [PostgreSQL Windows binaries](https://www.enterprisedb.com/download-postgresql-binaries)
+   and a matching [PostGIS bundle](https://download.osgeo.org/postgis/windows/), for the SAME major
+   version. A PostGIS built for 16 will not load into 17.
+2. Extract Postgres, then copy the bundle's `bin`, `lib` and `share` folders over the `pgsql`
+   folder, merging them. Copy `gdal-data` alongside as well; PostGIS raster needs it.
+3. Initialise and start, choosing a path with **no spaces** — several Postgres utilities on Windows
+   mishandle them:
+
+```bash
+pgsql/bin/initdb -D data -U langgol --pwfile=pw.txt -E UTF8 --locale=C
+pgsql/bin/pg_ctl -D data -l server.log -o "-p 5432" start
+pgsql/bin/psql -h 127.0.0.1 -U langgol -d postgres -c "CREATE DATABASE langgol_dev OWNER langgol"
+```
+
+`initdb` writes `trust` authentication for every connection. Change the `host` lines in
+`data/pg_hba.conf` to `scram-sha-256` so that `DATABASE_URL` is actually exercised with its
+password, rather than working locally for a reason that will not hold anywhere else.
+
+Then point `DATABASE_URL` and `DIRECT_URL` at
+`postgresql://langgol:langgol@127.0.0.1:5432/langgol_dev` and run the migrations. Confirm PostGIS
+really loaded before trusting anything:
+
+```bash
+pgsql/bin/psql -h 127.0.0.1 -U langgol -d langgol_dev -c "SELECT postgis_version()"
+```
+
 ### Commands
 
 ```bash
@@ -82,10 +115,36 @@ pnpm db:validate                              # validate the schema — no datab
 pnpm db:migrate                               # create/apply migrations in development
 pnpm db:migrate:deploy                        # apply pending migrations (CI, staging, production)
 pnpm db:seed                                  # idempotent reference data
+pnpm seed:synthetic                           # test data for the back office — see below
 pnpm --filter @langgol/db run migrate:status  # is every migration applied and unmodified?
 pnpm --filter @langgol/db run verify:guarantees   # read-only; safe anywhere including production
 pnpm --filter @langgol/db run verify:behaviour    # writes rows — CI and scratch databases ONLY
 ```
+
+### Synthetic data for the back office
+
+`pnpm db:seed` is enough to sign in and nowhere near enough to exercise the admin screens. Those
+screens are queues, and an empty queue looks exactly like a broken one.
+
+```bash
+pnpm db:seed && pnpm seed:synthetic
+```
+
+It adds fifteen people with Bangla and English names across every role, and verifications in each
+state across the identity, farm, business and expert queues. Identity records are encrypted with
+the real cipher, so `KYC_ENCRYPTION_KEY` must be set; a placeholder ciphertext would let the queue
+render and then fail the moment a reviewer opened a record.
+
+It also solves the administrator problem. P13 made ADMIN a role that grants nothing on its own,
+and its backfill deliberately skips an installation with only one administrator, because a grant
+must be attributed to somebody else and a database CHECK enforces it. A fresh database has exactly
+one administrator — the `admin` fixture — so it arrives holding the role, no permissions, and a
+dashboard that correctly reports it can do nothing. The script creates a second administrator to
+act as grantor and grants the ten permissions from it, which is the same two-person path a real
+installation uses.
+
+Document images are the one thing it cannot provide: the storage keys point at objects that do not
+exist, because object storage is a separate service. Everything else on the review screen works.
 
 ### Migrations that Prisma cannot generate
 

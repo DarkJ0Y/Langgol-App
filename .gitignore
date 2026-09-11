@@ -18,6 +18,11 @@ coverage/
 .env
 .env.local
 .env.*.local
+# Every other .env variant, backups included. Switching a database URL invites a
+# `cp .env .env.backup`, and that copy holds the same passwords the original does
+# while matching none of the patterns above — one `git add -A` away from being
+# published. Broad by intent; the exception below is what keeps the template.
+.env.*
 !.env.example
 
 # Personal access tokens. This repository has had a `pat.txt` in its working directory more than
