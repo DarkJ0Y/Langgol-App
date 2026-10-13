@@ -62,6 +62,11 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
 
+  // The cPanel package (scripts/package-cpanel.mjs) needs a self-contained server: shared hosting
+  // cannot run `pnpm install` or `next build` within its memory limits. Opt-in, so the Vercel
+  // build is unchanged. docs/DEPLOY-CPANEL.md
+  ...(process.env['LANGGOL_STANDALONE'] === '1' ? { output: 'standalone' } : {}),
+
   // Workspace packages are TypeScript source, compiled by Next rather than pre-built. One less
   // build step, and the app always sees the code in the repository.
   transpilePackages: [

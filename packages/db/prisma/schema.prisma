@@ -15,6 +15,10 @@
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/client"
+  // `native` for wherever it is generated; the RHEL builds for the cPanel host (CloudLinux 8 and 9),
+  // whose package is built on a different machine and cannot run `prisma generate` itself.
+  // docs/DEPLOY-CPANEL.md
+  binaryTargets = ["native", "rhel-openssl-1.1.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {

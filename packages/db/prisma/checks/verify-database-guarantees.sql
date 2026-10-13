@@ -262,6 +262,20 @@ BEGIN
     END IF;
   END LOOP;
 
+  -- ADR-06: RLS deny-all on every table, so a hosted database's public API cannot reach them.
+  -- Checked by inventory rather than by name, so a table added later without it fails here.
+  FOR item IN
+    SELECT c.relname
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public'
+      AND c.relkind IN ('r', 'p')
+      AND c.relname <> 'spatial_ref_sys'
+      AND NOT c.relrowsecurity
+  LOOP
+    missing := missing || ('rls:' || item);
+  END LOOP;
+
   IF array_length(missing, 1) IS NOT NULL THEN
     RAISE EXCEPTION 'Database guarantees missing: %', array_to_string(missing, ', ');
   END IF;

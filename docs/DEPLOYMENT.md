@@ -2,7 +2,8 @@
 
 How Langgol is deployed, and why the production checklist is longer than it looks.
 
-Development setup lives in [`DEVELOPMENT.md`](DEVELOPMENT.md).
+Development setup lives in [`DEVELOPMENT.md`](DEVELOPMENT.md). The step-by-step guide for the
+cPanel host, with Supabase as the database, is [`DEPLOY-CPANEL.md`](DEPLOY-CPANEL.md).
 
 ---
 
