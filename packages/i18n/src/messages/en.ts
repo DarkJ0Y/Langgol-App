@@ -173,6 +173,7 @@ export const en: Catalogue = {
     title: 'What is available near you',
     subtitle: 'Prices below are what you pay at your door, including delivery.',
     perKg: 'per kg',
+    guestQuote: 'Log in to get the price delivered to your address, and to order.',
     deliveredPerKg: 'delivered, per kg',
     from: 'From {farm}',
     available: '{quantity} available',
@@ -448,8 +449,11 @@ export const en: Catalogue = {
     heroTitle: 'Turn agricultural data into decisions worth making',
     heroBody:
       'Langgol brings Bangladesh\u2019s farmers, buyers, retailers and agronomists onto one surface \u2014 field data, market prices and crop advice in the same place.',
-    heroPrimary: 'Get started',
-    heroSecondary: 'Explore the platform',
+    guest: 'Continue as guest',
+    guestHint:
+      'As a guest you can browse the market and today’s prices. Log in to get a quote or place an order.',
+    newHere: 'New to Langgol?',
+    createAccount: 'Create an account',
     heroNote: 'The figures below are illustrative, not live data.',
 
     panelTitle: 'Field intelligence',

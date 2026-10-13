@@ -14,7 +14,6 @@
 
 import Link from 'next/link'
 import { prisma } from '@langgol/db'
-import { LinkButton } from '@langgol/ui/components'
 import { createTranslator } from '@langgol/i18n'
 import { checkFirebase } from '@langgol/infrastructure'
 import { getLocale } from '@/lib/locale'
@@ -60,11 +59,12 @@ export default async function MarketPage() {
         </p>
         <h1 className="lg-hero__title">{t.t('marketplace.title')}</h1>
         <p className="lg-hero__lede">{t.t('marketplace.subtitle')}</p>
-        {session === null ? (
-          <div className="lg-hero__action" style={{ marginTop: 'var(--lg-space-6)' }}>
-            <LinkButton href="/auth">{t.t('auth.signInTitle')}</LinkButton>
-          </div>
-        ) : null}
+        {/*
+          A guest is browsing on purpose — they chose it on the landing page — so this says what
+          they can do rather than blocking the page with a sign-in button. "Log in" is in the
+          header on every screen, and a listing asks for it at the moment a quote needs it.
+        */}
+        {session === null ? <p className="lg-hint">{t.t('home.guestHint')}</p> : null}
       </section>
 
       {/* Live service status. Honest about what is connected and what is not. */}

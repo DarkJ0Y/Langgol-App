@@ -3,6 +3,41 @@ import type { Translator } from '@langgol/i18n'
 import { DEMO_ECOSYSTEM, DEMO_METRICS, DEMO_PLOTS, DEMO_PRODUCTS } from './home-demo'
 
 /**
+ * Where "Log in" goes. `/auth` picks the screen for the server's AUTH_MODE — the demo identities,
+ * Firebase or OTP — so the landing page never has to know which one is active.
+ */
+const SIGN_IN_HREF = '/auth'
+
+/** A guest starts at the market: public, and the part of Langgol worth seeing without an account. */
+const GUEST_HREF = '/market'
+
+/**
+ * The landing page's one decision: sign in, or look around first.
+ *
+ * Shown in the hero and again at the foot of the page. The hint says what a guest can and cannot
+ * do, so choosing "guest" is not a surprise later — a quote or an order asks for sign-in at that
+ * point (app/market/actions.ts), and nothing before it does.
+ */
+function EntryChoice({ t, centred = false }: { t: Translator; centred?: boolean }) {
+  return (
+    <div className={centred ? 'lgh__entry lgh__entry--centred' : 'lgh__entry'}>
+      <div className="lgh__cta-row">
+        <a className="lgh__btn lgh__btn--primary lgh__btn--lg" href={SIGN_IN_HREF}>
+          {t.t('home.signIn')}
+        </a>
+        <a className="lgh__btn lgh__btn--ghost lgh__btn--lg" href={GUEST_HREF}>
+          {t.t('home.guest')}
+        </a>
+      </div>
+      <p className="lgh__entry-hint">{t.t('home.guestHint')}</p>
+      <p className="lgh__entry-hint">
+        {t.t('home.newHere')} <a href="/auth/register">{t.t('home.createAccount')}</a>
+      </p>
+    </div>
+  )
+}
+
+/**
  * The Langgol marketing homepage.
  *
  * A server component with no client JavaScript at all. Every effect — the reveal, the filling
@@ -50,11 +85,11 @@ export function HomeLanding({ t, locale }: { t: Translator; locale: 'bn' | 'en' 
               action="/api/locale"
               returnTo="/"
             />
-            <a className="lgh__btn lgh__btn--ghost lgh__nav-signin" href="/auth/phone">
-              {t.t('home.signIn')}
+            <a className="lgh__btn lgh__btn--ghost lgh__nav-guest" href={GUEST_HREF}>
+              {t.t('home.guest')}
             </a>
-            <a className="lgh__btn lgh__btn--primary" href="/auth/register">
-              {t.t('home.getStarted')}
+            <a className="lgh__btn lgh__btn--primary" href={SIGN_IN_HREF}>
+              {t.t('home.signIn')}
             </a>
           </div>
         </div>
@@ -68,14 +103,7 @@ export function HomeLanding({ t, locale }: { t: Translator; locale: 'bn' | 'en' 
             <h1 className="lgh__display">{t.t('home.heroTitle')}</h1>
             <p className="lgh__lede">{t.t('home.heroBody')}</p>
 
-            <div className="lgh__cta-row">
-              <a className="lgh__btn lgh__btn--primary lgh__btn--lg" href="/auth/register">
-                {t.t('home.heroPrimary')}
-              </a>
-              <a className="lgh__btn lgh__btn--ghost lgh__btn--lg" href="#platform">
-                {t.t('home.heroSecondary')}
-              </a>
-            </div>
+            <EntryChoice t={t} />
 
             {/* The page states plainly that the panel beside it is an example. */}
             <p className="lgh__note">{t.t('home.heroNote')}</p>
@@ -296,14 +324,7 @@ export function HomeLanding({ t, locale }: { t: Translator; locale: 'bn' | 'en' 
           <p className="lgh__lede" style={{ textAlign: 'center' }}>
             {t.t('home.ctaBody')}
           </p>
-          <div className="lgh__cta-row">
-            <a className="lgh__btn lgh__btn--primary lgh__btn--lg" href="/auth/register">
-              {t.t('home.getStarted')}
-            </a>
-            <a className="lgh__btn lgh__btn--ghost lgh__btn--lg" href="/market">
-              {t.t('home.navMarket')}
-            </a>
-          </div>
+          <EntryChoice t={t} centred />
         </div>
       </section>
 

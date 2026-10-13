@@ -431,6 +431,47 @@ body {
   text-decoration: none;
 }
 
+/* Market, the language switch and — for a guest — the way to sign in. */
+.lg-header-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--lg-space-3);
+}
+
+.lg-header-link {
+  font-size: var(--lg-text-sm);
+  font-weight: 500;
+  color: var(--lg-text-secondary);
+  text-decoration: none;
+}
+
+.lg-header-link:hover {
+  color: var(--lg-text-primary);
+}
+
+.lg-header-signin {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0 var(--lg-space-4);
+  border-radius: var(--lg-radius-md);
+  background-color: var(--lg-action-primary);
+  color: var(--lg-text-on-action);
+  font-size: var(--lg-text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.lg-header-signin:hover {
+  background-color: var(--lg-action-primary-hover);
+}
+
+.lg-header-link:focus-visible,
+.lg-header-signin:focus-visible {
+  outline: 3px solid var(--lg-focus-ring);
+  outline-offset: 2px;
+}
+
 /* ------------------------------------------------------------------ utility */
 
 .lg-visually-hidden {

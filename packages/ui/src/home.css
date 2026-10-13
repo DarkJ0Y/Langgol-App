@@ -374,6 +374,36 @@
   margin-top: 0.35rem;
 }
 
+/* The sign-in-or-guest choice: two buttons, then what each one means. */
+.lgh__entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.lgh__entry--centred {
+  align-items: center;
+  text-align: center;
+}
+
+.lgh__entry--centred .lgh__cta-row {
+  justify-content: center;
+}
+
+.lgh__entry-hint {
+  max-width: 34rem;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--lgh-dim);
+}
+
+.lgh__entry-hint a {
+  color: var(--lgh-green);
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+
 /* ------------------------------------------------------- the instrument panel */
 
 .lgh__panel {
@@ -934,16 +964,17 @@
 }
 
 /*
- * Below 30rem the navbar cannot hold the logo, the language switcher and two buttons — "Get
- * started" was being cut off at the right edge. Sign-in is the one that gives way: it is still
- * one tap from the register screen, which carries an "already have an account" link, whereas
- * losing the primary call to action would leave a visitor with nowhere to go.
+ * Below 40rem the navbar cannot hold the logo, the language switcher and two buttons. "Continue
+ * as guest" is the one that gives way: the hero offers it again directly underneath, at full
+ * width, whereas "Log in" is what a returning user looks for in the corner.
  */
-@media (max-width: 30rem) {
-  .lgh__nav-signin {
+@media (max-width: 40rem) {
+  .lgh__nav-guest {
     display: none;
   }
+}
 
+@media (max-width: 30rem) {
   .lgh__nav-inner {
     gap: 0.6rem;
   }

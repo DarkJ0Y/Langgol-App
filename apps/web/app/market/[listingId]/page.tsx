@@ -68,7 +68,8 @@ export default async function ListingPage({ params }: { params: Promise<{ listin
 
       {session === null ? (
         <Card>
-          <p className="lg-subtitle">{t.t('auth.signInSubtitle')}</p>
+          {/* Why, not how: the how depends on AUTH_MODE, and /auth knows which one is active. */}
+          <p className="lg-subtitle">{t.t('marketplace.guestQuote')}</p>
           <LinkButton href="/auth">{t.t('auth.signInTitle')}</LinkButton>
         </Card>
       ) : (

@@ -6,6 +6,7 @@ import { DevelopmentBanner, LanguageSwitcher, SkipLink } from '@langgol/ui/compo
 import { createTranslator } from '@langgol/i18n'
 import { getLocale } from '@/lib/locale'
 import { isDevelopmentAuth } from '@/lib/deps'
+import { getSession } from '@/lib/session'
 
 /*
  * The two faces, downloaded at build time and served from our own origin.
@@ -68,6 +69,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
    */
   const isLanding = path === '/'
 
+  /*
+   * A guest who chose "Continue as guest" on the landing page needs the way back to signing in
+   * on every screen, not only on the one that refuses them. Without a session cookie this costs
+   * nothing: getSession returns before touching the database.
+   */
+  const isGuest = isLanding ? false : (await getSession()) === null
+
   return (
     /*
      * The dark surface is the default. Langgol is used outdoors and after dark, and the
@@ -109,12 +117,22 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <a className="lg-brand" href="/">
                 {t.t('common.appName')}
               </a>
-              <LanguageSwitcher
-                currentLocale={locale}
-                otherLabel={t.t('common.switchToEnglish')}
-                action="/api/locale"
-                returnTo={path}
-              />
+              <nav className="lg-header-nav" aria-label={t.t('home.menu')}>
+                <a className="lg-header-link" href="/market">
+                  {t.t('home.navMarket')}
+                </a>
+                <LanguageSwitcher
+                  currentLocale={locale}
+                  otherLabel={t.t('common.switchToEnglish')}
+                  action="/api/locale"
+                  returnTo={path}
+                />
+                {isGuest && !path.startsWith('/auth') ? (
+                  <a className="lg-header-signin" href="/auth">
+                    {t.t('home.signIn')}
+                  </a>
+                ) : null}
+              </nav>
             </header>
           )}
           <main

@@ -171,6 +171,7 @@ export const bn = {
     title: 'আপনার কাছাকাছি যা আছে',
     subtitle: 'নিচের দাম আপনার দরজায় পৌঁছে দেওয়ার দাম — পরিবহন খরচসহ।',
     perKg: 'কেজি প্রতি',
+    guestQuote: 'আপনার ঠিকানায় দাম জানতে আর অর্ডার দিতে প্রবেশ করুন।',
     deliveredPerKg: 'পৌঁছে দিয়ে, কেজি প্রতি',
     from: '{farm} থেকে',
     available: '{quantity} আছে',
@@ -456,8 +457,12 @@ export const bn = {
     heroTitle: 'কৃষির তথ্যকে কাজের সিদ্ধান্তে বদলে দিন',
     heroBody:
       'লাঙ্গল বাংলাদেশের কৃষক, ক্রেতা, দোকানি ও কৃষি বিশেষজ্ঞদের এক জায়গায় আনে — জমির তথ্য, বাজারের দাম আর ফসলের পরামর্শ একসাথে।',
-    heroPrimary: 'শুরু করুন',
-    heroSecondary: 'প্ল্যাটফর্ম দেখুন',
+    // The two doors off the landing page. A guest sees the market and prices; anything that
+    // acts — a quote, an order — asks them to sign in at that point, not before.
+    guest: 'অতিথি হিসেবে দেখুন',
+    guestHint: 'অতিথি হিসেবে বাজার আর আজকের দাম দেখতে পারবেন। দর নিতে বা অর্ডার দিতে প্রবেশ করুন।',
+    newHere: 'লাঙ্গলে নতুন?',
+    createAccount: 'অ্যাকাউন্ট খুলুন',
     heroNote: 'নিচের সংখ্যাগুলো উদাহরণ, আসল তথ্য নয়।',
 
     panelTitle: 'জমির অবস্থা',

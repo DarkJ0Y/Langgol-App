@@ -90,6 +90,27 @@ function poishaFromTaka(value: string): bigint {
   return BigInt(whole ?? '0') * 100n + BigInt((fraction + '00').slice(0, 2))
 }
 
+/**
+ * Put a fixture listing back on sale once its window has closed.
+ *
+ * Listings are created with a 30-day window, and the market shows only those still inside it. The
+ * seed is idempotent, so without this a second run a month later skipped every fixture as
+ * "already present" and the development market quietly emptied — which looks exactly like a
+ * broken market page. Renewed only when lapsed, so a run inside the window changes nothing.
+ * Fixtures only: this module refuses to run when APP_ENV=production.
+ */
+async function keepOnSale(
+  prisma: PrismaClient,
+  listingId: string,
+  now: Date,
+  availableTo: Date,
+): Promise<void> {
+  await prisma.listing.updateMany({
+    where: { id: listingId, availableTo: { lt: now } },
+    data: { availableFrom: now, availableTo },
+  })
+}
+
 export async function seedDevelopmentMarketplace(
   prisma: PrismaClient,
   appEnv: string,
@@ -180,6 +201,7 @@ export async function seedDevelopmentMarketplace(
       select: { id: true },
     })
     if (found) {
+      await keepOnSale(prisma, found.id, now, availableTo)
       existing += 1
       continue
     }
@@ -365,6 +387,7 @@ async function seedCompetingFarmer(
       select: { id: true },
     })
     if (found) {
+      await keepOnSale(prisma, found.id, now, availableTo)
       existing += 1
       continue
     }
