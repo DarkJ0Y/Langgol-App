@@ -1,4 +1,4 @@
-import { LanguageSwitcher } from '@langgol/ui/components'
+import { LanguageSwitcher, ThemeSwitcher } from '@langgol/ui/components'
 import type { Translator } from '@langgol/i18n'
 import { DEMO_ECOSYSTEM, DEMO_METRICS, DEMO_PLOTS, DEMO_PRODUCTS } from './home-demo'
 
@@ -49,7 +49,50 @@ function EntryChoice({ t, centred = false }: { t: Translator; centred?: boolean 
  * The numbers are illustrative and the page says so, in both languages, right under the hero.
  * See `home-demo.ts` for why they live apart from everything else.
  */
-export function HomeLanding({ t, locale }: { t: Translator; locale: 'bn' | 'en' }) {
+/**
+ * The farmland under the hero: plots of crop, drawn as coloured rectangles on a 3D plane that
+ * drifts toward the viewer. Positions are percentages of one tile; the tile is drawn twice, one
+ * above the other, so the drift loops without a seam (home.css, `lgh-drift`). `glow` marks a plot
+ * carrying a sensor node.
+ */
+const TERRAIN_PLOTS = [
+  { x: 6, y: 4, w: 18, h: 9, tone: 'lime' },
+  { x: 30, y: 2, w: 14, h: 13, tone: 'green', glow: true },
+  { x: 52, y: 6, w: 22, h: 8, tone: 'sun' },
+  { x: 80, y: 3, w: 12, h: 12, tone: 'sky' },
+  { x: 10, y: 22, w: 13, h: 14, tone: 'green' },
+  { x: 28, y: 24, w: 24, h: 9, tone: 'sky', glow: true },
+  { x: 60, y: 20, w: 15, h: 15, tone: 'lime' },
+  { x: 82, y: 23, w: 12, h: 9, tone: 'green' },
+  { x: 4, y: 41, w: 20, h: 7, tone: 'sun', glow: true },
+  { x: 34, y: 38, w: 12, h: 10, tone: 'lime' },
+  { x: 54, y: 40, w: 20, h: 8, tone: 'green' },
+  { x: 79, y: 37, w: 15, h: 11, tone: 'sun' },
+] as const
+
+/** A six-faced CSS cube. Purely decorative; the faces are empty and styled in home.css. */
+function Cube({ className }: { className: string }) {
+  return (
+    <span className={`lgh__cube ${className}`} aria-hidden="true">
+      <i />
+      <i />
+      <i />
+      <i />
+      <i />
+      <i />
+    </span>
+  )
+}
+
+export function HomeLanding({
+  t,
+  locale,
+  theme,
+}: {
+  t: Translator
+  locale: 'bn' | 'en'
+  theme: 'dark' | 'light'
+}) {
   const bn = locale === 'bn'
   const nav = [
     { href: '#platform', label: t.t('home.navPlatform') },
@@ -85,6 +128,12 @@ export function HomeLanding({ t, locale }: { t: Translator; locale: 'bn' | 'en' 
               action="/api/locale"
               returnTo="/"
             />
+            <ThemeSwitcher
+              currentTheme={theme}
+              label={t.t(theme === 'dark' ? 'common.themeToLight' : 'common.themeToDark')}
+              action="/api/theme"
+              returnTo="/"
+            />
             <a className="lgh__btn lgh__btn--ghost lgh__nav-guest" href={GUEST_HREF}>
               {t.t('home.guest')}
             </a>
@@ -97,6 +146,34 @@ export function HomeLanding({ t, locale }: { t: Translator; locale: 'bn' | 'en' 
 
       {/* ----------------------------------------------------------- hero */}
       <header className="lgh__hero">
+        {/*
+          The 3D field. A perspective plane of crop plots drifting toward the viewer, with a scan
+          line sweeping it — farmland seen by an instrument. CSS only; still under reduced motion.
+        */}
+        <div className="lgh__scene" aria-hidden="true">
+          <div className="lgh__terrain">
+            <div className="lgh__terrain-track">
+              {[0, 50].map((offset) =>
+                TERRAIN_PLOTS.map((plot, index) => (
+                  <span
+                    key={`${String(offset)}-${String(index)}`}
+                    className={`lgh__plot lgh__plot--${plot.tone}${'glow' in plot ? ' lgh__plot--node' : ''}`}
+                    style={
+                      {
+                        left: `${String(plot.x)}%`,
+                        top: `${String(plot.y + offset)}%`,
+                        width: `${String(plot.w)}%`,
+                        height: `${String(plot.h)}%`,
+                      } as never
+                    }
+                  />
+                )),
+              )}
+            </div>
+            <div className="lgh__scan" />
+          </div>
+        </div>
+
         <div className="lgh__inner lgh__hero-grid">
           <div className="lgh__hero-copy lgh__reveal">
             <p className="lgh__eyebrow">{t.t('home.heroEyebrow')}</p>
@@ -109,48 +186,56 @@ export function HomeLanding({ t, locale }: { t: Translator; locale: 'bn' | 'en' 
             <p className="lgh__note">{t.t('home.heroNote')}</p>
           </div>
 
-          {/* The instrument panel. Static markup; the bar fills and the dot pulses in CSS. */}
-          <div className="lgh__panel lgh__reveal" style={{ '--delay': '120ms' } as never}>
-            <div className="lgh__panel-head">
-              <span className="lgh__dot" aria-hidden="true" />
-              <h2 className="lgh__panel-title">{t.t('home.panelTitle')}</h2>
-              <span className="lgh__panel-meta">
-                {t.t('home.panelCrop')} · {t.t('home.panelDays')}
-              </span>
-            </div>
+          {/* The instrument panel, floating in 3D. Static markup; every motion is CSS. */}
+          <div className="lgh__stage">
+            <Cube className="lgh__cube--a" />
+            <Cube className="lgh__cube--b" />
+            <Cube className="lgh__cube--c" />
+            <div
+              className="lgh__panel lgh__panel--3d lgh__reveal"
+              style={{ '--delay': '120ms' } as never}
+            >
+              <div className="lgh__panel-head">
+                <span className="lgh__dot" aria-hidden="true" />
+                <h2 className="lgh__panel-title">{t.t('home.panelTitle')}</h2>
+                <span className="lgh__panel-meta">
+                  {t.t('home.panelCrop')} · {t.t('home.panelDays')}
+                </span>
+              </div>
 
-            <div className="lgh__stat">
-              <div className="lgh__stat-row">
-                <span className="lgh__stat-label">{t.t('home.panelHealth')}</span>
-                <span className="lgh__stat-value">94%</span>
+              <div className="lgh__stat">
+                <div className="lgh__stat-row">
+                  <span className="lgh__stat-label">{t.t('home.panelHealth')}</span>
+                  <span className="lgh__stat-value">94%</span>
+                </div>
+                <div className="lgh__bar" style={{ '--fill': '94%' } as never}>
+                  <i />
+                </div>
               </div>
-              <div className="lgh__bar" style={{ '--fill': '94%' } as never}>
-                <i />
-              </div>
-            </div>
 
-            <dl className="lgh__panel-facts">
-              <div className="lgh__fact">
-                <dt>{t.t('home.panelMoisture')}</dt>
-                <dd>68%</dd>
-              </div>
-              <div className="lgh__fact">
-                <dt>{t.t('home.panelRisk')}</dt>
-                <dd>{t.t('home.panelRiskLow')}</dd>
-              </div>
-              <div className="lgh__fact">
-                <dt>{t.t('home.panelYield')}</dt>
-                <dd>+12%</dd>
-              </div>
-              <div className="lgh__fact">
-                <dt>{t.t('home.farmArea')}</dt>
-                <dd>{bn ? '২.৫ বিঘা' : '2.5 bigha'}</dd>
-              </div>
-            </dl>
+              <dl className="lgh__panel-facts">
+                <div className="lgh__fact">
+                  <dt>{t.t('home.panelMoisture')}</dt>
+                  <dd>68%</dd>
+                </div>
+                <div className="lgh__fact">
+                  <dt>{t.t('home.panelRisk')}</dt>
+                  <dd>{t.t('home.panelRiskLow')}</dd>
+                </div>
+                <div className="lgh__fact">
+                  <dt>{t.t('home.panelYield')}</dt>
+                  <dd>+12%</dd>
+                </div>
+                <div className="lgh__fact">
+                  <dt>{t.t('home.farmArea')}</dt>
+                  <dd>{bn ? '২.৫ বিঘা' : '2.5 bigha'}</dd>
+                </div>
+              </dl>
 
-            <div className="lgh__advice">
-              <strong>{t.t('home.panelAdvice')}</strong>
-              <p>{t.t('home.panelAdviceText')}</p>
+              <div className="lgh__advice">
+                <strong>{t.t('home.panelAdvice')}</strong>
+                <p>{t.t('home.panelAdviceText')}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -287,11 +372,25 @@ export function HomeLanding({ t, locale }: { t: Translator; locale: 'bn' | 'en' 
             <p className="lgh__lede">{t.t('home.ecoBody')}</p>
           </div>
 
+          {/*
+            A tilted ring spinning in 3D, every role equidistant from Langgol at the centre. Each
+            label counter-rotates so it always faces the reader. Narrow screens get the plain grid
+            (home.css): seven labels on a phone-sized ring would collide.
+          */}
           <div className="lgh__eco">
             <div className="lgh__node lgh__node--core">{t.t('common.appName')}</div>
-            {DEMO_ECOSYSTEM.map((key) => (
-              <div key={key} className="lgh__node">
-                {t.t(`home.${key}` as 'home.ecoFarmer')}
+            <div className="lgh__ring" aria-hidden="true" />
+            {DEMO_ECOSYSTEM.map((key, index) => (
+              <div
+                key={key}
+                className="lgh__node lgh__node--orbit"
+                style={
+                  {
+                    '--angle': `${String((360 / DEMO_ECOSYSTEM.length) * index)}deg`,
+                  } as never
+                }
+              >
+                <span>{t.t(`home.${key}` as 'home.ecoFarmer')}</span>
               </div>
             ))}
           </div>

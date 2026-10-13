@@ -22,6 +22,8 @@ export const bn = {
     loading: 'অপেক্ষা করুন…',
     languageName: 'বাংলা',
     switchToEnglish: 'English',
+    themeToLight: 'উজ্জ্বল মোডে যান',
+    themeToDark: 'অন্ধকার মোডে যান',
   },
 
   auth: {

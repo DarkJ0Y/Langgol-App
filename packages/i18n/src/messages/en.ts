@@ -25,6 +25,8 @@ export const en: Catalogue = {
     loading: 'Loading…',
     languageName: 'English',
     switchToEnglish: 'বাংলা',
+    themeToLight: 'Switch to bright mode',
+    themeToDark: 'Switch to dark mode',
   },
 
   auth: {

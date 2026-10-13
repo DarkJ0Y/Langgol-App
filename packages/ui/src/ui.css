@@ -431,6 +431,28 @@ body {
   text-decoration: none;
 }
 
+/* The browser draws scrollbars and form controls to match the chosen theme. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+/* Dark / bright switch: an icon button, the same height as the language switch beside it. */
+.lg-theme-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  padding: var(--lg-space-2);
+}
+
+.lgh .lg-theme-switch {
+  color: var(--lgh-sun);
+}
+
 /* Market, the language switch and — for a guest — the way to sign in. */
 .lg-header-nav {
   display: flex;

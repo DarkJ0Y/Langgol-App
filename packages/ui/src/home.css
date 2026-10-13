@@ -24,17 +24,31 @@
    * than a second colour system — the greens and warm neutrals are already right, and a homepage
    * that did not look like the product would be a promise the product breaks.
    */
-  --lgh-ink: var(--lg-text-primary);
-  --lgh-dim: var(--lg-text-secondary);
-  --lgh-ground: #12100d;
-  --lgh-raised: #1a1713;
-  --lgh-raised-2: #221e18;
-  --lgh-line: #2e2820;
-  --lgh-line-bright: #3d352a;
-  --lgh-green: #7fc98c;
-  --lgh-green-deep: #2f7a43;
-  --lgh-amber: #e5ac55;
-  --lgh-danger: #e08a70;
+  /*
+   * DARK, the default. A lit instrument panel in a dark room: near-black ground, and the colour
+   * comes from the instruments — emerald, lime, sky and sun — rather than from the walls.
+   */
+  --lgh-ink: #f4f7f1;
+  --lgh-dim: #b9c3b3;
+  --lgh-ground: #0a0d0a;
+  --lgh-raised: #121712;
+  --lgh-raised-2: #19201a;
+  --lgh-line: #232c24;
+  --lgh-line-bright: #344235;
+  --lgh-green: #4ade80;
+  --lgh-green-deep: #16a34a;
+  --lgh-lime: #bef264;
+  --lgh-sky: #38bdf8;
+  --lgh-sun: #facc15;
+  --lgh-coral: #fb7185;
+  --lgh-amber: #fbbf24;
+  --lgh-danger: #fb7185;
+  /* The primary button: a field of young rice catching the light. Text on it is always dark. */
+  --lgh-cta: linear-gradient(120deg, #a3e635 0%, #4ade80 50%, #22d3ee 100%);
+  --lgh-cta-hover: linear-gradient(120deg, #bef264 0%, #6ee7a0 50%, #67e8f9 100%);
+  --lgh-on-cta: #05220f;
+  --lgh-shadow: rgb(0 0 0 / 0.85);
+  --lgh-glow: 0.22;
 
   /* One measure for running text, one for headings. Headings want to break earlier. */
   --lgh-measure: 62ch;
@@ -47,8 +61,36 @@
   overflow-x: hidden;
 }
 
-/* The page is committed to one visual world — a lit instrument panel in a dark room. It paints
-   its own ground rather than inheriting the theme, so it holds on either. */
+/*
+ * BRIGHT. Daylight on the same instruments: warm white ground, white panels, and the accents at
+ * full saturation. Text-coloured accents are a shade deeper than their fills, so a green label on
+ * white still reads at 4.5:1 — the bright fills stay on bars, buttons and the 3D scene.
+ */
+:root[data-theme='light'] .lgh {
+  --lgh-ink: #0d1a10;
+  --lgh-dim: #4a5a4d;
+  --lgh-ground: #fbfcf6;
+  --lgh-raised: #ffffff;
+  --lgh-raised-2: #f2f8ee;
+  --lgh-line: #e2e9dd;
+  --lgh-line-bright: #c6d3bf;
+  --lgh-green: #15803d;
+  --lgh-green-deep: #22c55e;
+  --lgh-lime: #84cc16;
+  --lgh-sky: #0284c7;
+  --lgh-sun: #eab308;
+  --lgh-coral: #e11d48;
+  --lgh-amber: #b45309;
+  --lgh-danger: #be123c;
+  --lgh-cta: linear-gradient(120deg, #84cc16 0%, #22c55e 50%, #06b6d4 100%);
+  --lgh-cta-hover: linear-gradient(120deg, #a3e635 0%, #4ade80 50%, #22d3ee 100%);
+  --lgh-on-cta: #04210e;
+  --lgh-shadow: rgb(22 60 30 / 0.28);
+  --lgh-glow: 0.3;
+}
+
+/* The page paints its own ground rather than inheriting the product's, so the marketing register
+   holds in both themes. */
 .lgh * {
   box-sizing: border-box;
 }
@@ -269,12 +311,13 @@
 }
 
 .lgh__btn--primary {
-  background: var(--lgh-green);
-  color: #0f1a12;
+  background: var(--lgh-cta);
+  color: var(--lgh-on-cta);
+  box-shadow: 0 10px 30px -12px color-mix(in srgb, var(--lgh-green-deep) 80%, transparent);
 }
 
 .lgh__btn--primary:hover {
-  background: #96d9a2;
+  background: var(--lgh-cta-hover);
 }
 
 .lgh__btn--ghost {
@@ -321,13 +364,18 @@
   z-index: -2;
   background:
     radial-gradient(
-      60% 45% at 72% 8%,
-      color-mix(in srgb, var(--lgh-green) 16%, transparent),
+      55% 45% at 75% 10%,
+      color-mix(in srgb, var(--lgh-green) calc(var(--lgh-glow) * 100%), transparent),
       transparent 70%
     ),
     radial-gradient(
-      45% 35% at 12% 0%,
-      color-mix(in srgb, var(--lgh-amber) 9%, transparent),
+      40% 35% at 95% 55%,
+      color-mix(in srgb, var(--lgh-sky) calc(var(--lgh-glow) * 80%), transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      45% 35% at 8% 0%,
+      color-mix(in srgb, var(--lgh-sun) calc(var(--lgh-glow) * 60%), transparent),
       transparent 72%
     );
   pointer-events: none;
@@ -414,7 +462,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.05rem;
-  box-shadow: 0 24px 60px -30px rgb(0 0 0 / 0.9);
+  box-shadow: 0 30px 70px -30px var(--lgh-shadow);
 }
 
 .lgh__panel-head {
@@ -711,7 +759,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(90deg, rgb(0 0 0 / 0.14) 1px, transparent 1px);
+  background-image: linear-gradient(90deg, rgb(0 0 0 / 0.12) 1px, transparent 1px);
   background-size: 0.9rem 100%;
   opacity: 0.5;
 }
@@ -941,13 +989,628 @@
     }
   }
 
-  .lgh__card:hover,
-  .lgh__panel:hover {
+  .lgh__panel:not(.lgh__panel--3d):hover {
     transform: translateY(-2px);
   }
 
   .lgh__btn:hover {
     transform: translateY(-1px);
+  }
+}
+
+/* ======================================================================== 3D
+ *
+ * The 3D layer. Still CSS only: perspective, preserve-3d and keyframes, no WebGL and no script.
+ * A canvas library would be the single largest download on the site, for a page a farmer may be
+ * opening on 2G. Everything here is the static pose; the motion lives in the reduced-motion block
+ * at the end of this section, so a reader who asked for stillness gets the same depth, still.
+ */
+
+/* The angle the ecosystem ring and the CTA halo turn through. Registered so it can be animated
+   and inherited: one keyframe on the parent turns every child that reads it. */
+@property --lgh-spin {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+
+/* --------------------------------------------------------- headline colour */
+
+/* Mostly ink, so it reads as text; the colour arrives in the last words like light on a crop. */
+.lgh__hero .lgh__display {
+  background-image: linear-gradient(
+    100deg,
+    var(--lgh-ink) 0%,
+    var(--lgh-ink) 42%,
+    var(--lgh-green) 62%,
+    var(--lgh-lime) 76%,
+    var(--lgh-sky) 90%,
+    var(--lgh-ink) 100%
+  );
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* --------------------------------------------------------------- the field */
+
+.lgh__scene {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  perspective: 60rem;
+  perspective-origin: 62% 0%;
+  pointer-events: none;
+  /*
+   * Faded where the words are: toward the top, and toward the left where the headline sits, so
+   * the field shows behind the panel and never behind a line of text. Two masks, intersected.
+   */
+  mask-image:
+    linear-gradient(180deg, transparent 0%, #000 45%, #000 85%, transparent 100%),
+    linear-gradient(90deg, rgb(0 0 0 / 0.12) 0%, rgb(0 0 0 / 0.2) 38%, #000 66%);
+  mask-composite: intersect;
+  -webkit-mask-image:
+    linear-gradient(180deg, transparent 0%, #000 45%, #000 85%, transparent 100%),
+    linear-gradient(90deg, rgb(0 0 0 / 0.12) 0%, rgb(0 0 0 / 0.2) 38%, #000 66%);
+  -webkit-mask-composite: source-in;
+}
+
+.lgh__terrain {
+  position: absolute;
+  left: -35%;
+  right: -35%;
+  bottom: -6%;
+  height: 90%;
+  transform: rotateX(66deg);
+  transform-origin: 50% 100%;
+  overflow: hidden;
+}
+
+/* Two tiles tall, so sliding it down by one tile lands exactly where it began. Grid lines are
+   sized in percent of the track for the same reason: a seam would show as a jump each loop. */
+.lgh__terrain-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -100%;
+  height: 200%;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--lgh-green) 22%, transparent) 1px, transparent 1px),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--lgh-green) 22%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 4% 3.125%;
+}
+
+.lgh__plot {
+  --tone: var(--lgh-green);
+  position: absolute;
+  border-radius: 4px;
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--tone) 42%, transparent) 0 6px,
+    color-mix(in srgb, var(--tone) 26%, transparent) 6px 10px
+  );
+  border: 1px solid color-mix(in srgb, var(--tone) 70%, transparent);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--tone) 32%, transparent);
+}
+
+.lgh__plot--lime {
+  --tone: var(--lgh-lime);
+}
+.lgh__plot--sky {
+  --tone: var(--lgh-sky);
+}
+.lgh__plot--sun {
+  --tone: var(--lgh-sun);
+}
+
+/* A sensor on the plot: a bright point that pulses. */
+.lgh__plot--node::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: var(--tone);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--tone) 30%, transparent),
+    0 0 18px var(--tone);
+}
+
+.lgh__scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -20%;
+  height: 16%;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in srgb, var(--lgh-lime) 30%, transparent) 70%,
+    color-mix(in srgb, var(--lgh-lime) 65%, transparent) 72%,
+    transparent 74%
+  );
+}
+
+/* ------------------------------------------------ the panel, floating in 3D */
+
+.lgh__stage {
+  position: relative;
+  perspective: 1400px;
+  --rx: 7deg;
+  --ry: -14deg;
+}
+
+.lgh__panel--3d {
+  transform-style: preserve-3d;
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--lgh-raised-2) 92%, transparent) 0%,
+    color-mix(in srgb, var(--lgh-raised) 94%, transparent) 100%
+  );
+  border-color: color-mix(in srgb, var(--lgh-green) 30%, var(--lgh-line-bright));
+  box-shadow:
+    0 40px 80px -36px var(--lgh-shadow),
+    0 0 0 1px color-mix(in srgb, var(--lgh-green) 10%, transparent),
+    0 0 60px -20px color-mix(in srgb, var(--lgh-green) 45%, transparent);
+}
+
+/* Each layer of the panel sits at its own depth, so the tilt shows them separating. */
+.lgh__panel--3d > .lgh__panel-head {
+  transform: translateZ(18px);
+}
+.lgh__panel--3d > .lgh__stat {
+  transform: translateZ(30px);
+}
+.lgh__panel--3d > .lgh__panel-facts {
+  transform: translateZ(42px);
+}
+.lgh__panel--3d > .lgh__advice {
+  transform: translateZ(64px);
+  background: color-mix(in srgb, var(--lgh-green) 12%, var(--lgh-raised));
+}
+
+.lgh__panel--3d .lgh__fact:nth-child(1) {
+  border-color: color-mix(in srgb, var(--lgh-sky) 45%, var(--lgh-line));
+}
+.lgh__panel--3d .lgh__fact:nth-child(2) {
+  border-color: color-mix(in srgb, var(--lgh-green) 45%, var(--lgh-line));
+}
+.lgh__panel--3d .lgh__fact:nth-child(3) {
+  border-color: color-mix(in srgb, var(--lgh-lime) 45%, var(--lgh-line));
+}
+.lgh__panel--3d .lgh__fact:nth-child(4) {
+  border-color: color-mix(in srgb, var(--lgh-sun) 45%, var(--lgh-line));
+}
+
+.lgh__bar > i {
+  background: linear-gradient(90deg, var(--lgh-green-deep), var(--lgh-green), var(--lgh-lime));
+}
+
+@media (max-width: 64rem) {
+  .lgh__stage {
+    --rx: 4deg;
+    --ry: -6deg;
+  }
+
+  /* Stacked, the text runs the full width over the field, so the field steps back. */
+  .lgh__scene {
+    opacity: 0.45;
+  }
+}
+
+/* -------------------------------------------------------------------- cubes */
+
+.lgh__cube {
+  --s: 3rem;
+  --c: var(--lgh-lime);
+  position: absolute;
+  z-index: 2;
+  width: var(--s);
+  height: var(--s);
+  transform-style: preserve-3d;
+  transform: rotateX(-24deg) rotateY(38deg);
+  pointer-events: none;
+}
+
+.lgh__cube i {
+  position: absolute;
+  inset: 0;
+  border: 1px solid color-mix(in srgb, var(--c) 85%, transparent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--c) 62%, transparent),
+    color-mix(in srgb, var(--c) 18%, transparent)
+  );
+  box-shadow: inset 0 0 14px color-mix(in srgb, var(--c) 45%, transparent);
+}
+
+.lgh__cube i:nth-child(1) {
+  transform: translateZ(calc(var(--s) / 2));
+}
+.lgh__cube i:nth-child(2) {
+  transform: rotateY(180deg) translateZ(calc(var(--s) / 2));
+}
+.lgh__cube i:nth-child(3) {
+  transform: rotateY(90deg) translateZ(calc(var(--s) / 2));
+}
+.lgh__cube i:nth-child(4) {
+  transform: rotateY(-90deg) translateZ(calc(var(--s) / 2));
+}
+.lgh__cube i:nth-child(5) {
+  transform: rotateX(90deg) translateZ(calc(var(--s) / 2));
+}
+.lgh__cube i:nth-child(6) {
+  transform: rotateX(-90deg) translateZ(calc(var(--s) / 2));
+}
+
+.lgh__cube--a {
+  --s: 3.25rem;
+  --c: var(--lgh-lime);
+  top: -1.9rem;
+  left: -1.4rem;
+}
+
+.lgh__cube--b {
+  --s: 2.25rem;
+  --c: var(--lgh-sky);
+  bottom: -1.1rem;
+  right: 18%;
+}
+
+.lgh__cube--c {
+  --s: 1.6rem;
+  --c: var(--lgh-sun);
+  top: 38%;
+  right: -1.6rem;
+}
+
+/* ----------------------------------------------------------- coloured cards */
+
+.lgh__grid {
+  perspective: 1200px;
+}
+
+.lgh__card {
+  --c: var(--lgh-green);
+  box-shadow: inset 0 2px 0 var(--c);
+}
+
+.lgh__grid--three .lgh__card:nth-child(6n + 2) {
+  --c: var(--lgh-sky);
+}
+.lgh__grid--three .lgh__card:nth-child(6n + 3) {
+  --c: var(--lgh-sun);
+}
+.lgh__grid--three .lgh__card:nth-child(6n + 4) {
+  --c: var(--lgh-lime);
+}
+.lgh__grid--three .lgh__card:nth-child(6n + 5) {
+  --c: var(--lgh-coral);
+}
+.lgh__grid--three .lgh__card:nth-child(6n + 6) {
+  --c: var(--lgh-green-deep);
+}
+
+.lgh__card .lgh__spark {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--c) 85%, transparent) 0%,
+    color-mix(in srgb, var(--c) 15%, transparent) 100%
+  );
+}
+
+.lgh__card-label {
+  color: color-mix(in srgb, var(--c) 55%, var(--lgh-dim));
+}
+
+/* -------------------------------------------------------- ecosystem orbit */
+
+/* Base (narrow screens): the plain grid. The pill lives on the inner span for every node. */
+.lgh__ring {
+  display: none;
+}
+
+.lgh__node--orbit {
+  --c: var(--lgh-green);
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.lgh__node--orbit span {
+  display: block;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--c) 50%, var(--lgh-line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c) 12%, var(--lgh-raised));
+  color: var(--lgh-ink);
+  white-space: nowrap;
+  box-shadow: 0 0 24px -6px color-mix(in srgb, var(--c) 55%, transparent);
+}
+
+.lgh__node--orbit:nth-of-type(7n + 2) {
+  --c: var(--lgh-sky);
+}
+.lgh__node--orbit:nth-of-type(7n + 3) {
+  --c: var(--lgh-sun);
+}
+.lgh__node--orbit:nth-of-type(7n + 4) {
+  --c: var(--lgh-lime);
+}
+.lgh__node--orbit:nth-of-type(7n + 5) {
+  --c: var(--lgh-coral);
+}
+.lgh__node--orbit:nth-of-type(7n + 6) {
+  --c: var(--lgh-green-deep);
+}
+
+.lgh__node--orbit:hover {
+  color: inherit;
+  border: 0;
+}
+
+@media (min-width: 48rem) {
+  .lgh__eco {
+    --r: min(19rem, 34vw);
+    --tilt: 66deg;
+    display: block;
+    position: relative;
+    height: 25rem;
+    perspective: 1100px;
+    transform-style: preserve-3d;
+  }
+
+  .lgh__ring {
+    display: block;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: calc(var(--r) * 2);
+    height: calc(var(--r) * 2);
+    margin: calc(var(--r) * -1) 0 0 calc(var(--r) * -1);
+    border-radius: 50%;
+    border: 1px dashed color-mix(in srgb, var(--lgh-green) 55%, transparent);
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--lgh-green) 12%, transparent),
+      transparent 75%
+    );
+    box-shadow: 0 0 60px -10px color-mix(in srgb, var(--lgh-green) 35%, transparent);
+    transform: rotateX(var(--tilt));
+  }
+
+  .lgh__node--core {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 1;
+    transform: translate(-50%, -50%);
+    padding: 1.3rem 2rem;
+    font-size: 1.25rem;
+    font-weight: 800;
+    border-radius: 18px;
+    color: var(--lgh-on-cta);
+    background: var(--lgh-cta);
+    border: 0;
+    box-shadow: 0 20px 60px -15px color-mix(in srgb, var(--lgh-green) 70%, transparent);
+  }
+
+  /* On the tilted ring at its angle plus the spin, then turned back to face the reader. */
+  .lgh__node--orbit {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform-style: preserve-3d;
+    transform: rotateX(var(--tilt)) rotateZ(calc(var(--angle) + var(--lgh-spin)))
+      translateX(var(--r)) rotateZ(calc(-1 * (var(--angle) + var(--lgh-spin))))
+      rotateX(calc(-1 * var(--tilt)));
+  }
+
+  .lgh__node--orbit span {
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* ------------------------------------------------------------- CTA halo */
+
+.lgh__cta {
+  position: relative;
+  isolation: isolate;
+}
+
+.lgh__cta::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: -1;
+  width: min(44rem, 92vw);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from var(--lgh-spin),
+    var(--lgh-green),
+    var(--lgh-lime),
+    var(--lgh-sun),
+    var(--lgh-coral),
+    var(--lgh-sky),
+    var(--lgh-green)
+  );
+  filter: blur(80px);
+  opacity: calc(var(--lgh-glow) + 0.04);
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------- 3D motion */
+
+@media (prefers-reduced-motion: no-preference) {
+  .lgh__hero .lgh__display {
+    animation: lgh-shimmer 9s ease-in-out infinite alternate;
+  }
+
+  @keyframes lgh-shimmer {
+    to {
+      background-position: 100% 50%;
+    }
+  }
+
+  .lgh__terrain-track {
+    animation: lgh-drift 26s linear infinite;
+  }
+
+  @keyframes lgh-drift {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(50%);
+    }
+  }
+
+  .lgh__scan {
+    animation: lgh-scan 7s ease-in-out infinite;
+  }
+
+  @keyframes lgh-scan {
+    from {
+      top: -20%;
+    }
+    to {
+      top: 105%;
+    }
+  }
+
+  .lgh__plot--node::after {
+    animation: lgh-pulse 2.4s ease-in-out infinite;
+  }
+
+  /* Rise in from deeper in the scene, then float. The float starts from exactly the pose the
+     rise ends on, so the hand-over is invisible. */
+  .lgh__panel--3d.lgh__reveal {
+    animation:
+      lgh-rise-3d 1100ms var(--lg-motion-easing) both,
+      lgh-float 9s ease-in-out 1100ms infinite alternate;
+  }
+
+  @keyframes lgh-rise-3d {
+    from {
+      opacity: 0;
+      transform: translateY(40px) rotateX(calc(var(--rx) + 22deg)) rotateY(var(--ry));
+    }
+    to {
+      opacity: 1;
+      transform: rotateX(var(--rx)) rotateY(var(--ry));
+    }
+  }
+
+  @keyframes lgh-float {
+    from {
+      transform: rotateX(var(--rx)) rotateY(var(--ry));
+    }
+    to {
+      transform: translateY(-12px) rotateX(calc(var(--rx) * 0.4)) rotateY(calc(var(--ry) * 0.3));
+    }
+  }
+
+  .lgh__cube {
+    animation: lgh-tumble 16s linear infinite;
+  }
+  .lgh__cube--b {
+    animation-duration: 12s;
+    animation-direction: reverse;
+  }
+  .lgh__cube--c {
+    animation-duration: 9s;
+  }
+
+  @keyframes lgh-tumble {
+    from {
+      transform: translateY(0) rotateX(-24deg) rotateY(0deg);
+    }
+    50% {
+      transform: translateY(-16px) rotateX(-24deg) rotateY(180deg);
+    }
+    to {
+      transform: translateY(0) rotateX(-24deg) rotateY(360deg);
+    }
+  }
+
+  .lgh__eco,
+  .lgh__cta::before {
+    animation: lgh-orbit 36s linear infinite;
+  }
+
+  .lgh__cta::before {
+    animation-duration: 18s;
+  }
+
+  .lgh__eco:hover {
+    animation-play-state: paused;
+  }
+
+  @keyframes lgh-orbit {
+    to {
+      --lgh-spin: 360deg;
+    }
+  }
+
+  /*
+   * Hover tilt. `rotate` and `translate` rather than `transform`, so they compose with the scroll
+   * reveal below — that animates `transform`, and an animation with fill-mode beats any hover
+   * rule written against the same property.
+   */
+  .lgh__card,
+  .lgh__product {
+    transition:
+      rotate 350ms var(--lg-motion-easing),
+      translate 350ms var(--lg-motion-easing),
+      box-shadow 350ms var(--lg-motion-easing),
+      border-color var(--lg-motion-base) var(--lg-motion-easing);
+  }
+
+  .lgh__card:hover,
+  .lgh__product:hover {
+    rotate: 1 -1 0 9deg;
+    translate: 0 -6px 24px;
+    box-shadow:
+      inset 0 2px 0 var(--c, var(--lgh-green)),
+      0 26px 50px -24px color-mix(in srgb, var(--c, var(--lgh-green)) 60%, transparent);
+  }
+
+  /* Cards turn up out of the page as they scroll into view, where the browser supports
+     scroll-driven animation. Elsewhere they are simply there. */
+  @supports (animation-timeline: view()) {
+    .lgh__card,
+    .lgh__product,
+    .lgh__chat,
+    .lgh__trust > div {
+      animation: lgh-flip linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 28%;
+    }
+
+    @keyframes lgh-flip {
+      from {
+        opacity: 0;
+        transform: perspective(900px) rotateX(-32deg) translateY(48px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
   }
 }
 

@@ -2,11 +2,17 @@ import './globals.css'
 import type { ReactNode } from 'react'
 import { headers } from 'next/headers'
 import { Hind_Siliguri, Poppins } from 'next/font/google'
-import { DevelopmentBanner, LanguageSwitcher, SkipLink } from '@langgol/ui/components'
+import {
+  DevelopmentBanner,
+  LanguageSwitcher,
+  SkipLink,
+  ThemeSwitcher,
+} from '@langgol/ui/components'
 import { createTranslator } from '@langgol/i18n'
 import { getLocale } from '@/lib/locale'
 import { isDevelopmentAuth } from '@/lib/deps'
 import { getSession } from '@/lib/session'
+import { getTheme } from '@/lib/theme'
 
 /*
  * The two faces, downloaded at build time and served from our own origin.
@@ -55,6 +61,7 @@ export const viewport = {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const locale = await getLocale()
+  const theme = await getTheme()
   const t = createTranslator(locale)
   const path = (await headers()).get('x-pathname') ?? '/'
 
@@ -78,15 +85,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   return (
     /*
-     * The dark surface is the default. Langgol is used outdoors and after dark, and the
-     * buyer screens are dense with figures — a near-black ground lets the money carry the
-     * emphasis. `data-theme` is explicit so a future preference toggle wins over the OS
-     * setting in both directions; the stylesheet honours `prefers-color-scheme` when no
-     * explicit choice is present.
+     * Dark is the default; bright is the visitor's choice, from the switch in the header and
+     * remembered in a cookie (lib/theme.ts). `data-theme` is always explicit, so the choice wins
+     * over the OS setting in both directions.
      */
     <html
       lang={locale}
-      data-theme="dark"
+      data-theme={theme}
       className={`${poppins.variable} ${hindSiliguri.variable}`}
     >
       {/*
@@ -125,6 +130,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                   currentLocale={locale}
                   otherLabel={t.t('common.switchToEnglish')}
                   action="/api/locale"
+                  returnTo={path}
+                />
+                <ThemeSwitcher
+                  currentTheme={theme}
+                  label={t.t(theme === 'dark' ? 'common.themeToLight' : 'common.themeToDark')}
+                  action="/api/theme"
                   returnTo={path}
                 />
                 {isGuest && !path.startsWith('/auth') ? (
