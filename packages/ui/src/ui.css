@@ -25,11 +25,9 @@ body {
   font-family: var(--lg-font-sans);
   font-size: var(--lg-text-base);
   color: var(--lg-text-primary);
-  /* Flat colour first so the page still has a ground if the gradient fails to resolve, then the
-     gradient over it. Fixed attachment would repaint on every scroll on a low-end Android. */
+  /* One flat colour. No gradients anywhere in the product: solid colour reads at a glance in
+     sunlight, and there is nothing to repaint on a low-end Android. */
   background-color: var(--lg-surface);
-  background-image: var(--lg-gradient-ground);
-  background-repeat: no-repeat;
   min-height: 100vh;
   line-height: var(--lg-leading-en-normal);
 }
@@ -152,7 +150,6 @@ body {
 
 .lg-card {
   background-color: var(--lg-surface-raised);
-  background-image: var(--lg-gradient-card);
   border: 1px solid var(--lg-border);
   border-radius: var(--lg-radius-lg);
   padding: var(--lg-space-5);
@@ -200,19 +197,13 @@ body {
 }
 
 .lg-button--primary {
-  /* Gradient over the flat token, so a browser that drops the image still gets a solid, legible
-     button rather than a transparent one. */
-  background-color: var(--lg-action-primary);
-  background-image: var(--lg-gradient-action);
-  color: var(--lg-text-on-action);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.14),
-    0 1px 2px rgb(0 0 0 / 0.3);
+  background-color: var(--lg-fill-primary);
+  color: var(--lg-on-fill-primary);
+  border: 1px solid var(--lg-fill-primary-hover);
 }
 
 .lg-button--primary:hover:not(:disabled) {
-  background-color: var(--lg-action-primary-hover);
-  background-image: var(--lg-gradient-action-hover);
+  background-color: var(--lg-fill-primary-hover);
 }
 
 /*
@@ -459,7 +450,7 @@ body {
   padding: var(--lg-space-4);
   border: 1px solid var(--lg-border);
   border-radius: var(--lg-radius-lg);
-  background: var(--lg-gradient-card);
+  background: var(--lg-surface-raised);
   color: var(--lg-text-primary);
   text-decoration: none;
   transition:
@@ -491,6 +482,17 @@ body {
   font-size: var(--lg-text-sm);
   line-height: 1.5;
   color: var(--lg-text-secondary);
+}
+
+/*
+ * The one fill colour: solid light green, the same in dark and bright mode, with dark green text
+ * on it (contrast above 10:1). Green TEXT keeps using --lg-action-primary, which is deeper on a
+ * white page so it stays readable; only filled surfaces use this.
+ */
+:root {
+  --lg-fill-primary: #86efac;
+  --lg-fill-primary-hover: #4ade80;
+  --lg-on-fill-primary: #0f2e17;
 }
 
 /* The browser draws scrollbars and form controls to match the chosen theme. */
@@ -539,15 +541,15 @@ body {
   min-height: 2.5rem;
   padding: 0 var(--lg-space-4);
   border-radius: var(--lg-radius-md);
-  background-color: var(--lg-action-primary);
-  color: var(--lg-text-on-action);
+  background-color: var(--lg-fill-primary);
+  color: var(--lg-on-fill-primary);
   font-size: var(--lg-text-sm);
   font-weight: 600;
   text-decoration: none;
 }
 
 .lg-header-signin:hover {
-  background-color: var(--lg-action-primary-hover);
+  background-color: var(--lg-fill-primary-hover);
 }
 
 .lg-header-link:focus-visible,
@@ -716,7 +718,7 @@ a.lg-button--secondary {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: var(--lg-radius-full);
-  background: var(--lg-action-primary);
+  background: var(--lg-fill-primary);
   animation: lg-pulse 2.4s var(--lg-motion-easing) infinite;
 }
 
@@ -918,7 +920,7 @@ a.lg-button--secondary {
 }
 
 .lg-status__led--on {
-  background: var(--lg-action-primary);
+  background: var(--lg-fill-primary);
 }
 
 .lg-status__led--off {
@@ -991,12 +993,12 @@ a.lg-button--secondary {
 }
 
 .lg-progress::-webkit-progress-value {
-  background-color: var(--lg-action-primary);
+  background-color: var(--lg-fill-primary);
   transition: inline-size var(--lg-motion-base) var(--lg-motion-easing);
 }
 
 .lg-progress::-moz-progress-bar {
-  background-color: var(--lg-action-primary);
+  background-color: var(--lg-fill-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {
