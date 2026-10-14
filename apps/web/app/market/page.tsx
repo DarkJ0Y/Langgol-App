@@ -38,7 +38,7 @@ const CATEGORIES = [
 export default async function MarketPage({
   searchParams,
 }: {
-  searchParams: Promise<{ c?: string }>
+  searchParams: Promise<{ c?: string; crop?: string; district?: string }>
 }) {
   const locale = await getLocale()
   const t = createTranslator(locale)
@@ -46,8 +46,16 @@ export default async function MarketPage({
   const session = await getSession()
 
   // Only a known category filters; anything else in the URL shows everything.
-  const requested = (await searchParams).c
-  const category = CATEGORIES.find((candidate) => candidate.slug === requested)
+  const params = await searchParams
+  const category = CATEGORIES.find((candidate) => candidate.slug === params.c)
+  // From the landing page's "what do you need?" form. Shape-checked here, and harmless if they
+  // match nothing: a slug and an id only ever narrow the WHERE clause, never widen it.
+  const crop =
+    typeof params.crop === 'string' && /^[a-z-]{1,40}$/.test(params.crop) ? params.crop : undefined
+  const district =
+    typeof params.district === 'string' && /^[0-9a-f-]{36}$/.test(params.district)
+      ? params.district
+      : undefined
 
   const live = { status: 'PUBLISHED', deletedAt: null, availableTo: { gte: new Date() } } as const
 
@@ -56,6 +64,8 @@ export default async function MarketPage({
       where: {
         ...live,
         ...(category === undefined ? {} : { product: { category: { slug: category.slug } } }),
+        ...(crop === undefined ? {} : { product: { slug: crop } }),
+        ...(district === undefined ? {} : { adminAreaId: district }),
       },
       orderBy: [{ publishedAt: 'desc' }],
       take: 24,

@@ -72,11 +72,11 @@ describe('typography for Bangla', () => {
   it('names a Bengali-capable face, after the Latin one', () => {
     /*
      * This replaces an assertion that the stack contained 'Bengali', which pinned an earlier
-     * decision to carry both scripts in one family. The decision changed: Poppins sets Latin and
+     * decision to carry both scripts in one family. The decision changed: Inter sets Latin and
      * Hind Siliguri sets Bangla.
      *
      * The property worth pinning is not the family name but the ORDER, because the order is the
-     * whole mechanism. Poppins has no Bengali glyphs, so Bengali codepoints fall through to the
+     * whole mechanism. Inter has no Bengali glyphs, so Bengali codepoints fall through to the
      * next family in the list. Put the Bangla face first and it would win for Latin as well, and
      * the entire English side of the product would silently change face.
      */
@@ -93,7 +93,7 @@ describe('typography for Bangla', () => {
      * computed-value time — the page would drop to the browser's serif default rather than to
      * the next family in the list.
      */
-    expect(stack).toContain("var(--lg-font-latin, 'Poppins')")
+    expect(stack).toContain("var(--lg-font-latin, 'Inter')")
     expect(stack).toContain("var(--lg-font-bangla, 'Hind Siliguri')")
 
     // And a generic still terminates the stack, for a client that has neither.

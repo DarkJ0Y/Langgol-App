@@ -1,7 +1,7 @@
 import './globals.css'
 import type { ReactNode } from 'react'
 import { headers } from 'next/headers'
-import { Hind_Siliguri, Poppins } from 'next/font/google'
+import { Hind_Siliguri, Inter } from 'next/font/google'
 import {
   DevelopmentBanner,
   LanguageSwitcher,
@@ -26,17 +26,19 @@ import { getTheme } from '@/lib/theme'
  * than the page showing nothing for the first second. On a slow connection the alternative is a
  * farmer looking at a blank screen.
  */
-const poppins = Poppins({
+/*
+ * Inter: a neutral grotesk built for interfaces. Numbers sit evenly in tables and prices, and it
+ * reads as a tool rather than a poster — the register Langgol wants for money and produce.
+ * Loaded as a variable font, so every weight below is one file.
+ */
+const inter = Inter({
   subsets: ['latin'],
-  // 800 carries the display headlines; 400 and 500 carry running text. Loading five weights of
-  // one family costs less than a second family would, and every one of them is used.
-  weight: ['400', '500', '600', '700', '800'],
   variable: '--lg-font-latin',
   display: 'swap',
 })
 
 /*
- * Bengali only. Poppins has no Bengali glyphs, so the browser falls through to this face for
+ * Bengali only. Inter has no Bengali glyphs, so the browser falls through to this face for
  * exactly those codepoints and for nothing else — the split is per glyph, not per element, and
  * needs no `:lang()` rule. Hind Siliguri stops at 700; there is no 800 to ask for.
  */
@@ -75,7 +77,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
    * on every screen, not only on the one that refuses them. Without a session cookie this costs
    * nothing: getSession returns before touching the database.
    */
-  const isGuest = (await getSession()) === null
+  const session = await getSession()
+  const isGuest = session === null
 
   // Only a visitor gets the marketing page at "/". A signed-in person gets their feature hub
   // there, inside the ordinary shell with its header and reading width.
@@ -98,11 +101,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
      * remembered in a cookie (lib/theme.ts). `data-theme` is always explicit, so the choice wins
      * over the OS setting in both directions.
      */
-    <html
-      lang={locale}
-      data-theme={theme}
-      className={`${poppins.variable} ${hindSiliguri.variable}`}
-    >
+    <html lang={locale} data-theme={theme} className={`${inter.variable} ${hindSiliguri.variable}`}>
       {/*
        * `suppressHydrationWarning` covers ONE thing: browser extensions that write attributes
        * onto <body> before React hydrates. Grammarly is the usual culprit — it adds
@@ -129,12 +128,45 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           {isLanding ? null : (
             <header className="lg-header">
               <a className="lg-brand" href="/">
+                <span className="lp-logo__mark" aria-hidden="true" />
                 {t.t('common.appName')}
               </a>
-              <nav className="lg-header-nav" aria-label={t.t('home.menu')}>
-                <a className="lg-header-link" href="/market">
-                  {t.t('home.navMarket')}
-                </a>
+              {/*
+                The places this person can go, by role. Each page re-checks access on its own;
+                this list only decides what is worth offering. The current section is marked.
+              */}
+              <nav className="lg-header-links" aria-label={t.t('home.menu')}>
+                {[
+                  { href: '/market', label: t.t('home.navMarket'), show: true },
+                  {
+                    href: '/orders',
+                    label: locale === 'bn' ? 'আমার অর্ডার' : 'My orders',
+                    show: session !== null,
+                  },
+                  {
+                    href: '/farmer',
+                    label: locale === 'bn' ? 'আমার খামার' : 'My farm',
+                    show: session?.roles.includes('FARMER') === true,
+                  },
+                  {
+                    href: '/admin',
+                    label: locale === 'bn' ? 'প্রশাসন' : 'Admin',
+                    show: session?.roles.includes('ADMIN') === true,
+                  },
+                ]
+                  .filter((link) => link.show)
+                  .map((link) => (
+                    <a
+                      key={link.href}
+                      className="lg-header-link"
+                      href={link.href}
+                      aria-current={path.startsWith(link.href) ? 'page' : undefined}
+                    >
+                      {link.label}
+                    </a>
+                  ))}
+              </nav>
+              <div className="lg-header-nav">
                 <LanguageSwitcher
                   currentLocale={locale}
                   otherLabel={t.t('common.switchToEnglish')}
@@ -152,7 +184,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                     {t.t('home.signIn')}
                   </a>
                 ) : null}
-              </nav>
+              </div>
             </header>
           )}
           <main

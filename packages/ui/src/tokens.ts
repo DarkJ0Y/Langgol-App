@@ -84,23 +84,28 @@ export const colors = {
 
 /** Semantic aliases. Components reference these, never a raw palette step. */
 export const semantic = {
-  background: colors.neutral[0],
-  surface: colors.neutral[50],
-  surfaceRaised: colors.neutral[0],
-  border: colors.neutral[300],
-  // neutral-400 measures 2.6:1 on white — below the 3:1 non-text threshold. The token test
-  // caught it; this is why the palette is asserted rather than eyeballed.
-  borderStrong: colors.neutral[500],
+  /*
+   * A neutral black-and-white base with ONE accent, the way the strongest product sites are
+   * built: the interface recedes and the produce, the prices and the one green action carry the
+   * page. Bright mode is white paper and black ink.
+   */
+  background: '#ffffff',
+  surface: '#f6f6f6',
+  surfaceRaised: '#ffffff',
+  border: '#e2e2e2',
+  // 4.5:1 on white — comfortably over the 3:1 non-text threshold the token test asserts.
+  borderStrong: '#767676',
 
-  textPrimary: colors.neutral[900],
-  textSecondary: colors.neutral[600],
-  textInverse: colors.neutral[0],
+  textPrimary: '#000000',
+  textSecondary: '#545454',
+  textInverse: '#ffffff',
   // On a light surface only. Contrast is asserted in the token tests.
-  textOnAction: colors.neutral[0],
+  textOnAction: '#ffffff',
 
-  actionPrimary: colors.leaf[700],
-  actionPrimaryHover: colors.leaf[800],
-  actionSecondary: colors.soil[700],
+  // Green as TEXT on white must be deep to read (5:1); the light-green FILL lives in ui.css.
+  actionPrimary: '#15803d',
+  actionPrimaryHover: '#166534',
+  actionSecondary: '#333333',
   accent: colors.harvest[600],
 
   focusRing: colors.info[500],
@@ -126,25 +131,26 @@ export const semantic = {
  * A dark theme that is merely "eyeballed to look nice" is how contrast bugs ship.
  */
 export const semanticDark = {
-  background: colors.soil[900],
-  surface: '#191612',
-  surfaceRaised: '#221e19',
-  border: '#3a332a',
-  borderStrong: colors.soil[300],
+  // Dark, the default: true black ground, near-black cards, white ink.
+  background: '#000000',
+  surface: '#0d0d0d',
+  surfaceRaised: '#161616',
+  border: '#2a2a2a',
+  borderStrong: '#8a8a8a',
 
-  textPrimary: colors.soil[50],
-  textSecondary: colors.soil[200],
-  textInverse: colors.neutral[900],
+  textPrimary: '#ffffff',
+  textSecondary: '#a6a6a6',
+  textInverse: '#000000',
   // Dark ground needs a LIGHT action fill, so the label on it must be dark — the inverse of the
   // light theme, and the reason this is a separate token rather than a reused one.
-  textOnAction: colors.soil[900],
+  textOnAction: '#052e16',
 
-  actionPrimary: colors.leaf[300],
-  actionPrimaryHover: colors.leaf[200],
-  actionSecondary: colors.soil[200],
+  actionPrimary: '#86efac',
+  actionPrimaryHover: '#4ade80',
+  actionSecondary: '#e5e5e5',
   accent: colors.harvest[300],
 
-  focusRing: colors.leaf[200],
+  focusRing: '#86efac',
 } as const
 
 /* -------------------------------------------------------------------- typography */
@@ -157,18 +163,20 @@ export const semanticDark = {
  *
  * ## Two families, and why the order is the mechanism
  *
- * Poppins sets Latin, Hind Siliguri sets Bangla. This note previously asked for ONE family
+ * Inter sets Latin, Hind Siliguri sets Bangla. (Inter replaced Poppins: a neutral grotesk reads
+ * as a working tool where Poppins read as a poster, and its figures sit evenly in prices and
+ * tables.) This note previously asked for ONE family
  * covering both scripts, on the grounds that per-script fallback produces mismatched heights
  * mid-sentence. That concern is real and the pairing answers it directly rather than by avoiding
  * it: the two were chosen to agree on x-height and stroke weight, and the Bangla line-height
- * tokens below already carry the rest of the difference. No geometric sans covers Bengali at
- * Poppins' quality, so a single family would have meant giving up one script or the other.
+ * tokens below already carry the rest of the difference. No Latin sans covers Bengali at Inter's
+ * quality, so a single family would have meant giving up one script or the other.
  *
- * The ORDER does the work. Poppins contains no Bengali glyphs at all, so the browser falls
- * through per glyph to Hind Siliguri for Bengali codepoints and keeps Poppins for Latin. A
+ * The ORDER does the work. Inter contains no Bengali glyphs at all, so the browser falls
+ * through per glyph to Hind Siliguri for Bengali codepoints and keeps Inter for Latin. A
  * sentence mixing both sets each script in its own face with no `:lang()` rule anywhere, which
  * matters because language is not the same thing as script — an English product name inside a
- * Bangla sentence should still be Poppins.
+ * Bangla sentence should still be Inter.
  *
  * Both are self-hosted by `next/font` in `apps/web/app/layout.tsx`, which is what defines the two
  * variables. That indirection is why each `var()` carries a literal fallback: if the stylesheet
@@ -180,7 +188,7 @@ export const semanticDark = {
  */
 export const typography = {
   fontFamily: {
-    sans: "var(--lg-font-latin, 'Poppins'), var(--lg-font-bangla, 'Hind Siliguri'), system-ui, -apple-system, 'Segoe UI', sans-serif",
+    sans: "var(--lg-font-latin, 'Inter'), var(--lg-font-bangla, 'Hind Siliguri'), system-ui, -apple-system, 'Segoe UI', sans-serif",
     mono: "'Noto Sans Mono', ui-monospace, 'Cascadia Mono', monospace",
   },
 

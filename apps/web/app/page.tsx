@@ -4,6 +4,7 @@ import { Alert, Button, Card } from '@langgol/ui/components'
 import { getLocale } from '@/lib/locale'
 import { getSession } from '@/lib/session'
 import { getTheme } from '@/lib/theme'
+import { landingData } from '@/lib/landing'
 import { signOutAction } from './actions/auth'
 import { FeatureHub } from './feature-hub'
 import { HomeLanding } from './home-landing'
@@ -19,7 +20,7 @@ export default async function HomePage() {
    * question should not have to scroll past it to reach their own work.
    */
   if (session === null) {
-    return <HomeLanding t={t} locale={locale} theme={await getTheme()} />
+    return <HomeLanding t={t} locale={locale} theme={await getTheme()} data={await landingData()} />
   }
 
   // A fixture shows its localised label; a real account shows the name it was registered with.
