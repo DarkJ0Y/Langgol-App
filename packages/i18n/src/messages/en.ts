@@ -181,7 +181,8 @@ export const en: Catalogue = {
 
   marketplace: {
     title: 'What is available near you',
-    subtitle: 'Prices below are what you pay at your door, including delivery.',
+    subtitle:
+      'Prices below are at the farm gate. Open a listing to see the price delivered to your door.',
     perKg: 'per kg',
     guestQuote: 'Log in to get the price delivered to your address, and to order.',
     deliveredPerKg: 'delivered, per kg',

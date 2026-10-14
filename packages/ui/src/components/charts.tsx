@@ -263,32 +263,47 @@ export function BarList({
   format,
   slot = 'brand',
 }: {
-  readonly items: readonly { readonly label: string; readonly value: number }[]
+  readonly items: readonly {
+    readonly label: string
+    readonly value: number
+    /** Exact text for the value. Money passes this; `value` is then a bar length only. */
+    readonly display?: string
+    /** Emphasis: when any item is highlighted, it keeps the colour and the rest go grey. */
+    readonly highlight?: boolean
+  }[]
   readonly format: (value: number) => string
   readonly slot?: VizSlot
 }) {
   const max = Math.max(1, ...items.map((item) => item.value))
+  const emphasis = items.some((item) => item.highlight === true)
   return (
     <ul className="lg-barlist">
-      {items.map((item) => (
-        <li key={item.label} className="lg-barlist__row">
-          <span className="lg-barlist__label">{item.label}</span>
-          <span className="lg-barlist__track">
-            <span
-              className="lg-barlist__bar"
-              style={{
-                width: `${String(Math.max((item.value / max) * 100, item.value > 0 ? 1.5 : 0))}%`,
-                background: colour(slot),
-              }}
-              tabIndex={0}
-              role="img"
-              aria-label={`${item.label}: ${format(item.value)}`}
-              data-tip={`${item.label}: ${format(item.value)}`}
-            />
-          </span>
-          <span className="lg-barlist__value">{format(item.value)}</span>
-        </li>
-      ))}
+      {items.map((item) => {
+        const text = item.display ?? format(item.value)
+        const muted = emphasis && item.highlight !== true
+        return (
+          <li
+            key={item.label}
+            className={`lg-barlist__row${item.highlight === true ? ' lg-barlist__row--highlight' : ''}`}
+          >
+            <span className="lg-barlist__label">{item.label}</span>
+            <span className="lg-barlist__track">
+              <span
+                className="lg-barlist__bar"
+                style={{
+                  width: `${String(Math.max((item.value / max) * 100, item.value > 0 ? 1.5 : 0))}%`,
+                  background: muted ? 'var(--lg-viz-muted)' : colour(slot),
+                }}
+                tabIndex={0}
+                role="img"
+                aria-label={`${item.label}: ${text}`}
+                data-tip={`${item.label}: ${text}`}
+              />
+            </span>
+            <span className="lg-barlist__value">{text}</span>
+          </li>
+        )
+      })}
     </ul>
   )
 }

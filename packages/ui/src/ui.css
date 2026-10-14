@@ -519,6 +519,7 @@ body {
   --lg-viz-7: #6250d6;
   --lg-viz-8: #e34948;
   --lg-viz-grid: #e6e9e4;
+  --lg-viz-muted: #b8beb4;
   --lg-viz-axis: #c3c8c0;
   --lg-viz-good: #15803d;
   --lg-viz-bad: #b91c1c;
@@ -541,6 +542,7 @@ body {
     --lg-viz-axis: #4a4238;
     --lg-viz-good: #86efac;
     --lg-viz-bad: #f19a9a;
+    --lg-viz-muted: #5c5448;
   }
 }
 
@@ -560,6 +562,7 @@ body {
   --lg-viz-axis: #4a4238;
   --lg-viz-good: #86efac;
   --lg-viz-bad: #f19a9a;
+  --lg-viz-muted: #5c5448;
 }
 
 /* ------------------------------------------------------------------ dashboards */
@@ -624,7 +627,7 @@ body {
 .lg-stat-row {
   display: grid;
   gap: var(--lg-space-3);
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
 }
 
 .lg-stat {
@@ -922,6 +925,11 @@ body {
   outline: none;
 }
 
+.lg-barlist__row--highlight .lg-barlist__label,
+.lg-barlist__row--highlight .lg-barlist__value {
+  font-weight: 700;
+}
+
 .lg-barlist__value {
   color: var(--lg-text-primary);
   font-weight: 600;
@@ -1184,6 +1192,251 @@ a.lg-rows__title:hover {
       clip-path: inset(0 100% 0 0);
     }
   }
+}
+
+/* ====================================================================== market */
+
+/* Category filter pills: links, one row, wrapping on a phone. */
+.lg-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lg-space-2);
+}
+
+.lg-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lg-space-1);
+  min-height: 2.5rem;
+  padding: 0 var(--lg-space-4);
+  border: 1px solid var(--lg-border);
+  border-radius: 999px;
+  background: var(--lg-surface-raised);
+  color: var(--lg-text-primary);
+  font-size: var(--lg-text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.lg-pill:hover {
+  border-color: var(--lg-fill-primary-hover);
+}
+
+.lg-pill[aria-current='page'] {
+  background: var(--lg-fill-primary);
+  border-color: var(--lg-fill-primary-hover);
+  color: var(--lg-on-fill-primary);
+}
+
+.lg-pill:focus-visible {
+  outline: 3px solid var(--lg-focus-ring);
+  outline-offset: 2px;
+}
+
+/* The grid of cards, with the price comparison beside it on a wide screen. */
+.lg-market {
+  display: grid;
+  gap: var(--lg-space-4);
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .lg-market {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+  }
+
+  .lg-market__side {
+    position: sticky;
+    top: var(--lg-space-4);
+  }
+}
+
+.lg-market__grid {
+  display: grid;
+  gap: var(--lg-space-4);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+}
+
+.lg-market__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-4);
+}
+
+/* Too narrow for label, bar and value on one line: label and value above, the bar under them. */
+.lg-market__side .lg-barlist__row {
+  grid-template-columns: 1fr auto;
+  row-gap: var(--lg-space-1);
+}
+
+.lg-market__side .lg-barlist__track {
+  grid-row: 2;
+  grid-column: 1 / -1;
+}
+
+/* A produce card: the picture, then name, provenance, price, stock and the call to action. */
+.lg-produce-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--lg-border);
+  border-radius: var(--lg-radius-lg);
+  background: var(--lg-surface-raised);
+  overflow: hidden;
+  transition:
+    border-color var(--lg-motion-base) var(--lg-motion-easing),
+    transform var(--lg-motion-base) var(--lg-motion-easing);
+}
+
+.lg-produce-card:hover {
+  border-color: var(--lg-fill-primary-hover);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lg-produce-card:hover {
+    transform: translateY(-3px);
+  }
+}
+
+.lg-produce-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-2);
+  padding: var(--lg-space-4);
+  flex: 1;
+}
+
+.lg-produce-card__body .lg-button {
+  margin-top: auto;
+}
+
+.lg-produce-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lg-space-2);
+}
+
+.lg-produce-card__name {
+  margin: 0;
+  font-size: var(--lg-text-xl);
+  font-weight: 700;
+  color: var(--lg-text-primary);
+}
+
+.lg-produce-card__farm,
+.lg-produce-card__left {
+  margin: 0;
+  font-size: var(--lg-text-sm);
+  color: var(--lg-text-secondary);
+}
+
+.lg-produce-card__price {
+  margin: var(--lg-space-1) 0 0;
+  font-size: var(--lg-text-2xl);
+  font-weight: 800;
+  color: var(--lg-text-primary);
+}
+
+.lg-produce-card__price span {
+  display: block;
+  font-size: var(--lg-text-xs);
+  font-weight: 500;
+  color: var(--lg-text-secondary);
+}
+
+/* How much is left: the unfilled track is a lighter step of the fill's own green. */
+.lg-produce-card__stock {
+  display: block;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lg-viz-brand) 22%, transparent);
+  overflow: hidden;
+}
+
+.lg-produce-card__stock span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--lg-viz-brand);
+}
+
+/* The produce tile: one emoji on a solid category tint. No image to download. */
+.lg-produce {
+  display: grid;
+  place-items: center;
+  height: 7.5rem;
+  font-size: 3.75rem;
+  line-height: 1;
+  background: var(--produce-tint, var(--lg-surface));
+}
+
+.lg-produce--veg {
+  --produce-tint: #dcfce7;
+}
+
+.lg-produce--fruit {
+  --produce-tint: #fef3c7;
+}
+
+.lg-produce--grain {
+  --produce-tint: #f5ead3;
+}
+
+:root[data-theme='dark'] .lg-produce--veg {
+  --produce-tint: #1c2e21;
+}
+
+:root[data-theme='dark'] .lg-produce--fruit {
+  --produce-tint: #33291a;
+}
+
+:root[data-theme='dark'] .lg-produce--grain {
+  --produce-tint: #2e2a20;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .lg-produce--veg {
+    --produce-tint: #1c2e21;
+  }
+
+  :root:not([data-theme='light']) .lg-produce--fruit {
+    --produce-tint: #33291a;
+  }
+
+  :root:not([data-theme='light']) .lg-produce--grain {
+    --produce-tint: #2e2a20;
+  }
+}
+
+/* The large version, at the top of a listing page. */
+.lg-produce--hero {
+  height: auto;
+  min-height: 11rem;
+  font-size: 6rem;
+  border-radius: var(--lg-radius-lg);
+}
+
+/* Listing page: picture beside the facts on a wide screen, stacked on a phone. */
+.lg-listing-hero {
+  display: grid;
+  gap: var(--lg-space-5);
+  padding: var(--lg-space-5);
+  border: 1px solid var(--lg-border);
+  border-radius: var(--lg-radius-lg);
+  background: var(--lg-surface-raised);
+}
+
+@media (min-width: 48rem) {
+  .lg-listing-hero {
+    grid-template-columns: 14rem 1fr;
+    align-items: center;
+  }
+}
+
+.lg-listing-hero__facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-2);
 }
 
 /* The browser draws scrollbars and form controls to match the chosen theme. */
