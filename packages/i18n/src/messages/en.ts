@@ -32,6 +32,14 @@ export const en: Catalogue = {
   auth: {
     signInTitle: 'Sign in to Langgol',
     signInSubtitle: 'Enter your mobile number. We will send you a code.',
+    demoTitle: 'Demo login — all features',
+    demoSubtitle:
+      'The whole platform in one account: farmer, buyer, business, expert, logistics and admin.',
+    demoEmail: 'Email',
+    demoPassword: 'Password',
+    demoSubmit: 'Log in',
+    demoInvalid: 'That email or password is not right.',
+    demoOrPick: 'Or pick a test identity for one specific role',
     phoneLabel: 'Mobile number',
     phonePlaceholder: '01XXXXXXXXX',
     phoneHelp: 'Use the number that receives SMS',
@@ -552,12 +560,15 @@ export const en: Catalogue = {
     yes: 'Yes',
     no: 'No',
 
+    roleFARMER: 'Farmer',
     roleCONSUMER: 'Consumer',
     roleRETAILER: 'Retailer',
     roleWHOLESALER: 'Wholesaler',
     roleSUPPLIER: 'Supplier',
     roleAGRICULTURAL_EXPERT: 'Agricultural expert',
     roleLOGISTICS_PROVIDER: 'Logistics provider',
+    roleOPS_AGENT: 'Field agent',
+    roleADMIN: 'Administrator',
 
     fieldBusinessName: 'Business name',
     fieldCompanyName: 'Company name',

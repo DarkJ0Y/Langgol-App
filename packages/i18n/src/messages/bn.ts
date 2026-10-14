@@ -29,6 +29,15 @@ export const bn = {
   auth: {
     signInTitle: 'লাঙ্গলে প্রবেশ করুন',
     signInSubtitle: 'আপনার মোবাইল নম্বর দিন। আমরা একটি কোড পাঠাব।',
+    // The demo email-and-password sign-in, shown only in development mode.
+    demoTitle: 'ডেমো প্রবেশ — সব সুবিধা',
+    demoSubtitle:
+      'একটি অ্যাকাউন্টে পুরো প্ল্যাটফর্ম: কৃষক, ক্রেতা, ব্যবসা, বিশেষজ্ঞ, পরিবহন আর অ্যাডমিন।',
+    demoEmail: 'ইমেইল',
+    demoPassword: 'পাসওয়ার্ড',
+    demoSubmit: 'প্রবেশ করুন',
+    demoInvalid: 'ইমেইল বা পাসওয়ার্ড ঠিক নয়।',
+    demoOrPick: 'অথবা একটি নির্দিষ্ট ভূমিকার পরীক্ষার পরিচয় বেছে নিন',
     phoneLabel: 'মোবাইল নম্বর',
     phonePlaceholder: '01XXXXXXXXX',
     phoneHelp: 'যে নম্বরে এসএমএস আসে সেটি দিন',
@@ -564,12 +573,15 @@ export const bn = {
     yes: 'হ্যাঁ',
     no: 'না',
 
+    roleFARMER: 'কৃষক',
     roleCONSUMER: 'ক্রেতা',
     roleRETAILER: 'দোকানি',
     roleWHOLESALER: 'পাইকার',
     roleSUPPLIER: 'সরবরাহকারী',
     roleAGRICULTURAL_EXPERT: 'কৃষি বিশেষজ্ঞ',
     roleLOGISTICS_PROVIDER: 'পরিবহন সেবা',
+    roleOPS_AGENT: 'মাঠকর্মী',
+    roleADMIN: 'প্রশাসক',
 
     fieldBusinessName: 'ব্যবসার নাম',
     fieldCompanyName: 'প্রতিষ্ঠানের নাম',

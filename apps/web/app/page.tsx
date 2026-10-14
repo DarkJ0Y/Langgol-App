@@ -5,6 +5,7 @@ import { getLocale } from '@/lib/locale'
 import { getSession } from '@/lib/session'
 import { getTheme } from '@/lib/theme'
 import { signOutAction } from './actions/auth'
+import { FeatureHub } from './feature-hub'
 import { HomeLanding } from './home-landing'
 
 export default async function HomePage() {
@@ -35,7 +36,7 @@ export default async function HomePage() {
         <p className="lg-subtitle">
           {session.roles.length === 0
             ? t.t('auth.chooseRole')
-            : session.roles.map((role) => t.t(`auth.role${titleCase(role)}` as never)).join(' · ')}
+            : session.roles.map((role) => t.t(`profile.role${role}`)).join(' · ')}
         </p>
         {session.isDevelopmentFixture ? (
           <Alert tone="warning">
@@ -46,17 +47,8 @@ export default async function HomePage() {
         ) : null}
       </Card>
 
-      {/*
-        P1 ends here on purpose. The farmer dashboard, listings and marketplace are P2 and are
-        not built until that phase is approved.
-      */}
-      <Card>
-        <p className="lg-hint">
-          {locale === 'bn'
-            ? 'বাজার ও ফসলের সুবিধা পরবর্তী ধাপে আসছে।'
-            : 'Marketplace and produce features arrive in the next phase.'}
-        </p>
-      </Card>
+      {/* Every area this person can open. With the all-features demo account, all of them. */}
+      <FeatureHub roles={session.roles} locale={locale} />
 
       <form action={signOutAction}>
         <Button type="submit" variant="secondary">
@@ -65,8 +57,4 @@ export default async function HomePage() {
       </form>
     </div>
   )
-}
-
-function titleCase(value: string): string {
-  return value.charAt(0) + value.slice(1).toLowerCase()
 }

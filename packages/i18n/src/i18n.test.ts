@@ -207,6 +207,7 @@ describe('development fixture labels', () => {
       'supplier',
       'expert',
       'logistics',
+      'demo',
     ])
   })
 })

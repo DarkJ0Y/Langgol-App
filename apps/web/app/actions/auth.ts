@@ -26,6 +26,8 @@ import {
 } from '@langgol/application'
 import { isErr } from '@langgol/shared'
 import { authMode, developmentDeps, firebaseDeps, otpDeps, authDeps } from '@/lib/deps'
+import { demoCredentialsMatch } from '@/lib/demo-login'
+import { DEMO_IDENTITY_KEY } from '@langgol/domain/identity'
 import { getLocale } from '@/lib/locale'
 import { clearSessionCookie, getSession, readSessionToken, setSessionCookie } from '@/lib/session'
 import {
@@ -344,6 +346,51 @@ export async function developmentSignInAction(
   // The same destination rule as a real sign-in, so signing in as the farmer fixture exercises
   // the farmer's actual first screen rather than a path only development takes.
   redirect(destinationAfterSignIn(result.value.roles))
+}
+
+/* ------------------------------------------------- demo email and password */
+
+const DemoLoginSchema = z.object({
+  email: z.string().max(254),
+  password: z.string().max(256),
+})
+
+/**
+ * Sign in to the all-features demo account with the configured email and password.
+ *
+ * The credential check is the only new thing here. The session comes from `developmentSignIn`
+ * with the demo key, so it is refused outside development mode by the use case itself, looked up
+ * only among fixture rows, and audited as a development sign-in like any other.
+ */
+export async function demoPasswordSignInAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = DemoLoginSchema.safeParse({
+    email: formData.get('email') ?? '',
+    password: formData.get('password') ?? '',
+  })
+
+  if (!parsed.success || !demoCredentialsMatch(parsed.data.email, parsed.data.password)) {
+    // A short, fixed pause on every failure. Not a rate limiter — there is one demo credential
+    // and the page beside it signs in with one click anyway — but it makes guessing tedious.
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    return { status: 'error', errorKey: 'auth.demoInvalid' }
+  }
+
+  const meta = await requestMeta()
+  const result = await developmentSignIn(
+    { identityKey: DEMO_IDENTITY_KEY, ...meta },
+    await developmentDeps(),
+  )
+
+  if (isErr(result)) return toActionState(result.error.code, result.error.meta)
+
+  await setSessionCookie(result.value.sessionToken, result.value.expiresAt)
+
+  // Home, not the role-based first screen: for an account holding every role that would be the
+  // farmer questionnaire, and the point of this account is the map of everything (FeatureHub).
+  redirect('/')
 }
 
 /* ------------------------------------------------------------ role selection */

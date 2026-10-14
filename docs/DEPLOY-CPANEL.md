@@ -102,6 +102,11 @@ of `[YOUR-PASSWORD]`, and for `DATABASE_URL` add `?pgbouncer=true&connection_lim
 **Leave `generate` as it is** on the three secret lines. The site replaces each with a random
 secret the first time it starts and saves it in this file. Never copy these to another site.
 
+**Demo login (optional).** To give people one email and password that opens every feature, set
+`DEMO_PASSWORD` to a password you choose (8 or more characters). `DEMO_EMAIL` is already
+`demo@langgol.app`; change it if you like. Leave `DEMO_PASSWORD` empty and the email/password
+form is simply not shown; the one-click demo accounts still work.
+
 _Save Changes_. Then select `.env` → **Permissions** → **600** → _Change Permissions_.
 
 ## 4. Create the Node.js application
@@ -143,6 +148,8 @@ The first load takes a few seconds.
 - [ ] After the password, the Langgol home page appears in Bangla.
 - [ ] **Market** shows the demo produce listings.
 - [ ] Sign in → _Development_ → **ডেভ অ্যাডমিন** (Dev Admin) opens the admin screens.
+- [ ] If you set `DEMO_PASSWORD`: sign in with `demo@langgol.app` and that password. The home page
+      lists every area — market, farmer, account and administration — and each one opens.
 - [ ] Sign in as **ডেভ ক্রেতা** (Dev Buyer), open a listing, get a quote.
 - [ ] `/health` shows `{"status":"ok","check":"live"}`.
 - [ ] In File Manager, `langgol_app/.env` no longer contains the word `generate`.

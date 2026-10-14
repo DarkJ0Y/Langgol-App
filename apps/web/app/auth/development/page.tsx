@@ -4,6 +4,8 @@ import { createTranslator } from '@langgol/i18n'
 import { Alert, Card } from '@langgol/ui/components'
 import { getLocale } from '@/lib/locale'
 import { authMode } from '@/lib/deps'
+import { demoLoginEnabled } from '@/lib/demo-login'
+import { DemoLoginForm } from './demo-form'
 import { DevelopmentIdentityForm } from './form'
 
 /**
@@ -37,11 +39,35 @@ export default async function DevelopmentAuthPage() {
           : 'Sign in without SMS or OTP, as one of a fixed set of test identities.'}
       </Alert>
 
+      {/*
+        The demo credential first, when one is configured: it is what a person being shown Langgol
+        has been given. The one-click identities stay below for whoever needs a single role.
+      */}
+      {demoLoginEnabled() ? (
+        <Card>
+          <h1 className="lg-title">{t.t('auth.demoTitle')}</h1>
+          <p className="lg-subtitle">{t.t('auth.demoSubtitle')}</p>
+          <DemoLoginForm
+            labels={{
+              email: t.t('auth.demoEmail'),
+              password: t.t('auth.demoPassword'),
+              submit: t.t('auth.demoSubmit'),
+              loading: t.t('common.loading'),
+              invalid: t.t('auth.demoInvalid'),
+              unexpected: t.t('errors.unexpected'),
+            }}
+          />
+        </Card>
+      ) : null}
+
       <Card>
-        <h1 className="lg-title">
-          {locale === 'bn' ? 'পরীক্ষার পরিচয় বেছে নিন' : 'Choose a test identity'}
-        </h1>
-        <p className="lg-subtitle">{t.t('auth.signInSubtitle')}</p>
+        {demoLoginEnabled() ? (
+          <h2 className="lg-title">{t.t('auth.demoOrPick')}</h2>
+        ) : (
+          <h1 className="lg-title">
+            {locale === 'bn' ? 'পরীক্ষার পরিচয় বেছে নিন' : 'Choose a test identity'}
+          </h1>
+        )}
         <DevelopmentIdentityForm
           identities={identities}
           submitLabel={t.t('common.continue')}

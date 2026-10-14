@@ -431,6 +431,68 @@ body {
   text-decoration: none;
 }
 
+/* The signed-in home: every area the person can open, as a grid of link tiles per section. */
+.lg-hub {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-3);
+}
+
+.lg-hub__title {
+  margin: 0;
+  font-size: var(--lg-text-lg);
+  font-weight: 700;
+  color: var(--lg-text-primary);
+}
+
+.lg-hub__grid {
+  display: grid;
+  gap: var(--lg-space-3);
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+}
+
+.lg-hub__link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-1);
+  min-height: var(--lg-touch-min);
+  padding: var(--lg-space-4);
+  border: 1px solid var(--lg-border);
+  border-radius: var(--lg-radius-lg);
+  background: var(--lg-gradient-card);
+  color: var(--lg-text-primary);
+  text-decoration: none;
+  transition:
+    border-color var(--lg-motion-base) var(--lg-motion-easing),
+    transform var(--lg-motion-base) var(--lg-motion-easing);
+}
+
+.lg-hub__link:hover {
+  border-color: var(--lg-action-primary);
+}
+
+.lg-hub__link:focus-visible {
+  outline: 3px solid var(--lg-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lg-hub__link:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.lg-hub__link-title {
+  font-weight: 700;
+  color: var(--lg-action-primary);
+}
+
+.lg-hub__link-body {
+  font-size: var(--lg-text-sm);
+  line-height: 1.5;
+  color: var(--lg-text-secondary);
+}
+
 /* The browser draws scrollbars and form controls to match the chosen theme. */
 :root[data-theme='dark'] {
   color-scheme: dark;

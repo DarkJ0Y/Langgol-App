@@ -132,6 +132,9 @@ export const DEVELOPMENT_PHONE_PREFIX = '+88017000000'
  */
 const DEVELOPMENT_PHONE_BLOCK = /^\+88017000000(?:0[1-9]|2[0-9])$/
 
+/** The all-features demo account. Named, because the seed and the password sign-in both find it. */
+export const DEMO_IDENTITY_KEY = 'demo'
+
 export interface DevelopmentIdentity {
   readonly key: string
   readonly phone: string
@@ -324,6 +327,34 @@ export const DEVELOPMENT_IDENTITIES: readonly DevelopmentIdentity[] = [
     descriptionEn: 'Transport provider moving crops from farm to market',
     roles: ['LOGISTICS_PROVIDER'],
     preferredLanguage: 'EN',
+  },
+  /*
+   * One account that can see the whole product: every role, and (granted by the seed, from
+   * Dev Admin) every admin permission. For showing Langgol to someone, where switching between
+   * thirteen fixtures to reach each screen loses the room. It is also the identity the demo
+   * email-and-password sign-in opens (DEMO_EMAIL / DEMO_PASSWORD) — still a fixture, still only
+   * in development mode, still refused in production.
+   */
+  {
+    key: DEMO_IDENTITY_KEY,
+    phone: `${DEVELOPMENT_PHONE_PREFIX}25`,
+    fullName: 'Langgol Demo',
+    nameBn: 'লাঙ্গল ডেমো',
+    nameEn: 'Langgol Demo',
+    descriptionBn: 'সব ভূমিকা আর সব অ্যাডমিন অনুমতি — পুরো প্ল্যাটফর্ম এক অ্যাকাউন্টে দেখার জন্য',
+    descriptionEn: 'Every role and every admin permission — the whole platform in one account',
+    roles: [
+      'FARMER',
+      'CONSUMER',
+      'RETAILER',
+      'WHOLESALER',
+      'SUPPLIER',
+      'AGRICULTURAL_EXPERT',
+      'LOGISTICS_PROVIDER',
+      'OPS_AGENT',
+      'ADMIN',
+    ],
+    preferredLanguage: 'BN',
   },
 ] as const
 

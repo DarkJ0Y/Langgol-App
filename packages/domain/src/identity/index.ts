@@ -10,6 +10,7 @@ export {
   findDevelopmentIdentityByPhone,
   developmentIdentityLabel,
   isDevelopmentPhone,
+  DEMO_IDENTITY_KEY,
   AuthModeError,
   type AuthMode,
   type AppEnvironment,

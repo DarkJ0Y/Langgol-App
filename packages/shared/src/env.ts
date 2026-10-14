@@ -97,6 +97,23 @@ const schema = z.object({
    * point louder.
    */
   KYC_ENCRYPTION_KEY: z.string().optional(),
+
+  /*
+   * The demo email-and-password sign-in, for showing the product to someone.
+   *
+   * It opens exactly one account — the all-features development fixture — and exists only under
+   * AUTH_MODE=development, which production refuses at startup. It is not a password system:
+   * nothing is stored, there is one credential, and it is compared in constant time. Leave
+   * DEMO_PASSWORD unset and the form does not appear at all. Both are trimmed; the email is
+   * compared without regard to case.
+   */
+  DEMO_EMAIL: z.string().trim().toLowerCase().email().optional().or(z.literal('')),
+  DEMO_PASSWORD: z
+    .string()
+    .trim()
+    .min(8, 'DEMO_PASSWORD must be at least 8 characters')
+    .optional()
+    .or(z.literal('')),
 })
 
 export type Env = z.infer<typeof schema> & {

@@ -65,23 +65,26 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const t = createTranslator(locale)
   const path = (await headers()).get('x-pathname') ?? '/'
 
-  // Browse and order screens need a grid; auth and form screens need a reading measure. The
-  // shell picks the width rather than each page fighting the container.
-  const isWide = path.startsWith('/market') || path.startsWith('/orders')
-
   /*
    * The marketing homepage brings its own navigation, its own width and its own visual register,
    * so the product shell steps out of its way entirely. Every other route keeps the header and
    * the reading measure — this is one exception, not a second layout system.
    */
-  const isLanding = path === '/'
-
   /*
    * A guest who chose "Continue as guest" on the landing page needs the way back to signing in
    * on every screen, not only on the one that refuses them. Without a session cookie this costs
    * nothing: getSession returns before touching the database.
    */
-  const isGuest = isLanding ? false : (await getSession()) === null
+  const isGuest = (await getSession()) === null
+
+  // Only a visitor gets the marketing page at "/". A signed-in person gets their feature hub
+  // there, inside the ordinary shell with its header and reading width.
+  const isLanding = path === '/' && isGuest
+
+  // Browse and order screens need a grid, and so does the signed-in home's feature hub; auth and
+  // form screens need a reading measure. The shell picks the width rather than each page fighting
+  // the container.
+  const isWide = path.startsWith('/market') || path.startsWith('/orders') || path === '/'
 
   return (
     /*
