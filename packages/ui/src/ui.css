@@ -2109,3 +2109,110 @@ a.lg-button--secondary {
   font-size: var(--lg-text-sm);
   color: var(--lg-text-secondary);
 }
+
+/* ======================================================================== nearby */
+
+/* The map beside the list on a wide screen; the map on top on a phone. */
+.lg-nearby {
+  display: grid;
+  gap: var(--lg-space-4);
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .lg-nearby {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  }
+}
+
+.lg-map {
+  height: clamp(20rem, 60vh, 34rem);
+  border: 1px solid var(--lg-border);
+  border-radius: var(--lg-radius-lg);
+  overflow: hidden;
+  background: var(--lg-surface);
+}
+
+/* The OSM tiles are drawn for a light page; in dark mode they are inverted to sit in it. */
+:root[data-theme='dark'] .lg-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9);
+}
+
+.lg-map .leaflet-popup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-family: var(--lg-font-sans);
+}
+
+.lg-nearby__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lg-nearby__farm {
+  display: flex;
+  gap: var(--lg-space-3);
+  padding: var(--lg-space-4);
+  border: 1px solid var(--lg-border);
+  border-radius: var(--lg-radius-lg);
+  background: var(--lg-surface-raised);
+}
+
+.lg-nearby__rank {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--lg-fill-primary);
+  color: var(--lg-on-fill-primary);
+  font-weight: 700;
+  font-size: var(--lg-text-sm);
+}
+
+.lg-nearby__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-1);
+  min-width: 0;
+  flex: 1;
+}
+
+.lg-nearby__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--lg-space-2);
+}
+
+.lg-nearby__name {
+  margin: 0;
+  font-size: var(--lg-text-base);
+  font-weight: 700;
+  color: var(--lg-text-primary);
+}
+
+.lg-nearby__km {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--lg-text-primary);
+}
+
+.lg-nearby .lg-chip-row a.lg-chip {
+  text-decoration: none;
+  color: var(--lg-text-primary);
+}
+
+.lg-locate__button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lg-space-2);
+  width: auto;
+}

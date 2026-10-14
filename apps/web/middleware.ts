@@ -117,7 +117,9 @@ function securityHeaders(options: CspOptions): Record<string, string> {
     "default-src 'self'",
     `script-src ${scriptSrc}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    // Map tiles for /nearby, from OpenStreetMap's own tile server and nowhere else. A Google Maps
+    // key, when one is configured, will add Google's tile and script hosts here — not before.
+    "img-src 'self' data: blob: https://tile.openstreetmap.org",
     "font-src 'self' data:",
     `connect-src ${connectSrc}`,
     ...frameSrc,
@@ -140,7 +142,9 @@ function securityHeaders(options: CspOptions): Record<string, string> {
     'referrer-policy': 'strict-origin-when-cross-origin',
     // Nothing in Langgol needs these yet. Geolocation will be requested explicitly when the
     // buyer address screen lands, and this list revisited then.
-    'permissions-policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+    // Geolocation for "Use my location" on /nearby, for Langgol's own pages only; never for an
+    // embedded third party. Everything else stays off.
+    'permissions-policy': 'camera=(), microphone=(), geolocation=(self), payment=(), usb=()',
     'cross-origin-opener-policy': 'same-origin',
     'x-dns-prefetch-control': 'off',
   }

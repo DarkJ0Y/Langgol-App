@@ -35,6 +35,14 @@ const MARKET: HubSection = {
       },
     },
     {
+      href: '/nearby',
+      title: { bn: 'কাছের খামার', en: 'Farms near you' },
+      body: {
+        bn: 'মানচিত্রে আপনার সবচেয়ে কাছের কৃষক আর তাঁদের আজকের ফসল।',
+        en: 'The farmers closest to you on a map, with what they have today.',
+      },
+    },
+    {
       href: '/orders',
       title: { bn: 'আমার অর্ডার', en: 'My orders' },
       body: {

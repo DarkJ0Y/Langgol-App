@@ -139,6 +139,7 @@ export function HomeLanding({
 
   const nav = [
     { href: GUEST_HREF, label: say('বাজার', 'Market') },
+    { href: '/nearby', label: say('কাছের খামার', 'Near me') },
     { href: '#farmers', label: say('কৃষকদের জন্য', 'For farmers') },
     { href: '#buyers', label: say('ক্রেতাদের জন্য', 'For buyers') },
     { href: '#how', label: say('কীভাবে কাজ করে', 'How it works') },

@@ -6,6 +6,7 @@ import { createTranslator } from '@langgol/i18n'
 import {
   Alert,
   Card,
+  BarList,
   ChartCard,
   ColumnChart,
   DataTable,
@@ -23,6 +24,7 @@ import { OnboardingChecklist } from '../onboarding/checklist'
 import { currentActor } from '@/lib/guard'
 import { getLocale } from '@/lib/locale'
 import { farmerInsights } from '@/lib/insights'
+import { buyersNear, MIN_DISCLOSED } from '@/lib/nearby'
 import {
   count,
   kgCompact,
@@ -63,6 +65,8 @@ export default async function FarmerDashboardPage() {
 
   // Scoped to the profile the use case above just authorized as the actor's own.
   const insights = await farmerInsights(profile.id)
+  // Counts of buyers by distance, never who or where (lib/nearby.ts).
+  const demand = await buyersNear(profile.id, profile.userId)
   const hasHistory = insights.seasons.length > 0
   const hasSales = insights.salesByMonth.some((month) => month.orders > 0)
   const totals = insights.totals
@@ -316,6 +320,34 @@ export default async function FarmerDashboardPage() {
                 format={(value, share) =>
                   `${kgCompact(value, locale, t)} · ${t.digits(String(Math.round(share * 100)))}%`
                 }
+              />
+            </ChartCard>
+          ) : null}
+
+          {totals.farms > 0 ? (
+            <ChartCard
+              title={say('আপনার খামারের কাছের ক্রেতা', 'Buyers near your farm')}
+              subtitle={say(
+                `কত জন ক্রেতা কত দূরে থাকেন — শুধু সংখ্যা, কারও নাম বা ঠিকানা নয়। ${t.digits(String(MIN_DISCLOSED))} জনের কম হলে সংখ্যা দেখানো হয় না।`,
+                `How many buyers live how far away — counts only, never a name or an address. Below ${String(MIN_DISCLOSED)}, the number is not shown.`,
+              )}
+            >
+              <BarList
+                items={demand.map((ring) => ({
+                  label: say(
+                    `${t.digits(String(ring.km))} কিমির মধ্যে`,
+                    `Within ${String(ring.km)} km`,
+                  ),
+                  value: ring.buyers ?? 0,
+                  display:
+                    ring.buyers === null
+                      ? say(
+                          `${t.digits(String(MIN_DISCLOSED))} জনের কম`,
+                          `Fewer than ${String(MIN_DISCLOSED)}`,
+                        )
+                      : count(ring.buyers, t),
+                }))}
+                format={(value) => count(value, t)}
               />
             </ChartCard>
           ) : null}

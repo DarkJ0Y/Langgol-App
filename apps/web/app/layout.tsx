@@ -94,6 +94,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     // The dashboards: stat tiles and charts need the width a reading column would deny them.
     path === '/farmer' ||
     path === '/assistant' ||
+    path === '/nearby' ||
     path === '/admin'
 
   return (
@@ -139,6 +140,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <nav className="lg-header-links" aria-label={t.t('home.menu')}>
                 {[
                   { href: '/market', label: t.t('home.navMarket'), show: true },
+                  {
+                    href: '/nearby',
+                    label: locale === 'bn' ? 'কাছের খামার' : 'Near me',
+                    show: true,
+                  },
                   {
                     href: '/orders',
                     label: locale === 'bn' ? 'আমার অর্ডার' : 'My orders',
