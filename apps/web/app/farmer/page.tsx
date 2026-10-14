@@ -1,14 +1,40 @@
 import { redirect } from 'next/navigation'
 import { getMyFarmerProfile } from '@langgol/application'
 import { formatLandAmount } from '@langgol/domain/farming'
+import * as Money from '@langgol/domain/money'
 import { createTranslator } from '@langgol/i18n'
-import { Alert, Card, LinkButton } from '@langgol/ui/components'
+import {
+  Alert,
+  Card,
+  ChartCard,
+  ColumnChart,
+  DataTable,
+  LinkButton,
+  Meter,
+  SplitBar,
+  StatRow,
+  StatTile,
+  type VizSlot,
+} from '@langgol/ui/components'
 import { isErr } from '@langgol/shared'
 import { myOnboarding } from '@langgol/application'
 import { farmerDeps, onboardingDeps } from '@/lib/deps'
 import { OnboardingChecklist } from '../onboarding/checklist'
 import { currentActor } from '@/lib/guard'
 import { getLocale } from '@/lib/locale'
+import { farmerInsights } from '@/lib/insights'
+import {
+  count,
+  kgCompact,
+  monthLabel,
+  chartTaka,
+  percentChange,
+  percentChangeMoney,
+  seasonLabel,
+  takaCompact,
+  takaFull,
+  takaTick,
+} from '@/lib/viz-format'
 import { labelFor } from './labels'
 
 /**
@@ -31,7 +57,36 @@ export default async function FarmerDashboardPage() {
   }
 
   const { profile, completion } = result.value
-  const t = createTranslator(await getLocale())
+  const locale = await getLocale()
+  const t = createTranslator(locale)
+  const say = (bn: string, en: string) => (locale === 'bn' ? bn : en)
+
+  // Scoped to the profile the use case above just authorized as the actor's own.
+  const insights = await farmerInsights(profile.id)
+  const hasHistory = insights.seasons.length > 0
+  const hasSales = insights.salesByMonth.some((month) => month.orders > 0)
+  const totals = insights.totals
+  const year = new Date().getUTCFullYear()
+
+  // Eight categorical slots at most; a ninth crop and beyond fold into "Other", never a new hue.
+  const crops = insights.cropMix.slice(0, 7)
+  const otherKg = insights.cropMix.slice(7).reduce((sum, crop) => sum + crop.kg, 0)
+  const cropSegments = [
+    ...crops.map((crop, index) => ({
+      label: locale === 'bn' ? crop.nameBn : crop.nameEn,
+      value: crop.kg,
+      slot: (index + 1) as VizSlot,
+    })),
+    ...(otherKg > 0
+      ? [{ label: say('অন্যান্য', 'Other'), value: otherKg, slot: 8 as VizSlot }]
+      : []),
+  ]
+  const profit = Money.subtract(totals.revenueThisYearPoisha, totals.costThisYearPoisha)
+  const incomeChange = percentChangeMoney(
+    totals.revenueThisYearPoisha,
+    totals.revenueLastYearPoisha,
+    t,
+  )
 
   /*
    * Best-effort. A dashboard that failed to render because a progress checklist could not be built
@@ -93,12 +148,225 @@ export default async function FarmerDashboardPage() {
   ]
 
   return (
-    <div className="lg-stack">
+    <div className="lg-dash">
+      <header className="lg-dash__head">
+        <div>
+          <h1 className="lg-dash__title">{t.t('farmer.dashboardTitle')}</h1>
+          <p className="lg-dash__lede">
+            {t.t('farmer.dashboardWelcome', { name: profile.displayName })}
+          </p>
+        </div>
+        <div className="lg-dash__actions">
+          <LinkButton href="/farmer/farms" variant="secondary">
+            {t.t('farm.myFarms')}
+          </LinkButton>
+          <LinkButton href="/market">{say('বাজার দেখুন', 'Open the market')}</LinkButton>
+        </div>
+      </header>
+
+      {/*
+        The numbers first, as tiles: what a farmer asks before anything else is "how am I doing
+        this year?". Each change is against last year, named, and says whether it is good news.
+      */}
+      <StatRow>
+        <StatTile
+          label={say(`${t.digits(year)} সালের আয়`, `Income in ${String(year)}`)}
+          value={takaCompact(totals.revenueThisYearPoisha, locale, t)}
+          delta={
+            incomeChange === undefined
+              ? undefined
+              : say(
+                  `গত বছরের একই সময়ের তুলনায় ${incomeChange}`,
+                  `${incomeChange} vs this time last year`,
+                )
+          }
+          deltaTone={
+            Money.compare(totals.revenueThisYearPoisha, totals.revenueLastYearPoisha) >= 0
+              ? 'good'
+              : 'bad'
+          }
+        />
+        <StatTile
+          label={say('এ বছরের লাভ', 'Profit this year')}
+          value={takaCompact(profit, locale, t)}
+          hint={say(
+            `খরচ ${takaCompact(totals.costThisYearPoisha, locale, t)}`,
+            `after ${takaCompact(totals.costThisYearPoisha, locale, t)} costs`,
+          )}
+        />
+        <StatTile
+          label={say('এ বছরের ফসল', 'Harvest this year')}
+          value={kgCompact(totals.harvestKgThisYear, locale, t)}
+          delta={
+            percentChange(totals.harvestKgThisYear, totals.harvestKgLastYear, t) === undefined
+              ? undefined
+              : say(
+                  `গত বছরের একই সময়ের তুলনায় ${percentChange(totals.harvestKgThisYear, totals.harvestKgLastYear, t) ?? ''}`,
+                  `${percentChange(totals.harvestKgThisYear, totals.harvestKgLastYear, t) ?? ''} vs this time last year`,
+                )
+          }
+          deltaTone={totals.harvestKgThisYear >= totals.harvestKgLastYear ? 'good' : 'bad'}
+        />
+        <StatTile
+          label={say('গত ৩০ দিনের অর্ডার', 'Orders, last 30 days')}
+          value={count(totals.ordersLast30, t)}
+          hint={
+            totals.rating === null
+              ? undefined
+              : say(
+                  `রেটিং ★ ${t.digits(totals.rating.toFixed(1))}`,
+                  `rated ★ ${totals.rating.toFixed(1)}`,
+                )
+          }
+        />
+        <StatTile
+          label={say('জমি ও প্লট', 'Farms and plots')}
+          value={`${count(totals.farms, t)} · ${count(totals.plots, t)}`}
+          hint={say('জমি · প্লট', 'farms · plots')}
+        />
+      </StatRow>
+
+      {hasHistory || hasSales ? (
+        <div className="lg-dash__grid">
+          {hasHistory ? (
+            <div className="lg-dash__wide">
+              <ChartCard
+                title={say('মৌসুম অনুযায়ী আয় ও খরচ', 'Income and cost by season')}
+                subtitle={say(
+                  'প্রতিটি মৌসুমে ফসল বিক্রির আয়, চাষের খরচের পাশে।',
+                  'What each season’s harvest earned, beside what it cost to grow.',
+                )}
+                tableLabel={say('টেবিল হিসেবে দেখুন', 'Show as table')}
+                table={
+                  <DataTable
+                    columns={[
+                      say('মৌসুম', 'Season'),
+                      say('আয়', 'Income'),
+                      say('খরচ', 'Cost'),
+                      say('ফসল', 'Harvest'),
+                    ]}
+                    rows={insights.seasons.map((point) => [
+                      seasonLabel(point.season, point.year, locale, t),
+                      takaFull(point.revenuePoisha, t),
+                      takaFull(point.costPoisha, t),
+                      kgCompact(point.producedKg, locale, t),
+                    ])}
+                  />
+                }
+              >
+                <ColumnChart
+                  series={[
+                    { label: say('আয়', 'Income'), slot: 'a' },
+                    { label: say('খরচ', 'Cost'), slot: 'b' },
+                  ]}
+                  data={insights.seasons.map((point) => ({
+                    label: seasonLabel(point.season, point.year, locale, t),
+                    values: [chartTaka(point.revenuePoisha), chartTaka(point.costPoisha)],
+                    display: [takaFull(point.revenuePoisha, t), takaFull(point.costPoisha, t)],
+                  }))}
+                  format={(value) => takaTick(value, locale, t)}
+                  formatTick={(value) => takaTick(value, locale, t)}
+                />
+              </ChartCard>
+            </div>
+          ) : null}
+
+          {hasSales ? (
+            <ChartCard
+              title={say('লাঙ্গলে বিক্রি', 'Sales on Langgol')}
+              subtitle={say(
+                'গত ছয় মাসে কমিশনের পরে আপনার হাতে আসা টাকা।',
+                'What reached you after commission, last six months.',
+              )}
+              tableLabel={say('টেবিল হিসেবে দেখুন', 'Show as table')}
+              table={
+                <DataTable
+                  columns={[say('মাস', 'Month'), say('অর্ডার', 'Orders'), say('আয়', 'Received')]}
+                  rows={insights.salesByMonth.map((month) => [
+                    monthLabel(month.key, locale),
+                    count(month.orders, t),
+                    takaFull(month.netPoisha, t),
+                  ])}
+                />
+              }
+            >
+              <ColumnChart
+                series={[{ label: say('আয়', 'Received'), slot: 'brand' }]}
+                data={insights.salesByMonth.map((month) => ({
+                  label: monthLabel(month.key, locale),
+                  values: [chartTaka(month.netPoisha)],
+                  display: [takaFull(month.netPoisha, t)],
+                }))}
+                format={(value) => takaTick(value, locale, t)}
+                formatTick={(value) => takaTick(value, locale, t)}
+              />
+            </ChartCard>
+          ) : null}
+
+          {cropSegments.length > 0 ? (
+            <ChartCard
+              title={say('আপনি কী ফলান', 'What you grow')}
+              subtitle={say(
+                'সব মৌসুমের মোট ফসল, ওজন অনুযায়ী।',
+                'All recorded harvests, by weight.',
+              )}
+            >
+              <SplitBar
+                segments={cropSegments}
+                format={(value, share) =>
+                  `${kgCompact(value, locale, t)} · ${t.digits(String(Math.round(share * 100)))}%`
+                }
+              />
+            </ChartCard>
+          ) : null}
+
+          {insights.listings.length > 0 ? (
+            <ChartCard
+              title={say('বিক্রির জন্য মজুত', 'Stock on sale')}
+              subtitle={say(
+                'প্রতিটি তালিকায় এখনও কতটা বাকি।',
+                'How much of each listing is left.',
+              )}
+            >
+              <div className="lg-stack">
+                {insights.listings.map((listing) => (
+                  <Meter
+                    key={listing.nameEn}
+                    label={`${locale === 'bn' ? listing.nameBn : listing.nameEn} · ${takaCompact(
+                      listing.pricePoisha,
+                      locale,
+                      t,
+                    )}/${say('কেজি', 'kg')}`}
+                    value={listing.availableKg}
+                    max={listing.totalKg}
+                    caption={`${kgCompact(listing.availableKg, locale, t)} / ${kgCompact(
+                      listing.totalKg,
+                      locale,
+                      t,
+                    )}`}
+                  />
+                ))}
+              </div>
+            </ChartCard>
+          ) : null}
+        </div>
+      ) : (
+        <Card>
+          <h2 className="lg-title">
+            {say('এখনও কোনো ফসলের হিসাব নেই', 'No harvests recorded yet')}
+          </h2>
+          <p className="lg-subtitle">
+            {say(
+              'জমি যোগ করে মৌসুমের ফসল লিখে রাখুন। তখন এখানে আপনার আয়, খরচ আর ফসলের ছবি দেখা যাবে।',
+              'Add a farm and record a season’s harvest. Your income, costs and crops will be drawn here.',
+            )}
+          </p>
+          <LinkButton href="/farmer/farms">{t.t('farm.myFarms')}</LinkButton>
+        </Card>
+      )}
+
       <Card>
-        <h1 className="lg-title">{t.t('farmer.dashboardTitle')}</h1>
-        <p className="lg-subtitle">
-          {t.t('farmer.dashboardWelcome', { name: profile.displayName })}
-        </p>
+        <h2 className="lg-title">{say('আপনার সেটআপ', 'Your setup')}</h2>
 
         {/*
          * The canonical setup progress, and the contextual prompts that go with it.
@@ -150,12 +418,6 @@ export default async function FarmerDashboardPage() {
         </dl>
 
         <LinkButton href="/farmer/onboarding">{t.t('farmer.editProfile')}</LinkButton>
-      </Card>
-
-      <Card>
-        <h2 className="lg-title">{t.t('farm.myFarms')}</h2>
-        <p className="lg-subtitle">{t.t('farm.myFarmsSubtitle')}</p>
-        <LinkButton href="/farmer/farms">{t.t('farm.myFarms')}</LinkButton>
       </Card>
     </div>
   )

@@ -495,6 +495,697 @@ body {
   --lg-on-fill-primary: #0f2e17;
 }
 
+/* ===================================================================== charts
+ *
+ * packages/ui/src/components/charts.tsx. Every colour below was run through the data-viz palette
+ * validator against the card surface it sits on: #ffffff (bright) and #221e19 (dark).
+ *
+ *  brand  single-series green. Bright #16a34a (3.3:1 on white); dark the light green #86efac.
+ *  a / b  the two-series pair, green + blue: passes every check in both modes. (Green + orange
+ *         failed colour-blind separation, so cost is blue, not orange.)
+ *  1-8    the categorical order, validated as a set in both modes. In bright mode three slots sit
+ *         under 3:1 on white, so every categorical chart carries a value legend and a table view.
+ */
+:root {
+  --lg-viz-brand: #16a34a;
+  --lg-viz-a: #16a34a;
+  --lg-viz-b: #2a78d6;
+  --lg-viz-1: #2a78d6;
+  --lg-viz-2: #eb6834;
+  --lg-viz-3: #1baf7a;
+  --lg-viz-4: #eda100;
+  --lg-viz-5: #e87ba4;
+  --lg-viz-6: #008300;
+  --lg-viz-7: #6250d6;
+  --lg-viz-8: #e34948;
+  --lg-viz-grid: #e6e9e4;
+  --lg-viz-axis: #c3c8c0;
+  --lg-viz-good: #15803d;
+  --lg-viz-bad: #b91c1c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --lg-viz-brand: #86efac;
+    --lg-viz-a: #16a34a;
+    --lg-viz-b: #3987e5;
+    --lg-viz-1: #3987e5;
+    --lg-viz-2: #d95926;
+    --lg-viz-3: #199e70;
+    --lg-viz-4: #c98500;
+    --lg-viz-5: #d55181;
+    --lg-viz-6: #008300;
+    --lg-viz-7: #9085e9;
+    --lg-viz-8: #e66767;
+    --lg-viz-grid: #322c25;
+    --lg-viz-axis: #4a4238;
+    --lg-viz-good: #86efac;
+    --lg-viz-bad: #f19a9a;
+  }
+}
+
+:root[data-theme='dark'] {
+  --lg-viz-brand: #86efac;
+  --lg-viz-a: #16a34a;
+  --lg-viz-b: #3987e5;
+  --lg-viz-1: #3987e5;
+  --lg-viz-2: #d95926;
+  --lg-viz-3: #199e70;
+  --lg-viz-4: #c98500;
+  --lg-viz-5: #d55181;
+  --lg-viz-6: #008300;
+  --lg-viz-7: #9085e9;
+  --lg-viz-8: #e66767;
+  --lg-viz-grid: #322c25;
+  --lg-viz-axis: #4a4238;
+  --lg-viz-good: #86efac;
+  --lg-viz-bad: #f19a9a;
+}
+
+/* ------------------------------------------------------------------ dashboards */
+
+/* A dashboard page: a heading block, a stat row, then a responsive grid of chart cards. */
+.lg-dash {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-6);
+}
+
+.lg-dash__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--lg-space-3);
+}
+
+.lg-dash__title {
+  margin: 0;
+  font-size: var(--lg-text-3xl);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--lg-text-primary);
+}
+
+[lang='bn'] .lg-dash__title {
+  letter-spacing: 0;
+  font-weight: 700;
+}
+
+.lg-dash__lede {
+  margin: var(--lg-space-1) 0 0;
+  color: var(--lg-text-secondary);
+}
+
+.lg-dash__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lg-space-2);
+}
+
+/* App buttons are full-width by default (a form's submit); in a dashboard header they sit side
+   by side. */
+.lg-dash__actions .lg-button {
+  width: auto;
+}
+
+.lg-dash__grid {
+  display: grid;
+  gap: var(--lg-space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+}
+
+.lg-dash__wide {
+  grid-column: 1 / -1;
+}
+
+/* ------------------------------------------------------------------ stat tiles */
+
+.lg-stat-row {
+  display: grid;
+  gap: var(--lg-space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+}
+
+.lg-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-1);
+  padding: var(--lg-space-4);
+  border: 1px solid var(--lg-border);
+  border-radius: var(--lg-radius-lg);
+  background: var(--lg-surface-raised);
+}
+
+.lg-stat__label {
+  font-size: var(--lg-text-sm);
+  color: var(--lg-text-secondary);
+}
+
+/* Proportional figures at display size; tabular digits make "121" look loose. */
+.lg-stat__value {
+  font-size: var(--lg-text-2xl);
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--lg-text-primary);
+}
+
+.lg-stat__delta {
+  font-size: var(--lg-text-xs);
+  font-weight: 600;
+}
+
+.lg-stat__delta--good {
+  color: var(--lg-viz-good);
+}
+
+.lg-stat__delta--bad {
+  color: var(--lg-viz-bad);
+}
+
+.lg-stat__delta--neutral,
+.lg-stat__hint {
+  color: var(--lg-text-secondary);
+}
+
+.lg-stat__hint {
+  font-size: var(--lg-text-xs);
+}
+
+/* ------------------------------------------------------------------ chart card */
+
+.lg-chart-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-4);
+  padding: var(--lg-space-5);
+  border: 1px solid var(--lg-border);
+  border-radius: var(--lg-radius-lg);
+  background: var(--lg-surface-raised);
+  min-width: 0;
+}
+
+.lg-chart-card__title {
+  margin: 0;
+  font-size: var(--lg-text-lg);
+  font-weight: 700;
+  color: var(--lg-text-primary);
+}
+
+.lg-chart-card__subtitle {
+  margin: var(--lg-space-1) 0 0;
+  font-size: var(--lg-text-sm);
+  color: var(--lg-text-secondary);
+}
+
+.lg-chart-card__table summary {
+  cursor: pointer;
+  font-size: var(--lg-text-sm);
+  color: var(--lg-action-primary);
+  font-weight: 600;
+}
+
+.lg-chart-card__table[open] summary {
+  margin-bottom: var(--lg-space-3);
+}
+
+.lg-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--lg-text-sm);
+}
+
+.lg-data-table th,
+.lg-data-table td {
+  padding: var(--lg-space-2);
+  border-bottom: 1px solid var(--lg-viz-grid);
+  text-align: left;
+  color: var(--lg-text-primary);
+}
+
+.lg-data-table thead th {
+  color: var(--lg-text-secondary);
+  font-weight: 600;
+}
+
+.lg-data-table td {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------- legend */
+
+.lg-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lg-space-2) var(--lg-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--lg-text-sm);
+}
+
+.lg-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lg-space-2);
+}
+
+.lg-legend__swatch {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 3px;
+  flex: none;
+}
+
+.lg-legend__label {
+  color: var(--lg-text-secondary);
+}
+
+.lg-legend__value {
+  color: var(--lg-text-primary);
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------- column chart */
+
+.lg-columns {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-3);
+}
+
+/* The plot height includes the x-label band, so the card never scrolls inside itself. */
+.lg-columns__plot {
+  position: relative;
+  height: 15rem;
+  padding: 0 0 1.75rem 3.25rem;
+}
+
+.lg-columns__axis,
+.lg-columns__grid {
+  position: absolute;
+  top: 0.5rem;
+  bottom: 1.75rem;
+}
+
+.lg-columns__axis {
+  left: 0;
+  width: 2.75rem;
+}
+
+.lg-columns__axis span {
+  position: absolute;
+  right: 0;
+  transform: translateY(50%);
+  font-size: var(--lg-text-xs);
+  color: var(--lg-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.lg-columns__grid {
+  left: 3.25rem;
+  right: 0;
+}
+
+.lg-columns__grid i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--lg-viz-grid);
+}
+
+.lg-columns__grid i:first-child {
+  border-top-color: var(--lg-viz-axis);
+}
+
+.lg-columns__bars {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: var(--lg-space-1);
+  height: calc(100% - 0.5rem);
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lg-columns__group {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Grouped columns touch with a 2px surface gap, never a border. */
+.lg-columns__stack {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+}
+
+.lg-columns__bar {
+  position: relative;
+  width: 100%;
+  max-width: 24px;
+  border-radius: 4px 4px 0 0;
+  outline: none;
+  transition: filter var(--lg-motion-base) var(--lg-motion-easing);
+}
+
+.lg-columns__value {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translate(-50%, -0.25rem);
+  font-size: var(--lg-text-xs);
+  font-weight: 700;
+  color: var(--lg-text-primary);
+  white-space: nowrap;
+}
+
+.lg-columns__label {
+  position: absolute;
+  bottom: -1.75rem;
+  left: 0;
+  right: 0;
+  height: 1.75rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font-size: var(--lg-text-xs);
+  color: var(--lg-text-secondary);
+  white-space: nowrap;
+}
+
+.lg-columns__group {
+  position: relative;
+}
+
+/* ---------------------------------------------------------- horizontal bar list */
+
+.lg-barlist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lg-barlist__row {
+  display: grid;
+  grid-template-columns: minmax(6rem, 9rem) 1fr auto;
+  align-items: center;
+  gap: var(--lg-space-3);
+  font-size: var(--lg-text-sm);
+}
+
+.lg-barlist__label {
+  color: var(--lg-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.lg-barlist__track {
+  position: relative;
+  height: 0.75rem;
+}
+
+.lg-barlist__bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 0 4px 4px 0;
+  outline: none;
+}
+
+.lg-barlist__value {
+  color: var(--lg-text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- split bar */
+
+.lg-split {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-3);
+}
+
+/* Segments touch with a 2px surface gap. */
+.lg-split__bar {
+  display: flex;
+  gap: 2px;
+  height: 1.25rem;
+}
+
+.lg-split__segment {
+  position: relative;
+  min-width: 4px;
+  outline: none;
+}
+
+.lg-split__segment:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.lg-split__segment:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.lg-split .lg-legend {
+  flex-direction: column;
+}
+
+.lg-split .lg-legend li {
+  justify-content: flex-start;
+}
+
+.lg-split .lg-legend__value {
+  margin-left: auto;
+}
+
+/* ---------------------------------------------------------------------- meter */
+
+.lg-meter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-2);
+}
+
+.lg-meter__head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--lg-space-3);
+  font-size: var(--lg-text-sm);
+}
+
+.lg-meter__label {
+  color: var(--lg-text-primary);
+}
+
+.lg-meter__caption {
+  color: var(--lg-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The unfilled track is a lighter step of the fill's own hue, so state reads across the bar. */
+.lg-meter__track {
+  display: block;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lg-viz-brand) 22%, transparent);
+  overflow: hidden;
+}
+
+.lg-meter__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--lg-viz-brand);
+}
+
+/* ------------------------------------------------------- hover and focus tooltip */
+
+/*
+ * One tooltip for every mark, from its `data-tip`. Shows on hover AND keyboard focus, so it is
+ * never mouse-only; the table view holds every value as well, so it never gates one.
+ */
+[data-tip] {
+  cursor: default;
+}
+
+[data-tip]:hover,
+[data-tip]:focus-visible {
+  filter: brightness(1.12);
+  z-index: 3;
+}
+
+[data-tip]:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--lg-surface-raised),
+    0 0 0 4px var(--lg-focus-ring);
+}
+
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--lg-radius-md);
+  border: 1px solid var(--lg-border);
+  background: var(--lg-surface-raised);
+  color: var(--lg-text-primary);
+  font-size: var(--lg-text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 6px 18px -8px rgb(0 0 0 / 0.5);
+}
+
+.lg-barlist__bar[data-tip]:hover::after,
+.lg-barlist__bar[data-tip]:focus-visible::after {
+  left: 0;
+  transform: none;
+}
+
+/* ---------------------------------------------------------------- list rows */
+
+/* A compact row list for "recent orders" and similar: text left, status chip and amount right. */
+.lg-rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lg-rows li {
+  display: flex;
+  align-items: center;
+  gap: var(--lg-space-3);
+  padding: var(--lg-space-3) 0;
+  border-bottom: 1px solid var(--lg-viz-grid);
+}
+
+.lg-rows li:last-child {
+  border-bottom: 0;
+}
+
+/* On a phone the title takes the whole first line; status and amount share the second. */
+@media (max-width: 40rem) {
+  .lg-rows li {
+    flex-wrap: wrap;
+  }
+
+  .lg-rows__main {
+    flex-basis: 100%;
+  }
+
+  .lg-rows__amount {
+    margin-left: auto;
+  }
+}
+
+.lg-rows__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.lg-rows__title {
+  color: var(--lg-text-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+a.lg-rows__title:hover {
+  color: var(--lg-action-primary);
+}
+
+.lg-rows__meta {
+  font-size: var(--lg-text-xs);
+  color: var(--lg-text-secondary);
+}
+
+.lg-rows__amount {
+  font-weight: 700;
+  color: var(--lg-text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Order status: an icon-like dot plus the word, never colour alone. */
+.lg-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--lg-border);
+  border-radius: 999px;
+  font-size: var(--lg-text-xs);
+  color: var(--lg-text-primary);
+  white-space: nowrap;
+}
+
+.lg-status-chip::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--chip, var(--lg-text-secondary));
+}
+
+.lg-status-chip--done {
+  --chip: var(--lg-viz-good);
+}
+
+.lg-status-chip--moving {
+  --chip: var(--lg-viz-b);
+}
+
+.lg-status-chip--waiting {
+  --chip: var(--lg-viz-4);
+}
+
+.lg-status-chip--stopped {
+  --chip: var(--lg-viz-bad);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lg-columns__bar,
+  .lg-barlist__bar,
+  .lg-meter__fill {
+    animation: lg-viz-grow 700ms var(--lg-motion-easing) both;
+  }
+
+  .lg-columns__bar {
+    transform-origin: bottom;
+    animation-name: lg-viz-rise;
+  }
+
+  @keyframes lg-viz-rise {
+    from {
+      transform: scaleY(0);
+    }
+  }
+
+  @keyframes lg-viz-grow {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+  }
+}
+
 /* The browser draws scrollbars and form controls to match the chosen theme. */
 :root[data-theme='dark'] {
   color-scheme: dark;

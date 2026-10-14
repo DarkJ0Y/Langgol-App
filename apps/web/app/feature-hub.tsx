@@ -34,6 +34,14 @@ const MARKET: HubSection = {
         en: 'Farmers’ listings and prices, delivered-price quotes to your address, and checkout.',
       },
     },
+    {
+      href: '/orders',
+      title: { bn: 'আমার অর্ডার', en: 'My orders' },
+      body: {
+        bn: 'যা কিনেছেন আর যা পথে আছে, মাসের খরচের চার্ট সহ।',
+        en: 'What you bought and what is on its way, with spending by month.',
+      },
+    },
   ],
 }
 

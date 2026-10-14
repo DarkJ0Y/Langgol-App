@@ -84,7 +84,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // Browse and order screens need a grid, and so does the signed-in home's feature hub; auth and
   // form screens need a reading measure. The shell picks the width rather than each page fighting
   // the container.
-  const isWide = path.startsWith('/market') || path.startsWith('/orders') || path === '/'
+  const isWide =
+    path.startsWith('/market') ||
+    path.startsWith('/orders') ||
+    path === '/' ||
+    // The dashboards: stat tiles and charts need the width a reading column would deny them.
+    path === '/farmer' ||
+    path === '/admin'
 
   return (
     /*

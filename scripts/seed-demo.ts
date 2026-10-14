@@ -442,8 +442,32 @@ async function ensureAddress(
 }
 
 async function ensureFarmerProfile(userId: string, plan: FarmPlan, displayName: string) {
+  const questionnaire = {
+    farmingExperienceYears: plan.experience,
+    farmerType: 'MIXED',
+    totalLandAmountMilli: BIGHA_MILLI(plan.bigha),
+    landUnit: 'BIGHA',
+    ownershipType: 'OWNED',
+    irrigationAvailable: true,
+    irrigationMethod: 'FURROW',
+    waterSource: 'SHALLOW_TUBEWELL',
+    farmingMethod: plan.method,
+  } as const
+
   const existing = await prisma.farmerProfile.findUnique({ where: { userId } })
-  if (existing !== null) return existing
+  if (existing !== null) {
+    // The app creates an empty profile the first time a farmer opens their dashboard. Fill the
+    // questionnaire in only if it was never started, so nothing a person typed is overwritten.
+    if (existing.farmingExperienceYears !== null || existing.farmerType !== null) return existing
+    return prisma.farmerProfile.update({
+      where: { id: existing.id },
+      data: {
+        ...questionnaire,
+        verificationStatus: 'VERIFIED',
+        verifiedAt: existing.verifiedAt ?? new Date(Date.now() - between(120, 300) * DAY),
+      },
+    })
+  }
 
   return prisma.farmerProfile.create({
     data: {
@@ -451,15 +475,7 @@ async function ensureFarmerProfile(userId: string, plan: FarmPlan, displayName: 
       displayName,
       verificationStatus: 'VERIFIED',
       verifiedAt: new Date(Date.now() - between(120, 300) * DAY),
-      farmingExperienceYears: plan.experience,
-      farmerType: 'MIXED',
-      totalLandAmountMilli: BIGHA_MILLI(plan.bigha),
-      landUnit: 'BIGHA',
-      ownershipType: 'OWNED',
-      irrigationAvailable: true,
-      irrigationMethod: 'FURROW',
-      waterSource: 'SHALLOW_TUBEWELL',
-      farmingMethod: plan.method,
+      ...questionnaire,
     },
   })
 }
