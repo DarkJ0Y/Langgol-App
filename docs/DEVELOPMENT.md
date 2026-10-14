@@ -146,6 +146,25 @@ installation uses.
 Document images are the one thing it cannot provide: the storage keys point at objects that do not
 exist, because object storage is a separate service. Everything else on the review screen works.
 
+### Demo data for showing the product
+
+```bash
+pnpm db:seed && pnpm seed:demo
+```
+
+Ten invented people with a history: four farmers with farms, plots and three years of harvests;
+a consumer, a retailer and a wholesaler with six months of orders in every state; a supplier, an
+agronomist and a transporter. The all-features "Langgol Demo" account gets a farm, harvests,
+purchases and sales of its own, so signing in with `DEMO_EMAIL` / `DEMO_PASSWORD` shows full
+dashboards.
+
+Orders go through the real `createQuote` and `checkout` use cases, so every price, fee and
+reservation is the product's own. Only what has no use case yet is written directly: moving an
+order past PENDING and back-dating it, keeping every CHECK constraint satisfied. The people live
+in the `+8801760000…` phone block, disjoint from the fixtures, the synthetic back-office data and
+the integration suites. Seeded randomness, so every run produces the same demo; idempotent; and
+it refuses to run with `APP_ENV=production`.
+
 ### Migrations that Prisma cannot generate
 
 CHECK constraints, append-only rules, PostGIS geography columns, their triggers and GIST indexes
