@@ -17,6 +17,9 @@ import {
   auditPort,
   configPort,
   consentRepository,
+  createDemoAdvisory,
+  diagnosisRepository,
+  noAdvisory,
   cryptoRandom,
   createFirebaseIdentityVerifier,
   createOtpDelivery,
@@ -47,6 +50,9 @@ import {
   verificationTokenRepository,
 } from '@langgol/infrastructure'
 import { env } from '@langgol/shared'
+import * as Money from '@langgol/domain/money'
+import type { ConsentVersions } from '@langgol/domain/consent'
+import type { DiagnoseDeps } from '@langgol/application'
 import { fixedOtpCodeFor } from '@langgol/domain/identity'
 import type { AppEnvironment, AuthMode } from '@langgol/domain/identity'
 
@@ -376,3 +382,37 @@ export function isDevelopmentAuth(): boolean {
 }
 
 export { systemClock, scryptHasher, sessionRepository, auditPort }
+
+/**
+ * The AI crop assistant.
+ *
+ * The provider is chosen by ADVISORY_PROVIDER: `demo` answers from a script (refused in
+ * production by the environment check), `none` reports the assistant unavailable. A real model is
+ * one more branch here and one more adapter behind `AdvisoryPort`; the use case and the page do
+ * not change. The spend limits and consent versions are versioned platform configuration.
+ */
+export async function advisoryDeps(): Promise<DiagnoseDeps> {
+  const config = await getConfig()
+  const limits = config.require('advisory.limits') as {
+    dailyBudgetPoisha: number
+    perUserDailyLimit: number
+  }
+  return {
+    clock: systemClock,
+    advisory: env().ADVISORY_PROVIDER === 'demo' ? createDemoAdvisory() : noAdvisory,
+    consents: consentRepository,
+    farmers: farmerProfileRepository,
+    diagnoses: diagnosisRepository,
+    audit: auditPort,
+    consentVersions: config.require('consent.versions') as ConsentVersions,
+    limits: {
+      dailyBudget: Money.fromPoisha(BigInt(limits.dailyBudgetPoisha)),
+      perUserDailyLimit: limits.perUserDailyLimit,
+    },
+  }
+}
+
+/** Whether a provider is configured at all — for the page to say so before anyone tries. */
+export function advisoryProvider(): 'none' | 'demo' {
+  return env().ADVISORY_PROVIDER
+}

@@ -25,6 +25,7 @@ const PROTECTED_PREFIXES = [
   '/admin',
   '/agri-profile',
   '/onboarding',
+  '/assistant',
 ]
 
 /** Pages that make no sense once signed in. */

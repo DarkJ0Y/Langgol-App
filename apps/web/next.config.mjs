@@ -97,6 +97,12 @@ const nextConfig = {
     return config
   },
 
+  // The crop assistant posts a photograph (up to 4 MB, enforced by the domain's image check).
+  // Next's 1 MB default would refuse it before the use case could say why.
+  experimental: {
+    serverActions: { bodySizeLimit: '5mb' },
+  },
+
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: false },
 }

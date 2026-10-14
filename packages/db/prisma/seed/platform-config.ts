@@ -312,6 +312,13 @@ export const PLATFORM_CONFIG_V1: readonly ConfigSeed[] = [
     note: 'Admin sessions are ~8 hours. docs/07 §3.3.',
   },
   {
+    key: 'advisory.limits',
+    value: { dailyBudgetPoisha: 500000, perUserDailyLimit: 10 },
+    note:
+      'AI assistant spend guard: ৳5,000 a day across the platform, ten diagnoses per farmer per ' +
+      'day. Pilot values, to be revisited against real usage and the chosen provider’s price.',
+  },
+  {
     key: 'consent.versions',
     value: {
       TERMS_OF_SERVICE: 1,

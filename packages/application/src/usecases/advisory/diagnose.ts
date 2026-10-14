@@ -63,7 +63,12 @@ export interface DiagnoseCommand {
   readonly image: Uint8Array
   readonly contentType: string
   readonly locale: 'bn' | 'en'
+  /** The farmer's own description. Trimmed and capped at QUESTION_MAX_LENGTH before it is sent. */
+  readonly question?: string | undefined
 }
+
+/** Long enough for a farmer to describe a problem; short enough not to be a prompt-stuffing channel. */
+export const QUESTION_MAX_LENGTH = 500
 
 export interface DiagnosisView {
   readonly diagnosis: Diagnosis
@@ -177,11 +182,14 @@ export async function diagnoseCropDisease(
   const fields: FarmingFields | null = profile
   const { system, version } = diagnosisPrompt(command.locale, fields)
 
+  const question = command.question?.trim().slice(0, QUESTION_MAX_LENGTH)
+
   const answer = await deps.advisory.diagnose({
     systemPrompt: system,
     image: command.image,
     contentType: command.contentType,
     locale: command.locale,
+    question: question === undefined || question === '' ? undefined : question,
   })
 
   if (!answer.ok) {

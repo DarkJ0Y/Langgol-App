@@ -73,6 +73,14 @@ const FARMER: HubSection = {
       },
     },
     {
+      href: '/assistant',
+      title: { bn: 'ফসলের সহকারী', en: 'Crop assistant' },
+      body: {
+        bn: 'আক্রান্ত গাছের ছবি দিন, সম্ভাব্য কারণ আর করণীয় জানুন।',
+        en: 'Send a photo of a sick plant; get the likely cause and first steps.',
+      },
+    },
+    {
       href: '/agri-profile',
       title: { bn: 'কৃষি পরিচয় (AGRI-ID)', en: 'Agricultural ID (AGRI-ID)' },
       body: {

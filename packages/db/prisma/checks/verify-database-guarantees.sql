@@ -105,6 +105,12 @@ DECLARE
     'agri_identity_country_known',
     'agri_id_country_matches_row',
 
+    -- P16: an AI diagnosis is labelled, attributable to its prompt and provider, and has no image
+    'diagnoses_confidence_known',
+    'diagnoses_answer_present',
+    'diagnoses_prompt_version_positive',
+    'diagnoses_provider_present',
+
     -- P13: a permission grant is attributable and never self-awarded
     'admin_permission_revocation_attributed',
     'admin_permission_granted_by_another',

@@ -13,8 +13,8 @@
 // generated ones. They are part of the security model, not a convenience.
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../generated/client"
+  provider      = "prisma-client-js"
+  output        = "../generated/client"
   // `native` for wherever it is generated; the RHEL builds for the cPanel host (CloudLinux 8 and 9),
   // whose package is built on a different machine and cannot run `prisma generate` itself.
   // docs/DEPLOY-CPANEL.md
@@ -150,6 +150,7 @@ model User {
   verificationEvents VerificationEvent[] @relation("VerificationEventActor")
   identityRecord     IdentityRecord?
   agriIdentity       AgriIdentity?
+  diagnoses          Diagnosis[]
 
   adminPermissions        AdminPermissionGrant[] @relation("AdminPermissionHolder")
   adminPermissionsGranted AdminPermissionGrant[] @relation("AdminPermissionGrantedBy")
@@ -2149,4 +2150,33 @@ model LedgerEntry {
   @@index([accountId, createdAt])
   @@index([transactionId])
   @@map("ledger_entries")
+}
+
+/// One AI crop diagnosis served to a farmer.
+///
+/// What was answered, how confidently, under which prompt version and by which provider — and
+/// nothing else. There is deliberately no image column: the photograph is forwarded to the
+/// provider and discarded (domain/advisory/diagnosis.ts), and a table that never had a place for
+/// it cannot leak it. The rows exist for the spend guard (served per day, per farmer), for the
+/// farmer's own history, and so an answer that caused harm can be traced to the prompt and
+/// provider that gave it.
+model Diagnosis {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  /// Shown as text, never as HTML.
+  answer        String
+  /// LOW | MEDIUM | HIGH, constrained in the migration.
+  confidence    String
+  unusableImage Boolean  @map("unusable_image")
+  promptVersion Int      @map("prompt_version")
+  /// Which provider answered, e.g. "demo" — so a demonstration answer is never mistaken for a
+  /// model's when the log is read later.
+  provider      String
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@map("diagnoses")
 }

@@ -2034,3 +2034,78 @@ a.lg-button--secondary {
   border: 1px solid var(--lg-border);
   border-radius: var(--lg-radius-md);
 }
+
+/* ===================================================================== assistant */
+
+.lg-assistant {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-5);
+}
+
+/* The answer card: the cause and steps as the provider wrote them, line breaks kept. */
+.lg-answer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-3);
+  padding: var(--lg-space-5);
+  border: 1px solid var(--lg-border);
+  border-left: 3px solid var(--lg-fill-primary);
+  border-radius: var(--lg-radius-lg);
+  background: var(--lg-surface);
+}
+
+.lg-answer__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lg-space-2);
+}
+
+.lg-answer__title {
+  margin: 0;
+  font-size: var(--lg-text-lg);
+  font-weight: 700;
+  color: var(--lg-text-primary);
+}
+
+.lg-answer__confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lg-space-2);
+  font-size: var(--lg-text-sm);
+  color: var(--lg-text-secondary);
+}
+
+/* Three short steps: confidence as a shape as well as a word. */
+.lg-answer__steps {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.lg-answer__steps i {
+  width: 0.9rem;
+  height: 0.4rem;
+  border-radius: 2px;
+  background: var(--lg-viz-muted);
+}
+
+.lg-answer__steps i.is-on {
+  background: var(--lg-viz-brand);
+}
+
+.lg-answer__body {
+  margin: 0;
+  white-space: pre-line;
+  line-height: 1.7;
+  color: var(--lg-text-primary);
+}
+
+.lg-answer__disclaimer {
+  margin: 0;
+  padding-top: var(--lg-space-3);
+  border-top: 1px solid var(--lg-border);
+  font-size: var(--lg-text-sm);
+  color: var(--lg-text-secondary);
+}

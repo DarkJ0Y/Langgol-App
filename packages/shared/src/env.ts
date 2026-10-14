@@ -107,6 +107,17 @@ const schema = z.object({
    * DEMO_PASSWORD unset and the form does not appear at all. Both are trimmed; the email is
    * compared without regard to case.
    */
+  /*
+   * Who answers the AI crop assistant.
+   *
+   * none  — the assistant reports itself unavailable (the default).
+   * demo  — scripted, clearly labelled answers, for showing the product. Refused in production:
+   *         advice that never saw the crop must not reach a real farmer.
+   *
+   * A real model is added as another value here and another adapter behind `AdvisoryPort`.
+   */
+  ADVISORY_PROVIDER: z.enum(['none', 'demo']).default('none'),
+
   DEMO_EMAIL: z.string().trim().toLowerCase().email().optional().or(z.literal('')),
   DEMO_PASSWORD: z
     .string()
@@ -234,6 +245,13 @@ export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
    * Notifications still use the provider, but a missing one degrades a notification rather than
    * locking every user out, so it is not a boot failure.
    */
+  if (isProduction && env.ADVISORY_PROVIDER === 'demo') {
+    throw new EnvironmentError(
+      'ADVISORY_PROVIDER="demo" cannot be used in production: its answers are scripted and never ' +
+        'see the crop, and a farmer would act on them.',
+    )
+  }
+
   if (isProduction && env.AUTH_MODE === 'otp' && env.SMS_PROVIDER !== 'http') {
     throw new EnvironmentError(
       `SMS_PROVIDER="${env.SMS_PROVIDER}" cannot be used in production with AUTH_MODE=otp: no ` +

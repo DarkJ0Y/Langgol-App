@@ -278,6 +278,16 @@ export const configSchemas = {
    * and they are asked again. That is a legal act, so it belongs somewhere immutable and audited
    * rather than in a deploy.
    */
+  /*
+   * The AI assistant's spending guard. Every diagnosis costs money at the provider, so the
+   * platform caps the day's total and each farmer's share of it. Configuration, not code: how
+   * much Langgol is willing to spend on advice is a business decision that will change.
+   */
+  'advisory.limits': z.object({
+    dailyBudgetPoisha: poisha,
+    perUserDailyLimit: z.number().int().positive(),
+  }),
+
   'consent.versions': z.object({
     TERMS_OF_SERVICE: z.number().int().positive(),
     PRIVACY_POLICY: z.number().int().positive(),

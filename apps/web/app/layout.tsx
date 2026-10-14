@@ -93,6 +93,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     path === '/' ||
     // The dashboards: stat tiles and charts need the width a reading column would deny them.
     path === '/farmer' ||
+    path === '/assistant' ||
     path === '/admin'
 
   return (
@@ -146,6 +147,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                   {
                     href: '/farmer',
                     label: locale === 'bn' ? 'আমার খামার' : 'My farm',
+                    show: session?.roles.includes('FARMER') === true,
+                  },
+                  {
+                    href: '/assistant',
+                    label: locale === 'bn' ? 'সহকারী' : 'Assistant',
                     show: session?.roles.includes('FARMER') === true,
                   },
                   {

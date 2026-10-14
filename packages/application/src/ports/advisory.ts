@@ -36,6 +36,13 @@ export interface DiagnoseInput {
   readonly image: Uint8Array
   readonly contentType: string
   readonly locale: 'bn' | 'en'
+  /**
+   * What the farmer said about it, in their own words, if anything ("the leaves went yellow from
+   * the tips"). Optional and length-limited by the use case. Vision models answer better with it,
+   * and a farmer often knows something the photograph cannot show — how fast it spread, what was
+   * sprayed last week.
+   */
+  readonly question?: string | undefined
 }
 
 export interface AdvisoryPort {

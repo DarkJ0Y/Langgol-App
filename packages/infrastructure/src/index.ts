@@ -42,6 +42,8 @@ export { adminAreaRepository, addressBookRepository } from './repositories/locat
 export { consentRepository } from './repositories/consent.js'
 export { farmerProfileRepository } from './repositories/farming.js'
 export { farmRepository, plotRepository } from './repositories/farm.js'
+export { diagnosisRepository } from './repositories/diagnosis.js'
+export { createDemoAdvisory, noAdvisory } from './advisory/demo.js'
 export { roleProfileRepository } from './repositories/role-profile.js'
 export { verificationRepository } from './repositories/verification.js'
 export { agriIdentityRepository } from './repositories/agri-identity.js'

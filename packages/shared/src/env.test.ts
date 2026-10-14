@@ -58,6 +58,14 @@ describe('production must never fall back to development authentication', () => 
     expect(env.isDevelopmentAuth).toBe(false)
   })
 
+  it('refuses the scripted demo assistant, whose answers never see the crop', () => {
+    expect(() => parseEnv({ ...production, AUTH_MODE: 'otp', ADVISORY_PROVIDER: 'demo' })).toThrow(
+      EnvironmentError,
+    )
+    // No assistant at all is a valid production choice: it reports itself unavailable.
+    expect(parseEnv({ ...production, AUTH_MODE: 'otp' }).ADVISORY_PROVIDER).toBe('none')
+  })
+
   const firebaseClient = {
     FIREBASE_PROJECT_ID: 'langgol-test',
     FIREBASE_API_KEY: 'client-api-key',
