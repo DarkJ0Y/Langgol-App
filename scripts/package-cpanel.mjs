@@ -145,6 +145,11 @@ rmSync(path.join(hoisted, 'typescript'), { recursive: true, force: true })
 
 cpSync(staticDir, path.join(server, 'apps/web/.next/static'), { recursive: true })
 
+// The standalone server serves `public/` (the logo) but does not copy it; that is our job.
+cpSync(path.join(root, 'apps/web/public'), path.join(server, 'apps/web/public'), {
+  recursive: true,
+})
+
 // File tracing copies the engine for the machine that built it, and only that one. The server
 // needs the RHEL builds listed in `binaryTargets`.
 const engines = readdirSync(prismaClient).filter((name) => /query_engine.*\.node$/.test(name))

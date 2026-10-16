@@ -134,8 +134,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           {isLanding ? null : (
             <header className="lg-header">
               <a className="lg-brand" href="/">
-                <span className="lp-logo__mark" aria-hidden="true" />
-                {t.t('common.appName')}
+                {/* The wordmark is part of the image, so its alt text is the link's name. */}
+                <img
+                  className="lg-logo"
+                  src="/logo.png"
+                  alt={t.t('common.appName')}
+                  width={1200}
+                  height={561}
+                />
               </a>
               {/*
                 The places this person can go, by role. Each page re-checks access on its own;

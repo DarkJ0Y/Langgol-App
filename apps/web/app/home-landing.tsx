@@ -260,8 +260,13 @@ export function HomeLanding({
       <header className="lp-nav">
         <div className="lp-wrap lp-nav__inner">
           <a className="lp-logo" href="/">
-            <span className="lp-logo__mark" aria-hidden="true" />
-            {t.t('common.appName')}
+            <img
+              className="lg-logo"
+              src="/logo.png"
+              alt={t.t('common.appName')}
+              width={1200}
+              height={561}
+            />
           </a>
 
           <nav aria-label={t.t('home.menu')} className="lp-nav__links">
@@ -566,8 +571,14 @@ export function HomeLanding({
           <div className="lp-footer__grid">
             <div>
               <a className="lp-logo" href="/">
-                <span className="lp-logo__mark" aria-hidden="true" />
-                {t.t('common.appName')}
+                <img
+                  className="lg-logo"
+                  src="/logo.png"
+                  alt={t.t('common.appName')}
+                  width={1200}
+                  height={561}
+                  loading="lazy"
+                />
               </a>
               <p className="lp-small">
                 {say(

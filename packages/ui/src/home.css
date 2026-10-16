@@ -229,24 +229,6 @@
   text-decoration: none;
 }
 
-/* The mark: a solid green square with a furrow. No image. */
-.lp-logo__mark {
-  position: relative;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 6px;
-  background: var(--lg-fill-primary);
-}
-
-.lp-logo__mark::after {
-  content: '';
-  position: absolute;
-  inset: 0.4rem 0.35rem;
-  border-left: 2px solid var(--lg-on-fill-primary);
-  border-bottom: 2px solid var(--lg-on-fill-primary);
-  border-bottom-left-radius: 3px;
-}
-
 .lp-nav__links {
   display: none;
   gap: 1.75rem;

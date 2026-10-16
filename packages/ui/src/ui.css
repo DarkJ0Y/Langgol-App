@@ -466,22 +466,20 @@ body {
   text-decoration: none;
 }
 
-/* The app's own pages: the same mark as the landing page, so the two read as one product. */
-.lg-brand .lp-logo__mark {
-  position: relative;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 6px;
-  background: var(--lg-fill-primary);
+/*
+ * The logo image carries the wordmark. Height is fixed and width follows the artwork, so it
+ * reads the same in the app header and on the landing page. The green is the logo's own and
+ * holds its contrast on both the dark and the bright background.
+ */
+.lg-logo {
+  display: block;
+  width: auto;
+  height: 2.5rem;
+  max-width: none;
 }
 
-.lg-brand .lp-logo__mark::after {
-  content: '';
-  position: absolute;
-  inset: 0.4rem 0.35rem;
-  border-left: 2px solid var(--lg-on-fill-primary);
-  border-bottom: 2px solid var(--lg-on-fill-primary);
-  border-bottom-left-radius: 3px;
+.lp-footer .lg-logo {
+  height: 3rem;
 }
 
 .lg-header-links {

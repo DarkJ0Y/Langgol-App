@@ -215,5 +215,5 @@ export function middleware(request: NextRequest): NextResponse {
 
 export const config = {
   // Static assets and images skip middleware entirely — headers there cost latency for no gain.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon.png|logo.png).*)'],
 }
