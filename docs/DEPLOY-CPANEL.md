@@ -18,6 +18,16 @@ Every cPanel step is done in the cPanel website; no Terminal is needed. Somakolo
 How it fits together: cPanel runs the Langgol web server (Node.js). The server connects to
 Supabase over the internet. Nothing is stored in a cPanel database.
 
+**What this version contains:**
+
+- the landing page, with a choice between signing in and browsing as a guest
+- dark and bright modes (dark by default) and the Langgol logo
+- the market, orders, and the farmer and admin dashboards with charts
+- **Near me**: a map of the nearest farms (OpenStreetMap)
+- the **crop assistant**, answering from a script for the demo (clearly labelled)
+- one demo email and password that opens every feature, and ten fake people with farms, harvests
+  and orders, so that the dashboards have something to show
+
 ---
 
 ## 1. The Supabase database (done once, by your developer)
@@ -49,9 +59,18 @@ APP_ENV=staging
 ```bash
 set -a && . ./.env.supabase && set +a
 pnpm db:migrate:deploy
-pnpm --filter @langgol/db run migrate:status
+pnpm --filter @langgol/db run migrate:status   # must end at p16_ai_diagnoses
 pnpm db:seed            # APP_ENV=staging: creates the demo accounts and marketplace too
+pnpm seed:demo          # ten fake people, their farms, three years of harvests, 54 orders
 ```
+
+Run `pnpm seed:demo` **once**, after `pnpm db:seed`. It needs the "Langgol Demo" account that
+`db:seed` creates, and it refuses to run when `APP_ENV=production`. Its people use the phone
+numbers `+8801760000…`, which belong to no one.
+
+The map needs **PostGIS**, and the first migration switches it on. Supabase includes it. If the
+migration stops with `extension "postgis" is not available`, turn it on in Supabase →
+**Database** → **Extensions** → _postgis_, then run `pnpm db:migrate:deploy` again.
 
 Both URLs are the **session** pooler here, deliberately. Migrations cannot run over the
 transaction pooler. The running site uses the transaction pooler for `DATABASE_URL` (step 3).
@@ -107,6 +126,10 @@ secret the first time it starts and saves it in this file. Never copy these to a
 `demo@langgol.app`; change it if you like. Leave `DEMO_PASSWORD` empty and the email/password
 form is simply not shown; the one-click demo accounts still work.
 
+**Crop assistant.** `ADVISORY_PROVIDER=demo` is already set: farmers get scripted answers, each
+one marked as a demo. Set it to `none` to switch the assistant off. The real AI model comes
+later; this setting is where it will be chosen.
+
 _Save Changes_. Then select `.env` → **Permissions** → **600** → _Change Permissions_.
 
 ## 4. Create the Node.js application
@@ -151,6 +174,13 @@ The first load takes a few seconds.
 - [ ] If you set `DEMO_PASSWORD`: sign in with `demo@langgol.app` and that password. The home page
       lists every area — market, farmer, account and administration — and each one opens.
 - [ ] Sign in as **ডেভ ক্রেতা** (Dev Buyer), open a listing, get a quote.
+- [ ] The **Langgol logo** shows at the top left of every page, and as the icon in the browser
+      tab. The sun/moon button switches between dark and bright.
+- [ ] **Near me** shows a map with farm markers. _Use my location_ asks for permission and
+      sorts the farms by distance.
+- [ ] Signed in with the demo email: **My farm** shows charts and harvest history, and
+      **Assistant** answers a question with a reply marked as a demo. (The first time, it asks for
+      permission to use AI. Give it on the privacy page it links to.)
 - [ ] `/health` shows `{"status":"ok","check":"live"}`.
 - [ ] In File Manager, `langgol_app/.env` no longer contains the word `generate`.
 
@@ -176,6 +206,11 @@ fixing a cause, **Restart** the app.
 | "Incomplete response received from application" or a 503                           | The app crashed while starting. The reason is in `stderr.log`.                                                                     |
 | A Node.js "It works!" page                                                         | The startup file is wrong: Setup Node.js App → edit → `app.js`, and check `langgol_app/app.js` is the one from the package.        |
 | `Cannot find module`                                                               | The upload is incomplete. Delete `langgol_app/server`, extract the zip again, Restart.                                             |
+| No logo, or a broken-image icon in its place                                       | `langgol_app/server/apps/web/public/logo.png` is missing. Extract the zip again, Restart.                                          |
+| **Near me** shows markers on a grey background                                     | The map pictures come from `tile.openstreetmap.org`. Check that site opens in your browser; a network filter may be blocking it.   |
+| **Near me** shows no farms                                                         | `pnpm seed:demo` was not run (step 1). Farms without a location are left off the map.                                              |
+| **Assistant** says "The assistant is not connected yet"                            | `ADVISORY_PROVIDER` is missing from `.env` or set to `none`. Add `ADVISORY_PROVIDER=demo` and Restart.                             |
+| Dashboards are empty                                                               | `pnpm seed:demo` was not run, or you signed in as a one-click account instead of the demo email.                                   |
 
 ## Updating later
 
@@ -186,7 +221,11 @@ fixing a cause, **Restart** the app.
 3. File Manager → `langgol_app` → delete the **`server`** folder only. **Keep `.env`**: it holds
    your settings and the generated secrets.
 4. Upload the zip to `/home/apeirowo` → **Extract** (overwrite). The zip has no `.env`, so yours stays.
-5. Setup Node.js App → **Restart**.
+5. **Compare your `.env` with the new `env.txt`** in the zip. A setting added since your first
+   install is not in your `.env` until you copy it across. For example, an install from before
+   October 2026 has no `ADVISORY_PROVIDER` line, so the assistant stays off until you add
+   `ADVISORY_PROVIDER=demo`. Delete `env.txt` afterwards.
+6. Setup Node.js App → **Restart**.
 
 ## Taking it offline
 
@@ -204,6 +243,10 @@ Setup Node.js App → **Stop** (or delete the app with the trash icon). The data
   the program and `.env`.
 - **Photo and document uploads** need the `FIREBASE_*` settings (see `.env.example`). Without them
   uploads are refused cleanly and everything else works.
+- **The map** uses OpenStreetMap, which needs no key. Moving to Google Maps later needs a Google
+  Maps API key and a code change; it is not a setting yet.
+- **The demo data is fake.** Before real farmers use the site, start from an empty Supabase
+  database and run `pnpm db:migrate:deploy` only, without either seed.
 
 ## For the developer: how the package is built
 
@@ -219,6 +262,8 @@ node scripts/package-cpanel.mjs                        # → deploy/cpanel/out/l
   selector reserves `node_modules` in the application root for its own symlink.
 - pnpm's symlinked store is flattened into one plain `node_modules`, because cPanel's extraction
   does not reliably recreate symlinks.
+- `apps/web/public` (the logo) is copied to `server/apps/web/public`. Next.js's standalone output
+  serves that folder but does not include it.
 - `app.js` ([`deploy/cpanel/app.cjs`](../deploy/cpanel/app.cjs)) loads `.env`, fills in the
   `generate` secrets once, and starts the server. Passenger takes over the port.
 - Packaging works locally on Windows too, for a test run with `node app.js` (`PORT=3123`).
