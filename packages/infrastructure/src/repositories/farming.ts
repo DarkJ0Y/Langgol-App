@@ -104,16 +104,28 @@ export const farmerProfileRepository: FarmerProfileRepository = {
       select: { fullName: true },
     })
 
-    const row = await prisma.farmerProfile.upsert({
-      where: { userId },
-      // Everything agronomic stays NULL. An auto-created profile must assert nothing about the
-      // farmer that they did not tell us.
-      create: { userId, displayName: user.fullName },
-      update: {},
-      select: SELECT,
-    })
-
-    return toRecord(row)
+    try {
+      const row = await prisma.farmerProfile.upsert({
+        where: { userId },
+        // Everything agronomic stays NULL. An auto-created profile must assert nothing about the
+        // farmer that they did not tell us.
+        create: { userId, displayName: user.fullName },
+        update: {},
+        select: SELECT,
+      })
+      return toRecord(row)
+    } catch (cause) {
+      /*
+       * Prisma does not always compile `upsert` to one INSERT ... ON CONFLICT; it can fall back
+       * to read-then-insert, and then the slower of two concurrent calls hits the UNIQUE. The
+       * constraint has done its job — the other request created the profile — so return it.
+       */
+      if ((cause as { code?: unknown }).code === 'P2002') {
+        const winner = await prisma.farmerProfile.findUnique({ where: { userId }, select: SELECT })
+        if (winner) return toRecord(winner)
+      }
+      throw cause
+    }
   },
 
   async updateForUser(userId, changes) {
