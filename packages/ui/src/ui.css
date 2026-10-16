@@ -84,8 +84,45 @@ body {
  * screens keep their measure.
  */
 .lg-main--wide {
+  /*
+   * Fill the window. Dashboards, the market, the map and the assistant are grids of cards, and
+   * every column the window can hold is another farmer or chart on screen at once. Capped only
+   * at 120rem (1920px), where a line of text would otherwise run too far to read.
+   */
+  max-width: 120rem;
+  padding-inline: clamp(var(--lg-space-4), 3vw, var(--lg-space-12));
+}
+
+/*
+ * Account, profile, farms, verification: pages of cards rather than one form. Wide enough that a
+ * desktop reader is not scrolling a 480px strip, while the forms inside keep a comfortable
+ * measure of their own — a text field 900px wide is harder to use, not easier.
+ */
+.lg-main--page {
   max-width: 72rem;
-  padding-inline: var(--lg-space-6);
+  padding-inline: clamp(var(--lg-space-4), 3vw, var(--lg-space-8));
+}
+
+.lg-main--page form {
+  max-width: 40rem;
+}
+
+/*
+ * A page of independent cards (the account page) flows into two columns on a wide screen, like
+ * a newspaper: no row gaps beside a tall card, and half the scrolling. Reading order runs down
+ * the first column, then the second. One column below 64rem.
+ */
+@media (min-width: 64rem) {
+  .lg-stack.lg-cards {
+    display: block;
+    columns: 2;
+    column-gap: var(--lg-space-4);
+  }
+
+  .lg-cards > * {
+    break-inside: avoid;
+    margin-bottom: var(--lg-space-4);
+  }
 }
 
 .lg-stack {

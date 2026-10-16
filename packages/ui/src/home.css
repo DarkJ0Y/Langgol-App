@@ -14,7 +14,7 @@
   /* A soft filled surface for secondary buttons and form fields — one step off the page. */
   --lp-soft: #eeeeee;
   --lp-soft-hover: #e2e2e2;
-  --lp-wrap: 76rem;
+  --lp-wrap: 90rem;
   --lp-radius: 12px;
 
   color: var(--lg-text-primary);

@@ -95,7 +95,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     path === '/farmer' ||
     path === '/assistant' ||
     path === '/nearby' ||
-    path === '/admin'
+    path.startsWith('/admin')
+
+  // Sign-in keeps its narrow column on purpose: one decision at a time. Every other page —
+  // account, profile, farms, verification — gets a page-width container.
+  const isAuth = path.startsWith('/auth')
 
   return (
     /*
@@ -201,7 +205,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           )}
           <main
             className={
-              isLanding ? 'lg-main lg-main--bleed' : isWide ? 'lg-main lg-main--wide' : 'lg-main'
+              isLanding
+                ? 'lg-main lg-main--bleed'
+                : isWide
+                  ? 'lg-main lg-main--wide'
+                  : isAuth
+                    ? 'lg-main'
+                    : 'lg-main lg-main--page'
             }
             id="main"
           >

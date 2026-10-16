@@ -50,7 +50,7 @@ export default async function AccountPage() {
   }
 
   return (
-    <div className="lg-stack">
+    <div className="lg-stack lg-cards">
       <Card>
         <h1 className="lg-title">{t.t('account.title')}</h1>
         <p className="lg-subtitle">{t.t('account.subtitle')}</p>
