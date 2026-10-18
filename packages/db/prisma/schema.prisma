@@ -15,10 +15,11 @@
 generator client {
   provider      = "prisma-client-js"
   output        = "../generated/client"
-  // `native` for wherever it is generated; the RHEL builds for the cPanel host (CloudLinux 8 and 9),
-  // whose package is built on a different machine and cannot run `prisma generate` itself.
-  // docs/DEPLOY-CPANEL.md
-  binaryTargets = ["native", "rhel-openssl-1.1.x", "rhel-openssl-3.0.x"]
+  // `native` for wherever it is generated; the rest for the cPanel host, whose package is built on
+  // a different machine and cannot run `prisma generate` itself. CloudLinux should report RHEL, but
+  // CageFS can hide /etc/os-release from the app, and Prisma then falls back to Debian: the live
+  // server asked for debian-openssl-1.1.x. All four are shipped. docs/DEPLOY-CPANEL.md
+  binaryTargets = ["native", "rhel-openssl-1.1.x", "rhel-openssl-3.0.x", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {

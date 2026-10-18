@@ -151,14 +151,29 @@ cpSync(path.join(root, 'apps/web/public'), path.join(server, 'apps/web/public'),
 })
 
 // File tracing copies the engine for the machine that built it, and only that one. The server
-// needs the RHEL builds listed in `binaryTargets`.
+// needs every build listed in `binaryTargets`: which one it asks for depends on what the host
+// lets Prisma see of the OS.
 const engines = readdirSync(prismaClient).filter((name) => /query_engine.*\.node$/.test(name))
-const rhelEngines = engines.filter((name) => name.includes('rhel'))
-if (rhelEngines.length === 0) {
-  fail(`no RHEL Prisma engine in ${prismaClient}. Run: pnpm db:generate`)
+const REQUIRED_ENGINES = [
+  'rhel-openssl-1.1.x',
+  'rhel-openssl-3.0.x',
+  'debian-openssl-1.1.x',
+  'debian-openssl-3.0.x',
+]
+const missingEngines = REQUIRED_ENGINES.filter(
+  (target) => !engines.some((name) => name.includes(target)),
+)
+if (missingEngines.length > 0) {
+  fail(
+    `Prisma engines missing for ${missingEngines.join(', ')} in ${prismaClient}. Run: pnpm db:generate`,
+  )
 }
-for (const name of engines) {
-  cpSync(path.join(prismaClient, name), path.join(server, 'packages/db/generated/client', name))
+// Two places. Prisma looks for the engine beside the generated client, but the client's path is
+// recorded at build time (/home/runner/…), so on the server it searches relative to the working
+// directory instead, and `server/apps/web/generated/client` is the first place it tries.
+for (const dir of ['packages/db/generated/client', 'apps/web/generated/client']) {
+  mkdirSync(path.join(server, dir), { recursive: true })
+  for (const name of engines) cpSync(path.join(prismaClient, name), path.join(server, dir, name))
 }
 
 // Belt and braces: the build environment's .env must never travel with the package.
