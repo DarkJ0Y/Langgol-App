@@ -76,9 +76,18 @@ Both URLs are the **session** pooler here, deliberately. Migrations cannot run o
 transaction pooler. The running site uses the transaction pooler for `DATABASE_URL` (step 3).
 
 The migration `p15_rls_deny_all_backstop` switches on Row Level Security for every table and
-removes the access of Supabase's public API keys. Langgol does not use Supabase's REST API, so
-with that in place nobody can read the data through it, even with the project's public key.
-Afterwards, Supabase → **Advisors** → _Security Advisor_ should show no "RLS disabled" errors.
+removes the access of Supabase's public API keys. Langgol does not use Supabase's REST API.
+
+**Then switch the REST API off** (once, in the dashboard): Supabase → **Project Settings** →
+**Integrations** → **Data API** → turn off **Enable Data API** → _Save_. Langgol talks to the
+database directly and does not notice. This matters because PostGIS creates three tables of its
+own (`spatial_ref_sys`, `geometry_columns`, `geography_columns`) under Supabase's internal admin
+role, and a migration is not allowed to take the API's write access to them away. With the Data
+API off, no key reaches the database at all.
+
+Supabase → **Advisors** → _Security Advisor_ will still list those three PostGIS objects and
+"RLS enabled, no policy" for every Langgol table. With the Data API off, both are expected: "no
+policy" is the deny-all design, and the PostGIS findings have no way in.
 
 ## 2. Download the package
 
