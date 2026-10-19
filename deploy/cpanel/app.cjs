@@ -86,6 +86,16 @@ function loadEnvFile() {
 
 loadEnvFile()
 
+/*
+ * Few threads. CloudLinux caps the threads and memory an account may use, and the defaults size
+ * thread pools by the machine's CPU count — dozens on a shared server. The Prisma query engine
+ * starts one Tokio worker per core; when the cap stops it creating its timer thread, every query
+ * dies with "PANIC: timer has gone away". Two workers are plenty for this site's traffic.
+ * Set before the server loads: both pools are created on first use. `.env` can still override.
+ */
+process.env.TOKIO_WORKER_THREADS ??= '2'
+process.env.UV_THREADPOOL_SIZE ??= '2'
+
 // The standalone server listens on $HOSTNAME, which a Linux shell sets to the machine's own name.
 // Passenger replaces the address with its own socket anyway; outside Passenger (a manual
 // `node app.js` to test the package) this keeps the server off public interfaces.
