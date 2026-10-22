@@ -14,6 +14,7 @@
  */
 
 import { NextResponse, type NextRequest } from 'next/server'
+import { SITE_REALM, sitePasswordAccepted } from '@/lib/site-password'
 
 const SESSION_COOKIES = ['__Host-langgol_session', 'langgol_session']
 
@@ -151,6 +152,28 @@ function securityHeaders(options: CspOptions): Record<string, string> {
 }
 
 export function middleware(request: NextRequest): NextResponse {
+  /*
+   * The site password, before anything else. Off unless SITE_PASSWORD is set; on Vercel with
+   * the demo sign-in, packages/shared/src/env.ts refuses to start without it. /health stays open
+   * so an uptime check needs no credentials — it reports liveness and nothing else.
+   */
+  const sitePassword = (process.env['SITE_PASSWORD'] ?? '').trim()
+  if (
+    sitePassword !== '' &&
+    request.nextUrl.pathname !== '/health' &&
+    !sitePasswordAccepted(request.headers.get('authorization'), sitePassword)
+  ) {
+    return new NextResponse('Password required.', {
+      status: 401,
+      headers: {
+        'www-authenticate': `Basic realm="${SITE_REALM}", charset="UTF-8"`,
+        'cache-control': 'no-store',
+        'x-frame-options': 'DENY',
+        'x-content-type-options': 'nosniff',
+      },
+    })
+  }
+
   const nonce = crypto.randomUUID().replace(/-/g, '')
   const isDevelopment = process.env['NODE_ENV'] === 'development'
 

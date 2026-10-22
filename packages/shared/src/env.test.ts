@@ -185,3 +185,26 @@ describe('development mode is not blocked on SMS infrastructure', () => {
     expect(() => parseEnv({ ...BASE, APP_ENV: 'staging', AUTH_MODE: 'otp' })).not.toThrow()
   })
 })
+
+describe('a demo on Vercel must sit behind the site password', () => {
+  const vercelDemo = { ...BASE, APP_ENV: 'staging', AUTH_MODE: 'development', VERCEL: '1' }
+
+  it('refuses to start with the one-click sign-in and no site password', () => {
+    expect(() => parseEnv(vercelDemo)).toThrow(/SITE_PASSWORD/)
+    expect(() => parseEnv({ ...vercelDemo, SITE_PASSWORD: '' })).toThrow(/SITE_PASSWORD/)
+  })
+
+  it('starts once the site password is set', () => {
+    const env = parseEnv({ ...vercelDemo, SITE_PASSWORD: 'LanggolDemo2026' })
+    expect(env.SITE_PASSWORD).toBe('LanggolDemo2026')
+  })
+
+  it('refuses a site password too short to protect anything', () => {
+    expect(() => parseEnv({ ...vercelDemo, SITE_PASSWORD: 'short' })).toThrow(EnvironmentError)
+  })
+
+  it('leaves cPanel and local development alone, where the host or nobody needs it', () => {
+    expect(() => parseEnv({ ...BASE, APP_ENV: 'staging', AUTH_MODE: 'development' })).not.toThrow()
+    expect(() => parseEnv({ ...BASE })).not.toThrow()
+  })
+})

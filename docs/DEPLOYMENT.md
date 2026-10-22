@@ -88,7 +88,7 @@ failure arrives at runtime as a missing export.
 "regions": ["sin1"]
 ```
 
-The Neon database is in `ap-southeast-1`. Vercel's default region is Washington, so every query
+The Supabase database is in `ap-southeast-1` (Singapore). Vercel's default region is Washington, so every query
 would cross the Pacific and back. Serverless functions run per request, and the round trips add up
 fast on the marketplace pages, which issue several. Singapore puts the functions beside the data.
 
@@ -101,20 +101,21 @@ Set these in the Vercel project, for the environment you are deploying.
 
 **Required. The app will not boot without them.**
 
-| Variable             | Note                              |
-| -------------------- | --------------------------------- |
-| `DATABASE_URL`       | Neon pooled connection            |
-| `DIRECT_URL`         | Neon unpooled. Migrations need it |
-| `AUTH_SECRET`        | 32 characters minimum             |
-| `JOB_TRIGGER_SECRET` | 16 characters minimum             |
+| Variable             | Note                                                                                                                       |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`       | Supabase transaction pooler (port 6543) with `?pgbouncer=true&connection_limit=1` — one connection per serverless function |
+| `DIRECT_URL`         | Supabase session pooler (port 5432). Migrations need it                                                                    |
+| `AUTH_SECRET`        | 32 characters minimum                                                                                                      |
+| `JOB_TRIGGER_SECRET` | 16 characters minimum                                                                                                      |
 
 **For a staging demo.**
 
-| Variable    | Value                                |
-| ----------- | ------------------------------------ |
-| `APP_ENV`   | `staging`                            |
-| `APP_URL`   | the deployment's own URL             |
-| `AUTH_MODE` | `development`, for the demo accounts |
+| Variable        | Value                                                        |
+| --------------- | ------------------------------------------------------------ |
+| `APP_ENV`       | `staging`                                                    |
+| `APP_URL`       | the deployment's own URL                                     |
+| `AUTH_MODE`     | `development`, for the demo accounts                         |
+| `SITE_PASSWORD` | **required on Vercel with `AUTH_MODE=development`** — see §4 |
 
 **Optional.** `FIREBASE_*` is needed only for photo and document uploads, which fail cleanly
 without it. `KYC_ENCRYPTION_KEY` outside production means identity submission is refused rather
@@ -128,9 +129,17 @@ are used. Anything already set in the environment always wins over the file.
 
 Because the fixture accounts have no password, a staging URL is an open administrator login.
 
-Vercel Deployment Protection closes this. **Vercel Authentication** limits access to members of
-your Vercel account and is available on every plan for preview deployments. **Password
-Protection** is a paid plan feature. Either is sufficient; no protection is not.
+On the free plan Vercel can protect preview deployments (**Vercel Authentication**) but not the
+production address; **Password Protection** is a paid feature. So the app protects itself:
+`SITE_PASSWORD` puts one password in front of every page (HTTP Basic, in
+[`middleware.ts`](../apps/web/middleware.ts)), and on Vercel the app **refuses to start** with
+`AUTH_MODE=development` unless it is set ([`env.ts`](../packages/shared/src/env.ts)). `/health`
+stays open for uptime checks. On cPanel, Directory Privacy does the same job and `SITE_PASSWORD`
+is optional.
+
+The variables for a Vercel demo can be pasted in one go: a `.env.vercel` file at the repository
+root (gitignored like every `.env.*`) holds them, and Vercel's Environment Variables screen
+accepts a whole `.env` pasted into its first field.
 
 Confirm it is on by opening the deployment in a private window. You should be asked to
 authenticate before you see the site. If the homepage renders, the protection is not active and

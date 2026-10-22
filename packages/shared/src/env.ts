@@ -125,6 +125,22 @@ const schema = z.object({
     .min(8, 'DEMO_PASSWORD must be at least 8 characters')
     .optional()
     .or(z.literal('')),
+
+  /*
+   * One password in front of the whole site, asked for by the browser (HTTP Basic, checked in
+   * apps/web/middleware.ts). For a demo deployment whose host cannot protect it — see the Vercel
+   * check below. Unset or empty, nothing is asked. Read by the middleware straight from the
+   * environment; declared here so that a value too short to protect anything fails at boot.
+   */
+  SITE_PASSWORD: z
+    .string()
+    .trim()
+    .min(8, 'SITE_PASSWORD must be at least 8 characters')
+    .optional()
+    .or(z.literal('')),
+
+  /** Set to "1" by Vercel on every build and function. Read only for the check below. */
+  VERCEL: z.string().optional(),
 })
 
 export type Env = z.infer<typeof schema> & {
@@ -290,6 +306,21 @@ export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
     // means development-only code paths (verbose logging, cached clients) are live.
     throw new EnvironmentError(
       `APP_ENV=production requires NODE_ENV=production, found "${env.NODE_ENV}".`,
+    )
+  }
+
+  /*
+   * The one-click demo sign-in on Vercel must sit behind the site password.
+   *
+   * Development sign-in makes anyone an administrator in one click. On cPanel the host's
+   * Directory Privacy guards it; on Vercel's free plan the production address cannot be
+   * protected by the platform at all, so the public URL would be an open admin login. Refusing to
+   * start is the only failure that cannot be missed.
+   */
+  if (env.VERCEL === '1' && env.AUTH_MODE === 'development' && !env.SITE_PASSWORD) {
+    throw new EnvironmentError(
+      'AUTH_MODE=development on Vercel requires SITE_PASSWORD: without it the public address ' +
+        'lets anyone sign in as an administrator with one click.',
     )
   }
 

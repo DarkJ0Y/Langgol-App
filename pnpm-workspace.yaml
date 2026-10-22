@@ -29,7 +29,23 @@ allowBuilds:
 overrides:
   # GHSA-r28c-9q8g-f849 and one earlier advisory. Patch-level bump inside 8.5.x.
   postcss: '>=8.5.18'
-  # Optional image optimiser pulled in by Next.
-  sharp: '>=0.35.0'
+  # Optional image optimiser pulled in by Next. GHSA-g89c-p67h-r497 (libheif) fixed in 0.35.4.
+  sharp: '>=0.35.5'
   # Stack exhaustion on recursive graphs; reached only via @prisma/config.
   deepmerge-ts: '>=8.0.0'
+  # Test runner only (vitest 3 asks for ^1.1.1); never shipped. Two prototype-pollution
+  # advisories, fixed in 2.1.2. Checked against the full test suite.
+  tinypool: '>=2.1.2'
+  # Lint only, via @eslint/eslintrc. CPU exhaustion on merge keys; patch-level within 4.x.
+  js-yaml: '>=4.3.2 <5'
+  # Two DoS advisories (uncontrolled recursion), lint and coverage tooling only. One pin per
+  # major line in use, so no consumer is moved across a major version.
+  'brace-expansion@<2': '>=1.1.20 <2'
+  'brace-expansion@>=2 <3': '>=2.1.6 <3'
+  'brace-expansion@>=5 <6': '>=5.0.11 <6'
+  # Reaches the server through firebase → @firebase/firestore. Minor bump within 1.x.
+  '@grpc/grpc-js': '>=1.13.6 <2'
+  # Coverage tooling only.
+  source-map-js: '>=1.2.2 <2'
+  # Test runner only (via @vitest/mocker); patch-level within 7.3.
+  'vite@>=7 <8': '>=7.3.7 <8'
