@@ -130,6 +130,35 @@ export default tseslint.config(
   },
 
   /*
+   * The portfolio site (GitHub Pages). Plain browser modules with no build step: the same
+   * explicit-globals approach as the scripts above, for the browser's globals instead of Node's.
+   * A failed 3D scene is reported to the console rather than breaking the page. portfolio/
+   */
+  {
+    files: ['portfolio/**/*.js'],
+    languageOptions: {
+      globals: Object.fromEntries(
+        [
+          'window',
+          'document',
+          'console',
+          'localStorage',
+          'getComputedStyle',
+          'IntersectionObserver',
+          'ResizeObserver',
+          'Intl',
+        ].map((name) => [name, 'readonly']),
+      ),
+    },
+    rules: {
+      'no-console': ['error', { allow: ['warn'] }],
+      // Decimals here are 3D sizes, angles and animation speeds. The only money is a set of
+      // fixed demo figures already computed in the database, shown, never calculated with.
+      'langgol/no-business-rate-literal': 'off',
+    },
+  },
+
+  /*
    * The cPanel startup file. CommonJS, because Passenger `require`s it, and it reports to the
    * host's log like any other script. deploy/cpanel/app.cjs
    */

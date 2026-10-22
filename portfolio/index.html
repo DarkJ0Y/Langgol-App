@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Langgol</title>
+    <meta
+      name="description"
+      content="Langgol is a digital operating system for the agricultural ecosystem of Bangladesh: farmers earn more, buyers pay less, and both are measured."
+    />
+    <meta property="og:title" content="Langgol" />
+    <meta
+      property="og:description"
+      content="Connecting Bangladeshi farmers with nearby buyers, on transparent delivered prices."
+    />
+    <meta property="og:image" content="assets/og.png" />
+    <link rel="icon" href="assets/icon.png" type="image/png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script>
+      // Theme before first paint: dark unless the visitor chose light here before.
+      try {
+        const saved = localStorage.getItem('langgol-portfolio-theme')
+        if (saved === 'light' || saved === 'dark') document.documentElement.dataset.theme = saved
+      } catch {}
+    </script>
+    <script type="importmap">
+      { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+    </script>
+    <script type="module" src="js/main.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#problem">Skip to content</a>
+
+    <header class="nav">
+      <div class="wrap nav__inner">
+        <a class="nav__brand" href="#top" aria-label="Langgol, back to top">
+          <img src="assets/logo.png" alt="Langgol" width="480" height="224" />
+        </a>
+        <nav class="nav__links" aria-label="Sections">
+          <a href="#problem">Problem</a>
+          <a href="#how">How it works</a>
+          <a href="#product">Product</a>
+          <a href="#numbers">Numbers</a>
+          <a href="#build">Built</a>
+          <a href="#roadmap">Roadmap</a>
+        </nav>
+        <div class="nav__actions">
+          <button
+            class="icon-btn"
+            id="theme-toggle"
+            type="button"
+            aria-label="Switch to light mode"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <path
+                class="sun"
+                d="M12 4V2m0 20v-2m8-8h2M2 12h2m13.66-5.66 1.41-1.41M4.93 19.07l1.41-1.41m0-11.32L4.93 4.93m14.14 14.14-1.41-1.41M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z"
+              />
+              <path class="moon" d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z" />
+            </svg>
+          </button>
+          <a class="btn btn--primary btn--sm" href="#contact">Talk to us</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- ============================================================= hero -->
+      <section class="hero" aria-labelledby="hero-title">
+        <canvas class="hero__canvas" id="hero-canvas" aria-hidden="true"></canvas>
+        <div class="wrap hero__content">
+          <p class="eyebrow"><span class="dot"></span> Agriculture · Bangladesh</p>
+          <h1 id="hero-title">
+            Farmers earn more.<br />Buyers pay less.<br /><span class="accent"
+              >Measured, not promised.</span
+            >
+          </h1>
+          <p class="lead">
+            Langgol connects farmers with buyers near them, prices every order at the buyer's door
+            instead of the farm gate, and keeps the books to prove whether both sides came out
+            ahead.
+          </p>
+          <div class="hero__cta">
+            <a class="btn btn--primary" href="#how">See how it works</a>
+            <a class="btn btn--ghost" href="#product">Tour the product</a>
+          </div>
+          <ul class="hero__facts" aria-label="At a glance">
+            <li><strong>Bangla</strong> and English</li>
+            <li>Built for a <strong>৳9,000</strong> Android phone</li>
+            <li>Money kept to the <strong>poisha</strong></li>
+          </ul>
+        </div>
+        <p class="hero__hint" aria-hidden="true">
+          Each light is an order travelling from a farm to the market.
+        </p>
+      </section>
+
+      <!-- ========================================================== problem -->
+      <section class="section" id="problem" aria-labelledby="problem-title">
+        <div class="wrap">
+          <p class="eyebrow">The problem</p>
+          <h2 id="problem-title">Six hands between the field and the plate</h2>
+          <p class="section__lead">
+            A tomato grown in Bogura usually changes hands five times before anyone eats it. Each
+            hop adds transport, handling, commission and loss — and none of it is visible to the
+            farmer or the buyer.
+          </p>
+
+          <ol class="chain" aria-label="A typical vegetable supply chain in Bangladesh">
+            <li class="chain__step chain__step--end"><span>Farmer</span></li>
+            <li class="chain__step"><span>Foria</span><small>village collector</small></li>
+            <li class="chain__step"><span>Bepari</span><small>trader</small></li>
+            <li class="chain__step"><span>Aratdar</span><small>commission agent</small></li>
+            <li class="chain__step"><span>Paikar</span><small>wholesaler</small></li>
+            <li class="chain__step"><span>Retailer</span></li>
+            <li class="chain__step chain__step--end"><span>Consumer</span></li>
+          </ol>
+
+          <div class="grid grid--3 cards">
+            <article class="card">
+              <h3>The farmer's share is a guess</h3>
+              <p>
+                For vegetables it is commonly reported at roughly 40–60% of what the consumer pays.
+                Langgol treats that as a hypothesis to measure in the pilot district, not a fact to
+                build a business on.
+              </p>
+            </article>
+            <article class="card">
+              <h3>The chain does real work</h3>
+              <p>
+                Traders pay cash at the farm gate, take the whole lot, arrange transport and lend
+                before harvest. Langgol removes unnecessary cost and opacity — not useful economic
+                activity.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Cheapest isn't cheapest</h3>
+              <p>
+                The lowest farm-gate price is often not the lowest price at the buyer's door.
+                Distance, basket size, handling and spoilage decide that — and today nobody shows
+                the sum.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================= idea -->
+      <section class="section section--alt" id="idea" aria-labelledby="idea-title">
+        <div class="wrap split">
+          <div>
+            <p class="eyebrow">The idea</p>
+            <h2 id="idea-title">Optimise the delivered price, not the farm-gate price</h2>
+            <p class="section__lead">
+              Every listing on Langgol is priced to the buyer's address: produce, delivery, handling
+              and commission, line by line. The buyer sees why one farm is cheaper than another, and
+              the farmer sees exactly what reaches them.
+            </p>
+          </div>
+          <div
+            class="compare"
+            role="group"
+            aria-label="Worked illustration, from the product vision"
+          >
+            <p class="compare__label">Worked illustration · not measured data</p>
+            <div class="compare__row">
+              <div class="compare__farm">
+                <strong>Farmer A</strong>
+                <span>Bogura · tomato · ৳30/kg</span>
+              </div>
+              <span class="tag tag--good">Cheaper delivered</span>
+            </div>
+            <div class="compare__row">
+              <div class="compare__farm">
+                <strong>Farmer B</strong>
+                <span>120 km away · tomato · ৳25/kg</span>
+              </div>
+              <span class="tag">Cheaper at the gate</span>
+            </div>
+            <p class="compare__note">
+              A buyer in Bogura wants <strong>5 kg</strong>. Farmer B is ৳5/kg cheaper at the farm
+              gate, but 5 kg cannot pay for a 240 km round trip. At 500 kg on a shared route with a
+              return load, the answer can flip. Langgol computes it, and shows the buyer why.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================== how it works -->
+      <section class="section how" id="how" aria-labelledby="how-title">
+        <div class="wrap">
+          <p class="eyebrow">How it works</p>
+          <h2 id="how-title">From a field in Bogura to a kitchen in town</h2>
+          <p class="section__lead">Scroll through one order. The model follows it.</p>
+        </div>
+        <div class="wrap how__grid">
+          <div class="how__stage">
+            <canvas id="flow-canvas" aria-hidden="true"></canvas>
+            <p class="how__caption" id="flow-caption" aria-live="polite">
+              1 · Farmer lists a harvest
+            </p>
+          </div>
+          <ol class="how__steps">
+            <li class="step is-active" data-step="0">
+              <span class="step__n">01</span>
+              <h3>A farmer lists a harvest</h3>
+              <p>
+                Crop, grade, quantity and farm-gate price, from a phone, in Bangla. Photos matter
+                more than text for a farmer who reads little English, so the screens are built
+                around them.
+              </p>
+            </li>
+            <li class="step" data-step="1">
+              <span class="step__n">02</span>
+              <h3>A buyer finds it nearby</h3>
+              <p>
+                The market and the <em>Near me</em> map sort farms by real distance from the buyer.
+                A farm's demand is shown as counts only — never a buyer's name or address.
+              </p>
+            </li>
+            <li class="step" data-step="2">
+              <span class="step__n">03</span>
+              <h3>The price is worked out to the door</h3>
+              <p>
+                Produce, delivery, handling and commission are calculated for that buyer's address
+                and shown line by line. The quote is frozen, so the price paid is the price seen.
+              </p>
+            </li>
+            <li class="step" data-step="3">
+              <span class="step__n">04</span>
+              <h3>Checkout reserves the stock</h3>
+              <p>
+                The quantity is held the moment the buyer pays, so two buyers can never buy the same
+                kilo. A double tap on a slow connection places one order, not two.
+              </p>
+            </li>
+            <li class="step" data-step="4">
+              <span class="step__n">05</span>
+              <h3>The farmer accepts, the order travels</h3>
+              <p>
+                Every order moves through a strict set of states — accepted, picked up, delivered —
+                and each move is recorded with who made it and when.
+              </p>
+            </li>
+            <li class="step" data-step="5">
+              <span class="step__n">06</span>
+              <h3>The books balance, to the poisha</h3>
+              <p>
+                Payment is posted to a double-entry ledger. The farmer's share, delivery and
+                commission are exact integers, and the order's economics are stored so the savings
+                can be measured, not claimed.
+              </p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- ========================================================== product -->
+      <section class="section section--alt" id="product" aria-labelledby="product-title">
+        <div class="wrap">
+          <p class="eyebrow">The product</p>
+          <h2 id="product-title">Working software, not a slide</h2>
+          <p class="section__lead">
+            Screens from the running web app, with its demo data. Dark and bright themes, Bangla and
+            English throughout.
+          </p>
+
+          <div class="tour" data-tour>
+            <div class="tour__tabs" role="tablist" aria-label="Product screens">
+              <button
+                role="tab"
+                id="tab-market"
+                aria-controls="panel-market"
+                aria-selected="true"
+                type="button"
+              >
+                Market
+              </button>
+              <button
+                role="tab"
+                id="tab-nearby"
+                aria-controls="panel-nearby"
+                aria-selected="false"
+                tabindex="-1"
+                type="button"
+              >
+                Near me
+              </button>
+              <button
+                role="tab"
+                id="tab-farmer"
+                aria-controls="panel-farmer"
+                aria-selected="false"
+                tabindex="-1"
+                type="button"
+              >
+                Farmer dashboard
+              </button>
+              <button
+                role="tab"
+                id="tab-assistant"
+                aria-controls="panel-assistant"
+                aria-selected="false"
+                tabindex="-1"
+                type="button"
+              >
+                Crop assistant
+              </button>
+            </div>
+
+            <div class="tour__panel" role="tabpanel" id="panel-market" aria-labelledby="tab-market">
+              <figure class="frame">
+                <div class="frame__bar" aria-hidden="true">
+                  <i></i><i></i><i></i><span>langgol · market</span>
+                </div>
+                <img
+                  src="assets/market.webp"
+                  width="1600"
+                  height="725"
+                  loading="lazy"
+                  alt="The Langgol market: live listings for potato, paddy, mango, tomato and bottle gourd with farm-gate prices per kilo, stock left, and a 'Lowest price today' list."
+                />
+              </figure>
+              <p class="tour__text">
+                <strong>The market.</strong> Live listings with farm-gate prices, grade and stock
+                left. One button turns a farm-gate price into the price delivered to your address.
+              </p>
+            </div>
+
+            <div
+              class="tour__panel"
+              role="tabpanel"
+              id="panel-nearby"
+              aria-labelledby="tab-nearby"
+              hidden
+            >
+              <figure class="frame">
+                <div class="frame__bar" aria-hidden="true">
+                  <i></i><i></i><i></i><span>langgol · near me</span>
+                </div>
+                <img
+                  src="assets/nearby.webp"
+                  width="1256"
+                  height="700"
+                  loading="lazy"
+                  alt="The 'Farms near you' page: a map of Bangladesh with farm markers and a list of the nearest farms with distances and what each has today."
+                />
+              </figure>
+              <p class="tour__text">
+                <strong>Near me.</strong> The closest farms on a map, sorted by distance, with what
+                each has today. Closer farms mean lower delivery — so this is where cheaper starts.
+              </p>
+            </div>
+
+            <div
+              class="tour__panel"
+              role="tabpanel"
+              id="panel-farmer"
+              aria-labelledby="tab-farmer"
+              hidden
+            >
+              <figure class="frame">
+                <div class="frame__bar" aria-hidden="true">
+                  <i></i><i></i><i></i><span>langgol · my farm</span>
+                </div>
+                <img
+                  src="assets/farmer.webp"
+                  width="1600"
+                  height="583"
+                  loading="lazy"
+                  alt="The farmer dashboard: income, profit and harvest this year with comparisons to last year, and a chart of income and cost for each season from Aman 2024 to Kharif 2026."
+                />
+              </figure>
+              <p class="tour__text">
+                <strong>My farm.</strong> Income, cost and harvest by Bangladeshi season — Aman,
+                Rabi, Boro, Kharif — so a farmer can see which crop and season actually paid.
+              </p>
+            </div>
+
+            <div
+              class="tour__panel"
+              role="tabpanel"
+              id="panel-assistant"
+              aria-labelledby="tab-assistant"
+              hidden
+            >
+              <div class="tour__phone">
+                <figure class="frame frame--phone">
+                  <img
+                    src="assets/assistant.webp"
+                    width="486"
+                    height="1360"
+                    loading="lazy"
+                    alt="The crop assistant: a form for a plant photo and a description, and an answer giving the likely cause, confidence and four steps to take, with a reminder to ask an agriculture officer."
+                  />
+                </figure>
+                <p class="tour__text">
+                  <strong>Crop assistant.</strong> A farmer photographs a sick plant and says what
+                  they see. The answer states its confidence and always points to the local
+                  agriculture officer before a costly decision. In the demo the answers are
+                  scripted, and say so.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================== numbers -->
+      <section class="section" id="numbers" aria-labelledby="numbers-title">
+        <div class="wrap">
+          <p class="eyebrow">Numbers</p>
+          <h2 id="numbers-title">What the demo marketplace recorded</h2>
+          <p class="section__lead">
+            <span class="tag tag--warn">Demo data</span> Ten invented people, their farms and six
+            months of orders, placed through the real quote and checkout code. These show how
+            Langgol accounts for money — they are not results from real farmers.
+          </p>
+
+          <ul class="tiles" aria-label="Demo dataset in figures">
+            <li class="tile">
+              <span class="tile__label">Paid by buyers</span
+              ><span class="tile__value">৳2,08,050</span
+              ><span class="tile__sub">40 fulfilled orders</span>
+            </li>
+            <li class="tile">
+              <span class="tile__label">Reached farmers</span
+              ><span class="tile__value">৳1,18,055</span
+              ><span class="tile__sub">56.7% of every taka</span>
+            </li>
+            <li class="tile">
+              <span class="tile__label">Langgol commission</span
+              ><span class="tile__value">1.8%</span><span class="tile__sub">৳3,651 in total</span>
+            </li>
+            <li class="tile">
+              <span class="tile__label">Harvest on record</span
+              ><span class="tile__value">220 t</span><span class="tile__sub">8 crops, 3 years</span>
+            </li>
+          </ul>
+
+          <div class="grid grid--charts">
+            <article class="chart-card chart-card--wide">
+              <h3>Where the buyer's taka went</h3>
+              <p class="chart-card__sub">
+                Every fulfilled demo order, added up. Exact to the poisha.
+              </p>
+              <div class="chart" id="chart-split"></div>
+              <p class="chart-card__note">
+                Delivery is large because the demo baskets are small. That is the point: on small
+                orders, distance dominates the price — which is why Langgol prices delivered cost
+                and matches buyers with the nearest farms.
+              </p>
+            </article>
+
+            <article class="chart-card">
+              <h3>Sales by month</h3>
+              <p class="chart-card__sub">What buyers paid, cancelled orders left out.</p>
+              <div class="chart" id="chart-months"></div>
+            </article>
+
+            <article class="chart-card">
+              <h3>Harvest recorded, by crop</h3>
+              <p class="chart-card__sub">Tonnes, all demo farms, 2024–2026.</p>
+              <div class="chart" id="chart-harvest"></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ build -->
+      <section class="section section--alt" id="build" aria-labelledby="build-title">
+        <div class="wrap">
+          <p class="eyebrow">How it is built</p>
+          <h2 id="build-title">Built like a financial system, because it is one</h2>
+          <p class="section__lead">
+            Farmers will trust Langgol only if it pays them correctly, on time, every time. The
+            engineering is organised around that.
+          </p>
+
+          <ul class="tiles tiles--build">
+            <li class="tile">
+              <span class="tile__value">1,600+</span
+              ><span class="tile__label">automated tests, run on every change</span>
+            </li>
+            <li class="tile">
+              <span class="tile__value">127</span
+              ><span class="tile__label">database guarantees checked in CI</span>
+            </li>
+            <li class="tile">
+              <span class="tile__value">0</span
+              ><span class="tile__label">floating-point taka — money is whole poisha</span>
+            </li>
+            <li class="tile">
+              <span class="tile__value">9</span
+              ><span class="tile__label">roles, from farmer to agronomist to admin</span>
+            </li>
+          </ul>
+
+          <div
+            class="layers"
+            role="img"
+            aria-label="Architecture: web app on top of application use cases, on top of the domain rules, with infrastructure adapters for the database, maps, messages and AI at the side."
+          >
+            <div class="layers__stack">
+              <div class="layer">
+                <strong>Web app</strong><span>Next.js · server-rendered · works on 3G</span>
+              </div>
+              <div class="layer">
+                <strong>Use cases</strong><span>quote · checkout · verify · diagnose</span>
+              </div>
+              <div class="layer layer--core">
+                <strong>Domain rules</strong><span>money · orders · geography · consent</span>
+              </div>
+            </div>
+            <div class="layers__side">
+              <div class="layer layer--port">
+                <strong>PostgreSQL + PostGIS</strong><span>constraints, row-level security</span>
+              </div>
+              <div class="layer layer--port">
+                <strong>Maps</strong><span>OpenStreetMap today</span>
+              </div>
+              <div class="layer layer--port">
+                <strong>SMS · e-mail</strong><span>swappable providers</span>
+              </div>
+              <div class="layer layer--port">
+                <strong>AI advisory</strong><span>model plugged in later</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid--3 cards">
+            <article class="card">
+              <h3>The database is the referee</h3>
+              <p>
+                Prices, stock and state changes are guarded by constraints in PostgreSQL itself, so
+                a bug in the app cannot oversell or unbalance the books.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Private by default</h3>
+              <p>
+                Identity numbers are encrypted, every admin action is in an append-only audit log,
+                and buyer demand is shown as counts — never names.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Honest by construction</h3>
+              <p>
+                A savings claim must trace to a stored price baseline, a method and a sample size.
+                Without one, the product makes no claim at all.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================== roadmap -->
+      <section class="section" id="roadmap" aria-labelledby="roadmap-title">
+        <div class="wrap">
+          <p class="eyebrow">Roadmap</p>
+          <h2 id="roadmap-title">One thing to prove first</h2>
+          <p class="section__lead">
+            A real farmer sells real produce to a real nearby buyer, with a transparent price,
+            reliable delivery and a measurable benefit to both. Everything else grows from that.
+          </p>
+
+          <ol class="road">
+            <li class="road__item is-done">
+              <span class="road__when">Built</span>
+              <h3>Marketplace MVP</h3>
+              <p>
+                Listings, delivered-price quotes, orders, ledger, verification, dashboards, map and
+                the assistant demo.
+              </p>
+            </li>
+            <li class="road__item is-next">
+              <span class="road__when">Next · 12 weeks</span>
+              <h3>Pilot in one district</h3>
+              <p>
+                Rajshahi is the default candidate. A go/no-go gate on measured farmer and buyer
+                benefit decides what follows.
+              </p>
+            </li>
+            <li class="road__item">
+              <span class="road__when">Then</span>
+              <h3>Logistics and intelligence</h3>
+              <p>
+                Shared routes and return loads to cut delivery cost; price and demand signals from
+                real transactions.
+              </p>
+            </li>
+            <li class="road__item">
+              <span class="road__when">Later</span>
+              <h3>Supply, Farm and Credit</h3>
+              <p>
+                Inputs, farm records and — last, through licensed partners — credit built on
+                transaction history.
+              </p>
+            </li>
+          </ol>
+
+          <div class="eco" aria-label="The Langgol ecosystem">
+            <span class="eco__item is-live">Market</span>
+            <span class="eco__item">Farm</span>
+            <span class="eco__item">Logistics</span>
+            <span class="eco__item">Supply</span>
+            <span class="eco__item">Intelligence</span>
+            <span class="eco__item">Credit</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================== contact -->
+      <section class="section section--cta" id="contact" aria-labelledby="contact-title">
+        <div class="wrap cta">
+          <h2 id="contact-title">Help us prove it in the field</h2>
+          <p>
+            We are looking for pilot partners: farmer groups, field agents, retailers, restaurants
+            and people who know a district's roads and markets.
+          </p>
+          <div class="hero__cta">
+            <a class="btn btn--primary" href="https://github.com/DarkJ0Y/Langgol-App" rel="noopener"
+              >See the code on GitHub</a
+            >
+            <a class="btn btn--ghost" href="https://langgol.apeiroworld.com" rel="noopener"
+              >Live demo (by invitation)</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="wrap footer__inner">
+        <img src="assets/logo.png" alt="Langgol" width="480" height="224" loading="lazy" />
+        <p>Digital operating system for the agricultural ecosystem of Bangladesh.</p>
+        <p class="footer__small">
+          Figures marked demo come from invented test data. © 2026 Langgol.
+        </p>
+      </div>
+    </footer>
+
+    <div class="tooltip" id="tooltip" role="status" hidden></div>
+  </body>
+</html>

@@ -1,0 +1,57 @@
+# Publishes portfolio/ to the gh-pages branch, which GitHub Pages serves at
+# https://darkj0y.github.io/Langgol-App/
+#
+# A branch rather than the Pages deployment action: the github-pages environment only accepts
+# deployments from the default branch, and this work lives on a feature branch.
+#
+# One-time setup in the repository: Settings → Pages → Build and deployment → Source:
+# "Deploy from a branch" → Branch: gh-pages, folder: / (root).
+
+name: Portfolio
+
+on:
+  push:
+    paths:
+      - 'portfolio/**'
+      - '.github/workflows/portfolio.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: portfolio
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # A page that links to a missing image or script still "deploys"; this catches it first.
+      - name: Check every local file the page references
+        working-directory: portfolio
+        run: |
+          missing=0
+          for ref in $(grep -oE '(src|href)="[^"#:]+"' index.html | sed -E 's/^(src|href)="//; s/"$//' | sort -u); do
+            if [ ! -f "$ref" ]; then echo "::error file=portfolio/index.html::missing $ref"; missing=1; fi
+          done
+          for ref in $(grep -ohE "from '\./[^']+'|import\('\./[^']+'\)" js/*.js | grep -oE "\./[^']+" | sort -u); do
+            if [ ! -f "js/${ref#./}" ]; then echo "::error::missing js/${ref#./}"; missing=1; fi
+          done
+          exit $missing
+
+      - name: Publish to gh-pages
+        working-directory: portfolio
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          touch .nojekyll
+          git init -q
+          git checkout -q -b gh-pages
+          git add -A
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -q -m "Publish portfolio from ${GITHUB_SHA::7}"
+          git push -q -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+          echo "Published. Pages URL: https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/" >> "$GITHUB_STEP_SUMMARY"
